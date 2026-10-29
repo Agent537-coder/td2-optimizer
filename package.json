@@ -1,0 +1,13 @@
+{
+  "name": "td2-optimizer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Agent Hub Division 2 build planner and optimizer review snapshot",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "python serve.py",
+    "test": "node --test tests/optimizer*.test.mjs",
+    "simulate": "node scripts/devcheck/build_sim.mjs --json",
+    "optimize": "node scripts/optimize.mjs"
+  }
+}

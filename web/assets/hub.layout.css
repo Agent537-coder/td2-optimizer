@@ -1,0 +1,182 @@
+/* Shared compact navigation and distinct surfaces. Identity colours remain in the DB palette. */
+:root{--hub-surface:#232426;--hub-canvas:#171819;--hub-edge:#434643;--bg:var(--hub-canvas);--panel:var(--hub-canvas);--card:var(--hub-surface);--line:var(--hub-edge);--fg:#e5e5e2;--mut:#afb1ad;--hub-bg:var(--hub-canvas);--hub-panel:var(--hub-surface);--hub-line:var(--hub-edge);--hub-text:var(--fg);--hub-muted:var(--mut)}
+[data-theme=light]{--hub-surface:#fffefa;--hub-canvas:#f3f2ed;--hub-edge:#b5bdc5;--fg:#242b33;--mut:#56616d}
+/* 交互四态梯级（Pen 08 / 网页控件状态，2026-10-15）：
+   默认（画布 #171819）→ 悬停 #30312e → 按下 #3b3c38；浅色主题同阶反向（更深=更实）。
+   ⚠️ 旧值 `--hover:var(--hub-surface)` 与 `--card` 同色 ⇒ 全站 52 处
+   `:hover{background:var(--hover)}` 在面层元素上**不可见**（探针实测，`work/interaction-20261015/`）。
+   原先拿 `--hover` 当基底色的 10 处已改指 `--fill-soft`（值不变），因此这里可以安全推进。 */
+:root{--shell-tint:#ffb179;--shell-tint-soft:#3b2b23;--hover:#30312e;--press:#3b3c38;--fill-soft:var(--hub-surface)}
+[data-theme=light]{--shell-tint:#98430f;--shell-tint-soft:#f6e7da;--hover:#e1dfd8;--press:#d4d2cb}
+body :is(.chip,.subchip){background:var(--hub-surface);color:var(--mut);border-color:var(--hub-edge)}
+body :is(.chip,.subchip).on{background:var(--shell-tint-soft);color:var(--shell-tint);border-color:var(--shell-tint)}
+body{background-color:var(--hub-canvas)}
+body>header{padding-top:8px;padding-bottom:8px;background:var(--panel);box-shadow:var(--shadow-bar)}
+body>header .hd{gap:8px;min-height:36px;padding-block:0}
+body>header h1{font-size:20px;line-height:1.25;margin:0}
+body>header .sub,body>header .sub2{margin-top:6px}
+#hub-navigation{min-height:46px;padding-block:4px;position:sticky;top:0;z-index:35;background:var(--panel)}
+/* 外壳占位（配合 hub.navigation.js / 导出注入的 <nav id="hub-navigation">）：
+   .hub-shell 是 sticky、占文档流，桌面 72px / 手机 60px+safe。占位必须在它被构建**之前**
+   就把这个高度占住，否则构建完成那一刻整页下移（实测 /build/ CLS 0.851 里 0.24 就是这段）。
+   构建完成后由 .hub-shell 自己的 !important 规则接管，这里不再生效。 */
+#hub-navigation:not(.hub-shell){min-height:72px}
+@media(max-width:760px){#hub-navigation:not(.hub-shell){min-height:calc(60px + env(safe-area-inset-top))}}
+#hub-navigation a{padding-block:7px}
+[data-hub-page=bug] header{position:relative;top:auto}
+[data-hub-page=bug] .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px}
+[data-hub-page=bug] .filterrow{gap:5px;align-items:center}
+[data-hub-page=bug] .stat{font-size:12px;line-height:1.45}
+[data-hub-page=bug] #list,[data-hub-page=steam] main{padding-top:12px}
+[data-hub-page=bug] #list>*,[data-hub-page=steam] main>.card,[data-hub-page=steam] .post{background:var(--hub-surface);border:1px solid var(--hub-edge);box-shadow:0 3px 10px #00000012;margin-bottom:12px;border-radius:8px}
+[data-hub-page=steam] .posthead,[data-hub-page=bug] .chead{background:color-mix(in srgb,var(--hub-surface) 88%,var(--hub-edge));border-bottom:1px solid var(--hub-edge)}
+.card,.v-detail .dsec,.v-card,.task-card,.stats-card{border-color:var(--hub-edge)}
+.v-detail .kvs,.v-detail .dbattrs,.v-detail .dbattr,.v-detail b,.v-detail strong,.v-dlg b{font-family:var(--ff-body);font-weight:400;font-variant-numeric:tabular-nums;text-shadow:none;letter-spacing:0}
+.v-detail .dsec{padding:12px;background:var(--card);border:1px solid var(--hub-edge);border-radius:6px;margin-bottom:12px}
+.dlg-hd,.v-dlghd{background:var(--panel);border-bottom:1px solid var(--hub-edge)}
+
+
+
+
+@media (max-width:1120px){
+ [data-hub-page=build] main{grid-template-columns:minmax(0,1fr)}
+ #col-desk{order:1}#col-res{order:2}
+}
+@media (max-width:760px){
+ body>header h1{font-size:18px}
+ #hub-navigation.menu-open #hub-route-list{position:absolute;left:8px;right:8px;top:100%;padding:10px;background:var(--panel);border:1px solid var(--hub-edge);box-shadow:var(--shadow-menu)}
+ .bar{height:52px!important;min-height:52px!important;display:flex!important;flex-wrap:nowrap!important;gap:5px!important;padding:0 8px!important}
+ .bar .brand{min-width:0!important;flex:0 0 auto;font-size:15px;margin:0}.bar .brand .blogo{display:none}.bar .brand small{display:none}
+ .bar #shell-menu{display:block;min-width:0;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;padding:6px}
+ .bar .shell-actions{margin-left:auto}.bar .shell-control{padding:0 6px}.bar #hbadge{display:none}
+ .bar .primary-nav{display:none!important}.bar.hub-open .primary-nav{display:grid!important;position:absolute;left:8px;right:8px;top:52px;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--hub-edge);padding:8px;max-height:70vh;overflow:auto;box-shadow:var(--shadow-menu)}
+ .bar .tab{width:100%;height:46px;min-height:44px;font-size:13px;text-align:left}.bar .tab.on{background:var(--accent-soft);border:1px solid var(--accent)}
+ #fr{top:52px!important;height:calc(100% - 52px)!important}
+ [data-hub-page=bug] header .sub{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+ [data-hub-page=bug] header #q{grid-column:1/-1;min-width:0}
+ [data-hub-page=bug] header .sub select{min-width:0;width:100%;min-height:34px}
+ [data-hub-page=bug] #statline{display:none}
+ [data-hub-page=build] main{padding:8px 8px 60px;gap:8px}
+ #build-quick{padding:6px;gap:5px}#build-quick>.swrow,#build-quick summary{font-size:12px;line-height:1.35}
+ #build-overview{padding:8px}.overview-heading{margin-bottom:8px}.overview-heading h2{font-size:15px}.overview-heading>span{font-size:11px}
+ .overview-weapons,.overview-gear,.overview-skills{gap:6px}
+ .loadout-tile{grid-template-columns:1fr;grid-template-rows:16px 36px 38px;gap:3px;padding:5px;position:relative}
+ .loadout-tile img{width:100%;height:36px}.tile-name{font-size:12px;line-height:1.4;-webkit-line-clamp:2;align-self:start}.tile-slot{font-size:11px}
+ .tile-empty{font-size:23px}.overview-skills .loadout-tile{grid-template-columns:32px 1fr;grid-template-rows:16px 30px}.overview-skills .tile-name{align-self:center}.overview-skills img{height:28px}
+ .build-summary #r_grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #build-edit-body{padding:8px}.build-edit-head{padding:8px 12px}
+}
+body[data-hub-page]{background:var(--hub-canvas)}
+body #hub-navigation{height:48px;min-height:48px;box-sizing:border-box;flex-wrap:nowrap;padding:2px 12px;position:sticky;top:0;background:var(--panel)}
+body #hub-navigation a,body #hub-navigation .hub-menu-button{min-height:40px;box-sizing:border-box;padding-block:6px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) #list .row{margin:0 0 12px;padding:16px;background:var(--hub-surface);border:1px solid var(--hub-edge);border-radius:8px;box-shadow:0 3px 10px #00000012;gap:14px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) #list .row.open{background:var(--hub-surface);border-left:3px solid var(--accent)}
+body[data-hub-page=build]>header{padding:8px 12px}
+body[data-hub-page=build]>header .hd{padding:0;gap:6px}
+
+
+@media (max-width:760px){
+ body[data-hub-page=build]>header h1{font-size:18px}
+ body[data-hub-page=build]>header .actions{gap:3px}
+ body[data-hub-page=build]>header button{padding:6px 8px;min-height:36px}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) #list .row{padding:12px;gap:10px}
+}
+
+
+
+body[data-hub-page=bug] header .sub{display:flex;align-items:flex-start;flex-wrap:wrap}
+body[data-hub-page=bug] header #q{flex:1;min-width:170px}
+body[data-hub-page=bug] .hub-filter-fold{position:relative;min-width:110px}
+body[data-hub-page=bug] .hub-filter-fold[open]{display:block;flex-basis:100%;padding:10px;border:1px solid var(--hub-edge);background:var(--hub-surface)}
+body[data-hub-page=bug] .hub-filter-fold>summary,body[data-hub-page=bug] .hub-filter-fold>#chips{grid-column:1/-1}
+body[data-hub-page=bug] .hub-filter-fold select{width:100%;min-width:0}
+body[data-hub-page=build] #r_agent{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+body[data-hub-page=build] #r_agent>.sub-lbl{grid-column:1/-1;margin:0;font-size:13px}
+body[data-hub-page=build] #r_agent .arow{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:10px;background:var(--card);border:1px solid var(--hub-edge);border-radius:6px;min-width:0}
+body[data-hub-page=build] #r_agent .ak{font-size:13px;font-weight:500;color:var(--fg);overflow-wrap:anywhere}
+body[data-hub-page=build] #r_agent .av{font-size:13px;font-weight:400;line-height:1.6;color:var(--mut);overflow-wrap:anywhere}
+body[data-hub-page=build] #r_build{padding:8px 0;line-height:1.5}
+body[data-hub-page=build] #r_grid{order:-1}
+@media (max-width:480px){body[data-hub-page=build] #r_agent{grid-template-columns:minmax(0,1fr)}}
+[data-theme=dark] body:is([data-hub-page=steam],[data-hub-page=bug]) .tag.t-img,[data-theme=dark] body:is([data-hub-page=steam],[data-hub-page=bug]) .tag.s-InProgress{color:#ffab70}
+[data-theme=dark] body[data-hub-page=bug] .tag.s-Deprioritized,[data-theme=dark] body[data-hub-page=bug] .tag.s-Willnotfix{color:#ff9b9f}
+
+/* v140 · 筛选冻结与窄屏可达性：筛选不再被固定高度裁掉。 */
+
+body[data-hub-page=bug]>header{position:sticky!important;top:48px;z-index:30}
+body.hub-embedded[data-hub-page=bug]>header{top:0}
+body[data-hub-page=bug] header .hub-filter-fold{flex:0 1 auto;width:auto;min-width:150px;max-width:100%;margin:0;background:var(--card);border-color:var(--hub-edge)}
+body[data-hub-page=bug] header .hub-filter-fold>summary{min-height:38px;padding:8px 12px;font-size:13px;white-space:nowrap}
+body[data-hub-page=bug] header .hub-filter-fold[open]{flex-basis:100%}
+body[data-hub-page=bug] .hub-bug-filters{display:grid;grid-template-columns:repeat(5,minmax(126px,1fr));gap:8px;padding:10px 12px;align-items:center}
+body[data-hub-page=bug] .hub-bug-filters #chips{grid-column:1/-1;display:flex;gap:6px;overflow-x:auto;padding:2px 0 5px}
+body[data-hub-page=bug] .hub-bug-filters #collapse{justify-self:start}
+@media (max-width:820px){
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  body[data-hub-page=bug]>header{top:48px}
+  body[data-hub-page=bug] header .hub-filter-fold{grid-column:1/-1;width:100%}
+  body[data-hub-page=bug] .hub-bug-filters{grid-template-columns:repeat(2,minmax(0,1fr));padding:9px}
+  body[data-hub-page=bug] .hub-bug-filters #chips,body[data-hub-page=bug] .hub-bug-filters #collapse{grid-column:1/-1}
+  
+  
+  
+}
+@media (max-width:500px){
+  
+  
+}
+/* v144 · 手机端保持装备、武器、技能、结果的直达顺序；不经中间编辑层。 */
+@media (max-width:760px){
+  body[data-hub-page=build] #col-desk{display:flex!important;flex-direction:column!important}
+  body[data-hub-page=build] #col-desk>.loadout-weapons{order:1!important}
+  body[data-hub-page=build] #col-desk>.loadout-gear{order:2!important}
+  body[data-hub-page=build] #col-desk>.loadout-skills{order:3!important}
+  body[data-hub-page=build] #col-desk>.build-summary{order:4!important}
+  body[data-hub-page=build] #col-desk>.build-analysis{order:5!important}
+  body[data-hub-page=build] #col-desk>#fold_tw{order:6!important}
+}
+
+/* Keep the DB mobile header inside the viewport; chip rows own their horizontal scroll. */
+@media (max-width:500px){
+  
+  
+  
+}
+
+
+/* The fold owns one full-width filter grid, never a grid nested in a half-width cell. */
+body[data-hub-page=bug] .hub-bug-filters{min-width:0;width:100%;box-sizing:border-box}
+body[data-hub-page=bug] .hub-bug-filters select{width:100%;min-width:0;max-width:100%}
+body[data-hub-page=bug] .hub-bug-filters #chips{min-width:0;max-width:100%;flex-wrap:nowrap}
+body[data-hub-page=bug] .hub-bug-filters #chips .chip{flex:0 0 auto;white-space:nowrap;min-height:36px}
+[data-theme=dark] body[data-hub-page=bug] .tag.s-PendingReview{color:#c9cbd0}
+[data-theme=light] body[data-hub-page=bug] .tag.s-PendingReview{color:#56514a}
+
+/* Compact type remains readable while the actual mobile hit box grows. */
+@media(max-width:760px){
+ body:is([data-hub-page=home],[data-hub-page=today],[data-hub-page=db],[data-hub-page=build]) #hub-navigation :is(a,button){min-height:44px;min-width:44px;box-sizing:border-box;touch-action:manipulation}
+}
+/* Last presentation layer: keep every public page's physical controls consistent. */
+body :is(.mini,.chip,.subchip,.shell-control,.hub-menu-button,.nav-child-toggle,.star,.support-tools button,.sets-controls button){border-radius:var(--db-r2,7px)}
+body :is(input[type=search],input[type=text],input[type=number],input[type=date],select,textarea){border-radius:var(--db-r2,7px)}
+body :is(.category,.status-tag,.pool-kind){border-radius:var(--db-r2,7px)}
+body :is(.table-scroll,.week-panel,.home-caches a,.home-events article,.home-update,.season-gear-card,.season-image-card,.home-feature-card,.pool-row,.pool-note,.current-board,.current-vendor,.reset-row>div,.season-state>div,.hub-fold,.gcard,.wcard,.set-card,.support-method,.support-benefit-grid article,.support-total,.support-table-wrap,.search-dropdown,.key-drawer,.v-detail .dsec){border-radius:var(--db-r3,10px)}
+body :is(.shell-subnav,.dlg,.dialog,#dlg,#dlgbox,#build-spec-dialog,.support-qr,.v-dlg,#build-mobile-settings){border-radius:var(--db-r3,10px)}
+body .set-card .set-visual{border-radius:inherit}
+@media(max-width:760px){
+ html body :is(button,summary,[role=button]){min-width:44px!important;min-height:44px!important;box-sizing:border-box}
+ html body :is(input[type=search],input[type=text],input[type=number],input[type=date],select,textarea){min-height:44px!important;box-sizing:border-box;font-size:16px}
+ html body input[type=range]{min-height:44px;margin-block:0;box-sizing:border-box}
+ html body label:has(>input[type=checkbox]){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+ html body table.home-table tr{border-radius:var(--db-r3,10px)}
+}

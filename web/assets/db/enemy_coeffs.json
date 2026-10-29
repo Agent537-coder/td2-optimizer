@@ -1,0 +1,3434 @@
+{
+ "meta": {
+  "schema": 1,
+  "generated_date": "2026-09-13",
+  "one_line": "敌人血量/装甲系数：官方解包属性式现算（40 级 · 1 人 · 普通杂兵为基准），供配装器「装甲目标设置」面板取值。",
+  "generator": "scripts/datamine/gen_enemy_coeffs.py",
+  "evaluator": "scripts/datamine/enemy_calc.py::compute（官方式受限求值器，非抄常量）",
+  "sources": {
+   "raw_root_env": "TD2_RAW",
+   "formulas": {
+    "BaseGearScalingCurve": {
+     "file": "rogue/game system data/juice/attribute/dictionary/scaling_dictionary.mdict",
+     "line": 56
+    },
+    "HealthFinal": {
+     "file": "rogue/game system data/juice/attribute/dictionary/attribute_dictionary.mdict",
+     "line": 1410
+    },
+    "HealthScalingCalc": {
+     "file": "rogue/game system data/juice/attribute/dictionary/scaling_dictionary.mdict",
+     "line": 531
+    },
+    "NPCArmorBase": {
+     "file": "rogue/game system data/juice/attribute/dictionary/npc_dictionary.mdict",
+     "line": 122
+    },
+    "NPCArmorFinal": {
+     "file": "rogue/game system data/juice/attribute/dictionary/attribute_dictionary.mdict",
+     "line": 2121
+    },
+    "NPCArmorScalingCalc": {
+     "file": "rogue/game system data/juice/attribute/dictionary/scaling_dictionary.mdict",
+     "line": 524
+    },
+    "NPCArmorSpecialRoleBase": {
+     "file": "rogue/game system data/juice/attribute/dictionary/npc_dictionary.mdict",
+     "line": 128
+    },
+    "NPCBaseCurve": {
+     "file": "rogue/game system data/juice/attribute/dictionary/scaling_dictionary.mdict",
+     "line": 472
+    },
+    "NPCHealthBase": {
+     "file": "rogue/game system data/juice/attribute/dictionary/npc_dictionary.mdict",
+     "line": 62
+    },
+    "NPCHealthFinal": {
+     "file": "rogue/game system data/juice/attribute/dictionary/npc_dictionary.mdict",
+     "line": 10
+    },
+    "NPCRoleArmorScalingCalc": {
+     "file": "rogue/game system data/juice/attribute/dictionary/npc_dictionary.mdict",
+     "line": 653
+    },
+    "NPCRoleHealthScalingCalc": {
+     "file": "rogue/game system data/juice/attribute/dictionary/npc_dictionary.mdict",
+     "line": 597
+    },
+    "ScalingDifficultyEliteArmorMod": {
+     "file": "rogue/game system data/juice/attribute/dictionary/mp_scaling_dictionary.mdict",
+     "line": 171
+    },
+    "ScalingDifficultyHealthMod": {
+     "file": "rogue/game system data/juice/attribute/dictionary/mp_scaling_dictionary.mdict",
+     "line": 9
+    },
+    "ScalingDifficultyNPCArmorMod": {
+     "file": "rogue/game system data/juice/attribute/dictionary/mp_scaling_dictionary.mdict",
+     "line": 125
+    },
+    "ScalingDifficultyNamedArmorMod": {
+     "file": "rogue/game system data/juice/attribute/dictionary/mp_scaling_dictionary.mdict",
+     "line": 194
+    },
+    "ScalingDifficultyVeteranArmorMod": {
+     "file": "rogue/game system data/juice/attribute/dictionary/mp_scaling_dictionary.mdict",
+     "line": 148
+    }
+   },
+   "formula_bodies": {
+    "NPCHealthFinal": {
+     "formula": "NPCHealthBase * Max(0, 1 + NPCHealthModBonus) * HealthScalingCalc * NPCRoleHealthScalingCalc",
+     "specializations": [
+      {
+       "name": "Immersion",
+       "condition": "Agent.IsImmersion",
+       "formula": "NPCHealthBase_Immersion * NPCRoleHealthScalingCalc"
+      }
+     ]
+    },
+    "HealthScalingCalc": {
+     "formula": "HealthDifficultyChallengeLevelCalc * SDHealthDifficultyChallengeLevelCalc * DarkZoneHealthDifficultyChallengeLevelCalc * NPCBossHealthScalingCalc * NPCBaseCurve * BaseGearScalingCurve * InfiniteDifficulty.CurrentHpScale",
+     "specializations": []
+    },
+    "HealthFinal": {
+     "formula": "Max(0, (PrimaryDefensiveCalc +PlayerHealthCalc+ HealthFlatBonus)) * Max(0, (1 + HealthModBonus))",
+     "specializations": [
+      {
+       "name": "PlayerSkillNPC",
+       "condition": "Agent.IsOwnedByPlayer",
+       "formula": "NPCHealthBase * SkillCurveFinal  * (1 + NPCHealthModBonus )"
+      },
+      {
+       "name": "NPC Solo Debuff",
+       "condition": "(Agent.IsNPC OR Agent.IsCompound OR Agent.IsTargetPoint) AND SoloPlayerStoryMissionDeathCountFinal > 1",
+       "formula": "NpcHealthFinal * ScalingDifficultyHealthMod * (1 - (Min(3, SoloPlayerStoryMissionDeathCountFinal-1) * SoloStoryNPCDebuff))"
+      },
+      {
+       "name": "NPC",
+       "condition": "Agent.IsNPC OR Agent.IsCompound OR Agent.IsTargetPoint",
+       "formula": "NpcHealthFinal * ScalingDifficultyHealthMod"
+      },
+      {
+       "name": "Vehicle",
+       "condition": "Agent.IsCompound OR Agent.IsTargetPoint",
+       "formula": "NpcHealthFinal * ScalingDifficultyVehicleHealthMod"
+      }
+     ]
+    },
+    "ScalingDifficultyHealthMod": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "PlayerInPhase_2_Normal",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0 AND !Agent.IsRoleVeteran AND !Agent.IsRoleElite AND !Agent.IsRoleNamed AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.2"
+      },
+      {
+       "name": "PlayerInPhase_2_Veteran",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleVeteran  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.2"
+      },
+      {
+       "name": "PlayerInPhase_2_Elite",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleElite  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.2"
+      },
+      {
+       "name": "PlayerInPhase_2_Named",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleNamed  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.2"
+      },
+      {
+       "name": "PlayerInPhase_3_Normal",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0 AND !Agent.IsRoleVeteran AND !Agent.IsRoleElite AND !Agent.IsRoleNamed  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.44"
+      },
+      {
+       "name": "PlayerInPhase_3_Veteran",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleVeteran  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.44"
+      },
+      {
+       "name": "PlayerInPhase_3_Elite",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleElite  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.44"
+      },
+      {
+       "name": "PlayerInPhase_3_Named",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleNamed  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.44"
+      },
+      {
+       "name": "PlayerInPhase_4_Normal",
+       "condition": "PlayerCountFinal = 4 AND PlayerSpawnedAgentBool = 0 AND !Agent.IsRoleVeteran AND !Agent.IsRoleElite AND !Agent.IsRoleNamed  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.73"
+      },
+      {
+       "name": "PlayerInPhase_4_Veteran",
+       "condition": "PlayerCountFinal >= 4 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleVeteran  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.73"
+      },
+      {
+       "name": "PlayerInPhase_4_Elite",
+       "condition": "PlayerCountFinal >= 4 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleElite  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.73"
+      },
+      {
+       "name": "PlayerInPhase_4_Named",
+       "condition": "PlayerCountFinal >= 4 AND PlayerSpawnedAgentBool = 0 AND Agent.IsRoleNamed  AND NPCFullDestructibleArmorBool = 0",
+       "formula": "1.73"
+      },
+      {
+       "name": "PlayerInPhase_2_DestructibleArmor",
+       "condition": "PlayerCountFinal = 2 AND NPCFullDestructibleArmorBool = 1",
+       "formula": "1.25"
+      },
+      {
+       "name": "PlayerInPhase_3_DestructibleArmor",
+       "condition": "PlayerCountFinal = 3 AND NPCFullDestructibleArmorBool = 1",
+       "formula": "1.56"
+      },
+      {
+       "name": "PlayerInPhase_4_DestructibleArmor",
+       "condition": "PlayerCountFinal = 4 AND NPCFullDestructibleArmorBool = 1",
+       "formula": "1.95"
+      }
+     ]
+    },
+    "NPCHealthBase": {
+     "formula": "0",
+     "specializations": []
+    },
+    "NPCRoleHealthScalingCalc": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "BlackoutDZ",
+       "condition": "Game.IsDarkZoneBlackoutHardcore",
+       "formula": "NPCRoleHealthScalingCalc_BlackoutDZ"
+      },
+      {
+       "name": "Immersion",
+       "condition": "Agent.IsImmersion",
+       "formula": "NPCRoleHealthScalingCalc_Immersion"
+      },
+      {
+       "name": "Standard",
+       "condition": "!Agent.IsRaidNPC",
+       "formula": "NPCRoleHealthScalingCalc_Standard"
+      },
+      {
+       "name": "Raid",
+       "condition": "Agent.IsRaidNPC",
+       "formula": "NPCRoleHealthScalingCalc_Raid"
+      }
+     ]
+    },
+    "NPCArmorFinal": {
+     "formula": "NPCArmorBase * NPCArmorScalingCalc * NPCRoleArmorScalingCalc",
+     "specializations": [
+      {
+       "name": "Immersion",
+       "condition": "Agent.IsImmersion",
+       "formula": "NPCArmorBase_Immersion * NPCRoleArmorScalingCalc"
+      },
+      {
+       "name": "Solo NPC Debuff PvE",
+       "condition": "SoloPlayerStoryMissionDeathCountFinal > 1 AND (Agent.IsRoleVeteran OR Agent.IsRoleElite OR Agent.IsRoleNamed)",
+       "formula": "NPCArmorSpecialRoleBase * NPCArmorScalingCalc * NPCRoleArmorScalingCalc * ScalingDifficultyNPCArmorMod * (1 - (Min(3, SoloPlayerStoryMissionDeathCountFinal-1) * SoloStoryNPCDebuff))"
+      },
+      {
+       "name": "Solo NPC Debuff",
+       "condition": "SoloPlayerStoryMissionDeathCountFinal > 1",
+       "formula": "NPCArmorBase * NPCArmorScalingCalc * NPCRoleArmorScalingCalc * (1 - (Min(3, SoloPlayerStoryMissionDeathCountFinal-1) * SoloStoryNPCDebuff))"
+      },
+      {
+       "name": "PvE",
+       "condition": "Agent.IsRoleVeteran OR Agent.IsRoleElite OR Agent.IsRoleNamed",
+       "formula": "NPCArmorSpecialRoleBase * NPCArmorScalingCalc * NPCRoleArmorScalingCalc * ScalingDifficultyNPCArmorMod"
+      },
+      {
+       "name": "PvP",
+       "condition": "Agent.IsInPVPZone AND (Agent.IsRoleVeteran OR Agent.IsRoleElite OR Agent.IsRoleNamed)",
+       "formula": "NPCArmorSpecialRoleBase * NPCArmorScalingCalc * NPCRoleArmorScalingCalc"
+      }
+     ]
+    },
+    "NPCArmorScalingCalc": {
+     "formula": "HealthDifficultyChallengeLevelCalc * SDArmorDifficultyChallengeLevelCalc * DarkZoneHealthDifficultyChallengeLevelCalc * NPCBossHealthScalingCalc * NPCBaseCurve * BaseGearScalingCurve * InfiniteDifficulty.CurrentArmorScale",
+     "specializations": []
+    },
+    "NPCArmorBase": {
+     "formula": "0",
+     "specializations": []
+    },
+    "NPCArmorSpecialRoleBase": {
+     "formula": "0",
+     "specializations": []
+    },
+    "NPCRoleArmorScalingCalc": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "BlackoutDZ",
+       "condition": "Game.IsDarkZoneBlackoutHardcore",
+       "formula": "NPCRoleArmorScalingCalc_BlackoutDZ"
+      },
+      {
+       "name": "Immersion",
+       "condition": "Agent.IsImmersion",
+       "formula": "NPCRoleArmorScalingCalc_Immersion"
+      },
+      {
+       "name": "Standard",
+       "condition": "!Agent.IsRaidNPC",
+       "formula": "NPCRoleArmorScalingCalc_Standard"
+      },
+      {
+       "name": "Raid",
+       "condition": "Agent.IsRaidNPC",
+       "formula": "NPCRoleArmorScalingCalc_Raid"
+      }
+     ]
+    },
+    "ScalingDifficultyNPCArmorMod": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "Veteran",
+       "condition": "Agent.IsRoleVeteran",
+       "formula": "ScalingDifficultyVeteranArmorMod"
+      },
+      {
+       "name": "Elite",
+       "condition": "Agent.IsRoleElite",
+       "formula": "ScalingDifficultyEliteArmorMod"
+      },
+      {
+       "name": "Named",
+       "condition": "Agent.IsRoleNamed",
+       "formula": "ScalingDifficultyNamedArmorMod"
+      }
+     ]
+    },
+    "ScalingDifficultyVeteranArmorMod": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "PlayerInPhase_2",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.2"
+      },
+      {
+       "name": "PlayerInPhase_3",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.4"
+      },
+      {
+       "name": "PlayerInPhase_4+",
+       "condition": "PlayerCountFinal >= 4 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.6"
+      }
+     ]
+    },
+    "ScalingDifficultyEliteArmorMod": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "PlayerInPhase_2",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.3"
+      },
+      {
+       "name": "PlayerInPhase_3",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.5"
+      },
+      {
+       "name": "PlayerInPhase_4+",
+       "condition": "PlayerCountFinal >= 4 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.7"
+      }
+     ]
+    },
+    "ScalingDifficultyNamedArmorMod": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "PlayerInPhase_2",
+       "condition": "PlayerCountFinal = 2 AND PlayerSpawnedAgentBool = 0",
+       "formula": "1.43"
+      },
+      {
+       "name": "PlayerInPhase_3",
+       "condition": "PlayerCountFinal = 3 AND PlayerSpawnedAgentBool = 0",
+       "formula": "2.04"
+      },
+      {
+       "name": "PlayerInPhase_4+",
+       "condition": "PlayerCountFinal >= 4 AND PlayerSpawnedAgentBool = 0",
+       "formula": "2.5"
+      }
+     ]
+    },
+    "NPCBaseCurve": {
+     "formula": "1.125 ^ Max(0, (agent.level - 1))",
+     "specializations": [
+      {
+       "name": "31+",
+       "condition": "Agent.level > 30",
+       "formula": "(1.125 ^ 29) * (1.25^5) * (1.125^MAX(0, (Agent.level - 30)))"
+      },
+      {
+       "name": "26+",
+       "condition": "Agent.level > 25",
+       "formula": "(1.125 ^ Agent.level) * (1.25^MAX (0, (Agent.level - 25)))"
+      }
+     ]
+    },
+    "BaseGearScalingCurve": {
+     "formula": "1",
+     "specializations": [
+      {
+       "name": "NPC lvl 1",
+       "condition": "Game.CurrentModeScalingLevel = 1",
+       "formula": "0.65"
+      },
+      {
+       "name": "NPC lvl 2",
+       "condition": "Game.CurrentModeScalingLevel = 2",
+       "formula": "0.75"
+      },
+      {
+       "name": "NPC lvl 3",
+       "condition": "Game.CurrentModeScalingLevel = 3",
+       "formula": "0.8"
+      },
+      {
+       "name": "NPC lvl 4",
+       "condition": "Game.CurrentModeScalingLevel = 4",
+       "formula": "0.9"
+      },
+      {
+       "name": "NPC lvl 5",
+       "condition": "Game.CurrentModeScalingLevel = 5",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 6",
+       "condition": "Game.CurrentModeScalingLevel = 6",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 7",
+       "condition": "Game.CurrentModeScalingLevel = 7",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 8",
+       "condition": "Game.CurrentModeScalingLevel = 8",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 9",
+       "condition": "Game.CurrentModeScalingLevel = 9",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 10",
+       "condition": "Game.CurrentModeScalingLevel = 10",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 11",
+       "condition": "Game.CurrentModeScalingLevel = 11",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 12",
+       "condition": "Game.CurrentModeScalingLevel = 12",
+       "formula": "1.02"
+      },
+      {
+       "name": "NPC lvl 13",
+       "condition": "Game.CurrentModeScalingLevel = 13",
+       "formula": "1.04"
+      },
+      {
+       "name": "NPC lvl 14",
+       "condition": "Game.CurrentModeScalingLevel = 14",
+       "formula": "1.06"
+      },
+      {
+       "name": "NPC lvl 15",
+       "condition": "Game.CurrentModeScalingLevel = 15",
+       "formula": "1.07"
+      },
+      {
+       "name": "NPC lvl 16",
+       "condition": "Game.CurrentModeScalingLevel = 16",
+       "formula": "1.09"
+      },
+      {
+       "name": "NPC lvl 17",
+       "condition": "Game.CurrentModeScalingLevel = 17",
+       "formula": "1.11"
+      },
+      {
+       "name": "NPC lvl 18",
+       "condition": "Game.CurrentModeScalingLevel = 18",
+       "formula": "1.13"
+      },
+      {
+       "name": "NPC lvl 19",
+       "condition": "Game.CurrentModeScalingLevel = 19",
+       "formula": "1.15"
+      },
+      {
+       "name": "NPC lvl 20",
+       "condition": "Game.CurrentModeScalingLevel = 20",
+       "formula": "1.17"
+      },
+      {
+       "name": "NPC lvl 21",
+       "condition": "Game.CurrentModeScalingLevel = 21",
+       "formula": "1.18"
+      },
+      {
+       "name": "NPC lvl 22",
+       "condition": "Game.CurrentModeScalingLevel = 22",
+       "formula": "1.2"
+      },
+      {
+       "name": "NPC lvl 23",
+       "condition": "Game.CurrentModeScalingLevel = 23",
+       "formula": "1.22"
+      },
+      {
+       "name": "NPC lvl 24",
+       "condition": "Game.CurrentModeScalingLevel = 24",
+       "formula": "1.24"
+      },
+      {
+       "name": "NPC lvl 25",
+       "condition": "Game.CurrentModeScalingLevel = 25",
+       "formula": "1.26"
+      },
+      {
+       "name": "NPC lvl 26",
+       "condition": "Game.CurrentModeScalingLevel = 26",
+       "formula": "1"
+      },
+      {
+       "name": "NPC lvl 27",
+       "condition": "Game.CurrentModeScalingLevel = 27",
+       "formula": "1.03"
+      },
+      {
+       "name": "NPC lvl 28",
+       "condition": "Game.CurrentModeScalingLevel = 28",
+       "formula": "1.06"
+      },
+      {
+       "name": "NPC lvl 29",
+       "condition": "Game.CurrentModeScalingLevel = 29",
+       "formula": "1.09"
+      },
+      {
+       "name": "NPC lvl 31",
+       "condition": "Game.CurrentModeScalingLevel = 31",
+       "formula": "1.13"
+      },
+      {
+       "name": "NPC lvl 32",
+       "condition": "Game.CurrentModeScalingLevel = 32",
+       "formula": "1.15"
+      },
+      {
+       "name": "NPC lvl 33",
+       "condition": "Game.CurrentModeScalingLevel = 33",
+       "formula": "1.2"
+      },
+      {
+       "name": "NPC lvl 34",
+       "condition": "Game.CurrentModeScalingLevel = 34",
+       "formula": "1.3"
+      },
+      {
+       "name": "NPC lvl 35",
+       "condition": "Game.CurrentModeScalingLevel = 35",
+       "formula": "1.4"
+      },
+      {
+       "name": "NPC lvl 36",
+       "condition": "Game.CurrentModeScalingLevel = 36",
+       "formula": "1.55"
+      },
+      {
+       "name": "NPC lvl 37",
+       "condition": "Game.CurrentModeScalingLevel = 37",
+       "formula": "1.7"
+      },
+      {
+       "name": "NPC lvl 38",
+       "condition": "Game.CurrentModeScalingLevel = 38",
+       "formula": "1.85"
+      },
+      {
+       "name": "NPC lvl 39",
+       "condition": "Game.CurrentModeScalingLevel = 39",
+       "formula": "2"
+      },
+      {
+       "name": "NPC lvl 40",
+       "condition": "Game.CurrentModeScalingLevel = 40",
+       "formula": "2.2"
+      },
+      {
+       "name": "NPC lvl 30",
+       "condition": "Game.CurrentModeScalingLevel = 30",
+       "formula": "1.12"
+      }
+     ]
+    }
+   },
+   "escalation": {
+    "file": "hunter/game system data/juice/infinitedifficulty/infinitedifficulty.juice",
+    "fields": [
+     "myScaleFactors/DifficultyScaleFactor:myDifficultyTier,myHpScale,myArmorScale,myDamageScale",
+     "myAdditionalScalingFactors",
+     "myExcludedNPCArchetypes"
+    ]
+   },
+   "progression_glob": "*/game system data/juice/attribute/progression/*.mattrib（字段 myBaseValue：Health / Armor / ArmorSpecialRole）",
+   "npc_glob": "*/game system data/juice/ai/npc/*.mnpc（字段 myAttributeProgression）",
+   "archetypes": "hunter/game system data/juice/ai/archetypes/archetypenames.juice",
+   "locpacks": {
+    "env": "TD2_LOCPKG",
+    "files": [
+     "simplifiedchinese/menus.locpack",
+     "english/menus.locpack"
+    ]
+   },
+   "counts": {
+    "progression_tiers": 525,
+    "npcs": 2344,
+    "archetypes": 24
+   }
+  },
+  "axis_note": {
+   "pve.health": [
+    "第 1 维 = 兵种**基础值档**（`myAttributeProgression`）4 档：npc_weak_progression / npc_default_progression / npc_strong_progression / npc_heavy_progression",
+    "第 2 维 = 难度 6 档（官方 `Agent.MissionDifficulty` 1–6）",
+    "⚠️ 官方模型里**血量不随红/紫/金/具名变**（`NPCRoleHealthScalingCalc` 四个分支实测均为 1），所以这一维**不是**「4 个兵种档」而是 4 条基础值档；本表如实按官方轴出表。"
+   ],
+   "pve.armor": [
+    "第 1 维 = **装甲兵种档** 3 档（`NPCRoleArmorScalingCalc` 的三个非 1 分支：Veteran ×1.25 / Elite ×2.5 / Named ×6）",
+    "第 2 维 = 兵种基础值档 4 档（同上）",
+    "第 3 维 = 难度 6 档",
+    "⚠️ 官方 `NPCArmorFinal` 的兵种档**只乘在「特殊位装甲」上**（`NPCArmorSpecialRoleBase`），普通/红名 NPC 的 `Armor = 0`（无装甲）⇒ **没有「普通」这一档**，官方模型里就只有 3 档。"
+   ],
+   "pve.columns": [
+    "难度列的官方顺序是 一般/困难/挑战/英雄/传奇/大师（`Agent.MissionDifficulty` = 1…6）。",
+    "对照：社区工具 Division2BuildTool 29.0.0 的 `EnemyHealth[4][6]` / `EnemyArmor[3][4][6]` 把第 5/6 列调了个头（先「大师 ×4.5」再「传奇 ×3.9」）；映射见 `meta.cross_check.buildtool.column_perm`。"
+   ],
+   "escalation": [
+    "T0–T10 共 11 档，**叠乘**在任务难度之上（不是替换）：T10 = 该难度基数 × 血甲 8 / 伤害 5.5。"
+   ],
+   "pvp_coeff": [
+    "官方解包数据里没有「7 类武器对玩家的伤害系数」表 ⇒ 本文件不出该键，见 meta.gaps[0]。"
+   ]
+  },
+  "label_src": {
+   "types": "官方 `.mattrib` 档位内部名（官方中文包无此名，中文 = 官方命名直译）",
+   "colors": "官方 `NPCRoleArmorScalingCalc` 分支名（中文为社区通行叫法，官方中文包无此表）",
+   "difficulties": "官方 locpack 简中，GUID 见 `difficulties_guid`（`25B6B8D4…` 一组 = 难度设置项）",
+   "teams": "人数，非官方字符串",
+   "archetypes": "官方 `archetypenames.juice` 的 `myUIName`（只有 23/77 个兵种有）；其余按内部名拆驼峰 → 中文包反查补齐（口径同 `extract_enemy_stats.py --archetypes`）"
+  },
+  "cross_check": {
+   "health_rank_invariant": true,
+   "health_named_default_progression": [796347, 1234338, 1672329, 2827032, 3105753, 3583562],
+   "players_mult_health": [1.0, 1.2, 1.44, 1.73],
+   "players_mult_armor": {
+    "Veteran": [1.0, 1.2, 1.4, 1.6],
+    "Elite": [1.0, 1.3, 1.5, 1.7],
+    "Named": [1.0, 1.43, 2.04, 2.5]
+   },
+   "buildtool": {
+    "column_perm": [1, 2, 3, 4, 6, 5],
+    "same_cells_raw": {
+     "health": 0,
+     "armor": 3
+    },
+    "same_cells_raw_note": "不换列、不乘任何系数时与 OUR 表逐格相等的格数（血量 24 格 / 装甲 64 格非 ∞）",
+    "health_max_abs_diff": 1794120,
+    "armor_max_abs_diff": 29228438,
+    "armor_infinite_cells": 8,
+    "note": "社区工具 Division2BuildTool 29.0.0 反编译常量（`scripts/buildtool/src/Model.g.cs`）：形状与我们相同（血量 4×6、装甲 3×4×6），但它第 1 行 = 官方标准档 ×1.2（它自带的 NPC 加成常数）、第 2/3/4 行 = ×1.44 / ×1.7294 / ×2.5950（≈ 官方 4 人人数斜率），第 5/6 列顺序与官方相反 ⇒ **数值与官方求值器不同源**，本文件不抄它的常量，只在这里记录差异供对账（面板要显示官方值时以本文件为准）。"
+   }
+  },
+  "gaps": [
+   {
+    "key": "pvp_coeff",
+    "why": "官方解包数据里没有「7 类武器对玩家（PvP）的伤害系数」表：全部 `*.mdict` 的 PvP 分支只去掉难度缩放项，且按 `0.3996 / 0.2331 / 0.2664` 全树扫描无命中；第三方工具那份是它自带的常量表，不属于官方数据 ⇒ 不出这个键（宁缺勿造）。"
+   },
+   {
+    "key": "pve.armor 的「普通（红）」档",
+    "why": "官方 `NPCArmorFinal` 的默认分支用 `NPCArmorBase`，而杂兵档的 `Armor = 0`（红名无装甲）⇒ 该档在官方模型里不存在（不是取不到，是没有）。"
+   },
+   {
+    "key": "「4 个兵种档」的血量差异",
+    "why": "官方 `NPCRoleHealthScalingCalc ≡ 1`，血量与兵种档无关；血量差异来自 2344 个 NPC 各自`myAttributeProgression` 指向的档位（77 个兵种分散在 500+ 个档位上）⇒ 本表第 1 维用官方四条基础值档，完整兵种档基值表在 `pve.basis.all_progression_tiers`。"
+   }
+  ]
+ },
+ "pve": {
+  "mode": "pve",
+  "level": 40,
+  "players": {
+   "axis": [
+    "players"
+   ],
+   "order": [1, 2, 3, 4],
+   "labels": [
+    "1 人",
+    "2 人",
+    "3 人",
+    "4 人"
+   ],
+   "health_mult": [1.0, 1.2, 1.44, 1.73],
+   "armor_mult": {
+    "Veteran": [1.0, 1.2, 1.4, 1.6],
+    "Elite": [1.0, 1.3, 1.5, 1.7],
+    "Named": [1.0, 1.43, 2.04, 2.5]
+   }
+  },
+  "rank_ref": "Normal",
+  "health": {
+   "axis": [
+    "progression",
+    "difficulty"
+   ],
+   "shape": [4, 6],
+   "order": [
+    "npc_weak_progression",
+    "npc_default_progression",
+    "npc_strong_progression",
+    "npc_heavy_progression"
+   ],
+   "labels": [
+    "弱（基础值 800）",
+    "标准（基础值 1200）",
+    "精锐（基础值 1800）",
+    "重装（基础值 2400）"
+   ],
+   "matrix": [
+    [530898, 822892, 1114886, 1884688, 2070502, 2389041],
+    [796347, 1234338, 1672329, 2827032, 3105753, 3583562],
+    [1194521, 1851507, 2508493, 4240548, 4658630, 5375342],
+    [1592694, 2468676, 3344658, 5654064, 6211507, 7167123]
+   ],
+   "by_tier": {
+    "npc_weak_progression": [530898, 822892, 1114886, 1884688, 2070502, 2389041],
+    "npc_default_progression": [796347, 1234338, 1672329, 2827032, 3105753, 3583562],
+    "npc_strong_progression": [1194521, 1851507, 2508493, 4240548, 4658630, 5375342],
+    "npc_heavy_progression": [1592694, 2468676, 3344658, 5654064, 6211507, 7167123]
+   }
+  },
+  "armor": {
+   "axis": [
+    "role",
+    "progression",
+    "difficulty"
+   ],
+   "shape": [3, 4, 6],
+   "order": [
+    [
+     "Veteran",
+     "Elite",
+     "Named"
+    ],
+    [
+     "npc_weak_progression",
+     "npc_default_progression",
+     "npc_strong_progression",
+     "npc_heavy_progression"
+    ]
+   ],
+   "labels": [
+    [
+     "老兵（紫）",
+     "精英（金）",
+     "具名"
+    ],
+    [
+     "弱（基础值 800）",
+     "标准（基础值 1200）",
+     "精锐（基础值 1800）",
+     "重装（基础值 2400）"
+    ]
+   ],
+   "matrix": [
+    [
+     [663622, 1028614, 1393607, 2355859, 2588127, 2986301],
+     [995433, 1542922, 2090410, 3533789, 3882191, 4479452],
+     [1493150, 2314383, 3135616, 5300684, 5823287, 6719178],
+     [995433, 1542922, 2090410, 3533789, 3882191, 4479452]
+    ],
+    [
+     [1327245, 2057229, 2787214, 4711719, 5176255, 5972602],
+     [1990867, 3085844, 4180821, 7067579, 7764383, 8958904],
+     [2986301, 4628767, 6271232, 10601369, 11646575, 13438356],
+     [1990867, 3085844, 4180821, 7067579, 7764383, 8958904]
+    ],
+    [
+     [3185388, 4937351, 6689315, 11308127, 12423013, 14334246],
+     [4778082, 7406027, 10033972, 16962191, 18634520, 21501369],
+     [7167123, 11109041, 15050958, 25443287, 27951780, 32252054],
+     [4778082, 7406027, 10033972, 16962191, 18634520, 21501369]
+    ]
+   ],
+   "by_role": {
+    "Veteran": {
+     "npc_weak_progression": [663622, 1028614, 1393607, 2355859, 2588127, 2986301],
+     "npc_default_progression": [995433, 1542922, 2090410, 3533789, 3882191, 4479452],
+     "npc_strong_progression": [1493150, 2314383, 3135616, 5300684, 5823287, 6719178],
+     "npc_heavy_progression": [995433, 1542922, 2090410, 3533789, 3882191, 4479452]
+    },
+    "Elite": {
+     "npc_weak_progression": [1327245, 2057229, 2787214, 4711719, 5176255, 5972602],
+     "npc_default_progression": [1990867, 3085844, 4180821, 7067579, 7764383, 8958904],
+     "npc_strong_progression": [2986301, 4628767, 6271232, 10601369, 11646575, 13438356],
+     "npc_heavy_progression": [1990867, 3085844, 4180821, 7067579, 7764383, 8958904]
+    },
+    "Named": {
+     "npc_weak_progression": [3185388, 4937351, 6689315, 11308127, 12423013, 14334246],
+     "npc_default_progression": [4778082, 7406027, 10033972, 16962191, 18634520, 21501369],
+     "npc_strong_progression": [7167123, 11109041, 15050958, 25443287, 27951780, 32252054],
+     "npc_heavy_progression": [4778082, 7406027, 10033972, 16962191, 18634520, 21501369]
+    }
+   }
+  },
+  "basis": {
+   "health_tiers": [
+    {
+     "progression": "npc_weak_progression",
+     "health": 800.0,
+     "armor": 0.0,
+     "armor_special_role": 800.0,
+     "zh": "弱（基础值 800）",
+     "en": "Weak"
+    },
+    {
+     "progression": "npc_default_progression",
+     "health": 1200.0,
+     "armor": 0.0,
+     "armor_special_role": 1200.0,
+     "zh": "标准（基础值 1200）",
+     "en": "Default"
+    },
+    {
+     "progression": "npc_strong_progression",
+     "health": 1800.0,
+     "armor": 0.0,
+     "armor_special_role": 1800.0,
+     "zh": "精锐（基础值 1800）",
+     "en": "Strong"
+    },
+    {
+     "progression": "npc_heavy_progression",
+     "health": 2400.0,
+     "armor": 0.0,
+     "armor_special_role": 1200.0,
+     "zh": "重装（基础值 2400）",
+     "en": "Heavy"
+    }
+   ],
+   "all_progression_tiers": {
+    "DLCEP02_DrillPanel_destructible_prop_progression": {
+     "health": 11000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "INC01_HiveInside_Progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "INC01_Phase2_Grid_progression": {
+     "health": 10000.0,
+     "armor_special_role": 10000.0,
+     "npc_count": 1
+    },
+    "INC01_npc_bigdog_progression": {
+     "health": 2375.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "Newseum": {
+     "health": 0.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "ODD_Site01_Library_Terminal_progression": {
+     "health": 6000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "Y8_NINC02_PR_Military_APC_Progression": {
+     "health": 200000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss01": {
+     "health": 4800.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "attribute_progression_fox_boss015a_PRotoTank": {
+     "health": 6000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss015b_prototank": {
+     "health": 6000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss02": {
+     "health": 2400.0,
+     "armor_special_role": 2400.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss03": {
+     "health": 5000.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss04a": {
+     "health": 1600.0,
+     "armor_special_role": 1600.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss04b": {
+     "health": 2400.0,
+     "armor_special_role": 2400.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss05": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_boss18med": {
+     "health": 3000.0,
+     "armor_special_role": 1500.0,
+     "npc_count": 1
+    },
+    "attribute_progression_fox_mech_npcs": {
+     "health": 2800.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "base_npc_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 140
+    },
+    "bla_assault_Y8S2_progression": {
+     "health": 1800.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "bla_boss_ca04_medic_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "bla_boss_reagan_sniper_progression": {
+     "health": 800.0,
+     "armor_special_role": 600.0,
+     "npc_count": 1
+    },
+    "bla_boss_verizon_disruptor_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "bla_boss_worldbank_shield_progression": {
+     "health": 1020.0,
+     "armor_special_role": 1020.0,
+     "npc_count": 1
+    },
+    "bla_boss_y6s2_assault_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "bla_boss_y6s2_rpg_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "bla_boss_y6s2_tank_progression": {
+     "health": 38000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "bla_boss_y7s2_assault_progression": {
+     "health": 5000.0,
+     "armor_special_role": 5000.0,
+     "npc_count": 1
+    },
+    "bla_boss_y8s2_engineer_progression": {
+     "health": 4800.0,
+     "armor_special_role": 5000.0,
+     "npc_count": 1
+    },
+    "bla_boss_y8s2_medic_progression": {
+     "health": 3600.0,
+     "armor_special_role": 4000.0,
+     "npc_count": 1
+    },
+    "bla_controller_y8s2_killsquad_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "bla_rusher_01_y8s2_killsquad_progression": {
+     "health": 700.0,
+     "armor_special_role": 500.0,
+     "npc_count": 1
+    },
+    "bla_rusher_02_y8s2_killsquad_progression": {
+     "health": 600.0,
+     "armor_special_role": 1600.0,
+     "npc_count": 1
+    },
+    "bla_sniper_y8s2_killsquad_progression": {
+     "health": 400.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "bla_tank_y8s2_killsquad_progression": {
+     "health": 2600.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "bla_thrower_Y8S2_progression": {
+     "health": 1800.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "bs_01_TVStudio_Terminal_progression": {
+     "health": 2000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "bs_explosive_ammo_pile_progression": {
+     "health": 2000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "bt_flame_tank_progression": {
+     "health": 10000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "civ_dronehelicopter_progression": {
+     "health": 500000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "civ_skyscraper_hostage_progression": {
+     "health": 3000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "civ_specops_hostage_progression": {
+     "health": 500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "cle_assault_y8s3_killsquad_progression": {
+     "health": 1500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_bigdog_flamer_y8s3_killsquad_progression": {
+     "health": 3500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_bombdrone_progression": {
+     "health": 2000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "cle_boss_ca05_sniper_progression": {
+     "health": 2100.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "cle_boss_intro_assault_vir_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_boss_mm34_firehosecrane_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_boss_mm40_bigdog_flamer_vir_progression": {
+     "health": 24000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_boss_mm40_firewalker_progression": {
+     "health": 1000.0,
+     "armor_special_role": 5000.0,
+     "npc_count": 1
+    },
+    "cle_boss_mm40_firewalker_vir_progression": {
+     "health": 4800.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_boss_sm40_engineer_vir_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_boss_sm41_controller_vir_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cle_engineer_y8s3_killsquad_progression": {
+     "health": 600.0,
+     "armor_special_role": 1400.0,
+     "npc_count": 1
+    },
+    "cle_rusher_y8s3_killsquad_progression": {
+     "health": 800.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "cle_tank_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 18
+    },
+    "cle_thrower_y8s3_killsquad_progression": {
+     "health": 1500.0,
+     "armor_special_role": 1300.0,
+     "npc_count": 1
+    },
+    "com_assault_default_progression": {
+     "health": 400.0,
+     "armor_special_role": 650.0,
+     "npc_count": 2
+    },
+    "com_default_companion_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "com_engineer_default_progression": {
+     "health": 350.0,
+     "armor_special_role": 800.0,
+     "npc_count": 2
+    },
+    "com_heavyweapons_default_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "com_medic_default_progression": {
+     "health": 600.0,
+     "armor_special_role": 500.0,
+     "npc_count": 2
+    },
+    "com_sniper_default_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "cul_attackdog_independent_progression": {
+     "health": 600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 3
+    },
+    "cul_attackdog_progression": {
+     "health": 600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "cul_boss_ca02_flamer_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "cul_boss_ca06_tank_progression": {
+     "health": 3570.0,
+     "armor_special_role": 3000.0,
+     "npc_count": 1
+    },
+    "cul_boss_coldwar_tank_progression": {
+     "health": 2400.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "cul_boss_redcross_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "cul_boss_secretsite01_temple_specialheavyweapons_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1100.0,
+     "npc_count": 2
+    },
+    "cul_boss_y7s2_flametank_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "cul_rcblade_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "destructible_prop_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 12
+    },
+    "div_agent_ca05_attributeprogression": {
+     "health": 8000.0,
+     "armor_special_role": 650.0,
+     "npc_count": 1
+    },
+    "div_agent_default_progression": {
+     "health": 4000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 5
+    },
+    "div_agent_grandhyatt_progression": {
+     "health": 4000.0,
+     "armor_special_role": 4000.0,
+     "npc_count": 2
+    },
+    "div_agent_keener_y6s1_progression": {
+     "health": 4000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "div_agent_prologue_progression": {
+     "health": 4000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "emp_jammer_npc_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "emp_jammer_npc_skyscraper_progression": {
+     "health": 1500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "end_assaultdrone_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "end_bigdog_boss_y6s1_progression": {
+     "health": 40000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_bigdog_boss_y7s1_progression": {
+     "health": 40000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_boss_coldwar_thrower_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "end_boss_mm20_dronehelicopter_progression": {
+     "health": 55000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "end_boss_mm20_tank_inv_progression": {
+     "health": 3600.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_boss_mm21_beat05_inv_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_boss_mm35_dronehelicopter_progression": {
+     "health": 30000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "end_boss_mm42_bravo_progression": {
+     "health": 3600.0,
+     "armor_special_role": 7200.0,
+     "npc_count": 1
+    },
+    "end_boss_pentagon_brenner_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "end_boss_redmoon_dronehelicopter_progression": {
+     "health": 200000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "end_boss_tidalbasin_thrower_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "end_boss_y7s1_sniper_progression": {
+     "health": 5000.0,
+     "armor_special_role": 5000.0,
+     "npc_count": 1
+    },
+    "end_boss_y8s1_controller_progression": {
+     "health": 2400.0,
+     "armor_special_role": 4800.0,
+     "npc_count": 1
+    },
+    "end_boss_y8s1_minitank_progression": {
+     "health": 3500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_boss_y8s1_thrower_progression": {
+     "health": 3000.0,
+     "armor_special_role": 4000.0,
+     "npc_count": 1
+    },
+    "end_dispenser_seekermine_explosive_progression": {
+     "health": 80.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "end_dronehelicopter_progression": {
+     "health": 55000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 11
+    },
+    "end_midboss_mm42_controller_vir_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_revivedrone_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 3
+    },
+    "end_suicidedrone_progression": {
+     "health": 50.0,
+     "armor_special_role": 0.0,
+     "npc_count": 6
+    },
+    "end_tank_y8s1_progression": {
+     "health": 3000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "end_taserdrone_progression": {
+     "health": 800.0,
+     "armor_special_role": 0.0,
+     "npc_count": 5
+    },
+    "expeditions_silowaterpressuretank_progression": {
+     "health": 80000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "fox_PDS_seekermine_dispenser_progression": {
+     "health": 3000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "fox_pds_emp_jammer_progression": {
+     "health": 10000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "fox_pds_turret_progression": {
+     "health": 10000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "fox_test_npc_BlastDoor_progression": {
+     "health": 200000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "fox_test_npc_PDSTurret_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "fuelTank_beat08_npc_progression": {
+     "health": 16000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "fuelTank_highTier_npc_progression": {
+     "health": 34000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "fuelTank_npc_progression": {
+     "health": 42000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "gym_end_assault_automationtesting_progression": {
+     "health": 900000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "gym_scripted_npc_actions_destructiblepropagent_progression": {
+     "health": 500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "hatch_npc_progression": {
+     "health": 16000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "hatch_solo_npc_progression": {
+     "health": 14000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "hun_hunter_pvedz_progression": {
+     "health": 3800.0,
+     "armor_special_role": 4000.0,
+     "npc_count": 1
+    },
+    "hun_hunter_y7s3_s_progression": {
+     "health": 7200.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "hun_hunter_y8s1_c1_progression": {
+     "health": 14000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "hun_hunter_y8s1_c2_progression": {
+     "health": 14000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "hun_hunter_y8s1_c3_progression": {
+     "health": 14000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "hun_hunter_y8s1_c4_progression": {
+     "health": 14000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "hun_hunter_y8s2_progression": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "inc01_AirstrikePanel_progression": {
+     "health": 9500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc01_AirstrikePanel_progression_casual": {
+     "health": 6175.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc01_Hive_Heroic_progression": {
+     "health": 12500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_Hive_casual_progression": {
+     "health": 8125.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_Hive_progression": {
+     "health": 12500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_airstrike_panel_heroic_progression": {
+     "health": 10000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc01_assaultdrone_progression": {
+     "health": 800.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_boss01_casual_progression": {
+     "health": 3970.0,
+     "armor_special_role": 5015.0,
+     "npc_count": 1
+    },
+    "inc01_boss01_heroic_progression": {
+     "health": 5672.0,
+     "armor_special_role": 7163.0,
+     "npc_count": 1
+    },
+    "inc01_boss01_progression": {
+     "health": 5672.0,
+     "armor_special_role": 7163.0,
+     "npc_count": 2
+    },
+    "inc01_boss02_casual_progression": {
+     "health": 2650.0,
+     "armor_special_role": 5580.0,
+     "npc_count": 1
+    },
+    "inc01_boss02_heroic_progression": {
+     "health": 8500.0,
+     "armor_special_role": 17850.0,
+     "npc_count": 1
+    },
+    "inc01_boss02_progression": {
+     "health": 3790.0,
+     "armor_special_role": 6855.0,
+     "npc_count": 2
+    },
+    "inc01_boss02_subboss_casual_progression": {
+     "health": 2050.0,
+     "armor_special_role": 3770.0,
+     "npc_count": 2
+    },
+    "inc01_boss02_subboss_heroic_progression": {
+     "health": 8000.0,
+     "armor_special_role": 15550.0,
+     "npc_count": 2
+    },
+    "inc01_boss02_subboss_progression": {
+     "health": 2915.0,
+     "armor_special_role": 4433.0,
+     "npc_count": 2
+    },
+    "inc01_boss03a_casual_progression": {
+     "health": 1600.0,
+     "armor_special_role": 4350.0,
+     "npc_count": 1
+    },
+    "inc01_boss03a_heroic_progression": {
+     "health": 7000.0,
+     "armor_special_role": 19000.0,
+     "npc_count": 1
+    },
+    "inc01_boss03a_progression": {
+     "health": 2265.0,
+     "armor_special_role": 6199.0,
+     "npc_count": 1
+    },
+    "inc01_boss03a_skill_seekermine_progression": {
+     "health": 80.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "inc01_boss03b_casual_progression": {
+     "health": 1600.0,
+     "armor_special_role": 4350.0,
+     "npc_count": 1
+    },
+    "inc01_boss03b_heroic_progression": {
+     "health": 7000.0,
+     "armor_special_role": 19000.0,
+     "npc_count": 1
+    },
+    "inc01_boss03b_progression": {
+     "health": 2265.0,
+     "armor_special_role": 6199.0,
+     "npc_count": 1
+    },
+    "inc01_default_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 5
+    },
+    "inc01_heavy_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "inc01_hive_mm35_progression": {
+     "health": 2000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_hive_y4s11_progression": {
+     "health": 3000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_minihive_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc01_mountedweapon_progression": {
+     "health": 30000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "inc01_weak_progression": {
+     "health": 800.0,
+     "armor_special_role": 800.0,
+     "npc_count": 1
+    },
+    "inc02_Boss04_Wagon_Gun_Progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc02_attributeprogression_destructibledebris": {
+     "health": 7231.200195,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc02_barricade_snipersupress_progression": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc02_boss01_casual_progression": {
+     "health": 7713.200195,
+     "armor_special_role": 5073.0,
+     "npc_count": 1
+    },
+    "inc02_boss01_heroic_progression": {
+     "health": 8103.899902,
+     "armor_special_role": 6823.0,
+     "npc_count": 1
+    },
+    "inc02_boss01_progression": {
+     "health": 7713.200195,
+     "armor_special_role": 5073.0,
+     "npc_count": 1
+    },
+    "inc02_boss02_casual_progression": {
+     "health": 6508.100098,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc02_boss02_heroic_progression": {
+     "health": 6483.200195,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc02_boss02_obstacle_progression": {
+     "health": 2500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc02_boss02_progression": {
+     "health": 6508.100098,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "inc02_boss03_casual_progression": {
+     "health": 19283.199219,
+     "armor_special_role": 4565.799805,
+     "npc_count": 1
+    },
+    "inc02_boss03_heroic_progression": {
+     "health": 16207.900391,
+     "armor_special_role": 4264.100098,
+     "npc_count": 1
+    },
+    "inc02_boss03_progression": {
+     "health": 19283.199219,
+     "armor_special_role": 4565.799805,
+     "npc_count": 1
+    },
+    "inc02_boss04_casual_progression": {
+     "health": 13147.599609,
+     "armor_special_role": 6255.5,
+     "npc_count": 1
+    },
+    "inc02_boss04_heroic_progression": {
+     "health": 12155.900391,
+     "armor_special_role": 11086.5,
+     "npc_count": 1
+    },
+    "inc02_boss04_medic_progression": {
+     "health": 1500.0,
+     "armor_special_role": 1210.0,
+     "npc_count": 1
+    },
+    "inc02_boss04_minigun_progression": {
+     "health": 30000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc02_boss04_progression": {
+     "health": 13147.599609,
+     "armor_special_role": 6255.5,
+     "npc_count": 1
+    },
+    "inc02_boss04_rusher_progression": {
+     "health": 2030.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc02_boss04_sniper_progression": {
+     "health": 945.0,
+     "armor_special_role": 945.0,
+     "npc_count": 1
+    },
+    "inc02_boss04_tankdistruptor_progression": {
+     "health": 2965.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "inc02_boss04_wagon_progression": {
+     "health": 15000.0,
+     "armor_special_role": 8000.0,
+     "npc_count": 2
+    },
+    "inc02_furnace_weakpoint_progression": {
+     "health": 7500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "inc02_lava_plane_progression": {
+     "health": 15000.0,
+     "armor_special_role": 8000.0,
+     "npc_count": 1
+    },
+    "inc02_shield_progression": {
+     "health": 3615.600098,
+     "armor_special_role": 1895.5,
+     "npc_count": 1
+    },
+    "jnv03_y8s2_destructible_prop_progression": {
+     "health": 8000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "leg_bigdog_progression": {
+     "health": 4000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 8
+    },
+    "leg_boss_capitol_support_progression": {
+     "health": 2500.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "leg_boss_verizon_tank_progression": {
+     "health": 4000.0,
+     "armor_special_role": 3000.0,
+     "npc_count": 1
+    },
+    "leg_minitank_progression": {
+     "health": 6000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "leg_revivedrone_progression": {
+     "health": 4000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "leg_suicidedrone_progression": {
+     "health": 500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "leg_supportstation_capitol_progression": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "leg_supportstation_progression": {
+     "health": 5000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "leg_tank_progression": {
+     "health": 3000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 7
+    },
+    "leg_taserdrone_progression": {
+     "health": 2000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "leg_weak_progression": {
+     "health": 900.0,
+     "armor_special_role": 900.0,
+     "npc_count": 6
+    },
+    "mil_boss_americanhistory_sniper_progression": {
+     "health": 800.0,
+     "armor_special_role": 800.0,
+     "npc_count": 1
+    },
+    "mil_boss_ca01_engineer_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "mil_boss_ca03_tank_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1600.0,
+     "npc_count": 1
+    },
+    "mil_boss_enfant_immobilizer_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1500.0,
+     "npc_count": 1
+    },
+    "mil_boss_nasa_tank_progression": {
+     "health": 1800.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mil_boss_y6s3_assault_alpha_progression": {
+     "health": 2000.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "mil_boss_y6s3_assault_bravo_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2200.0,
+     "npc_count": 1
+    },
+    "mil_boss_y7s2_heavyweapons_progression": {
+     "health": 7000.0,
+     "armor_special_role": 3000.0,
+     "npc_count": 1
+    },
+    "mil_boss_y7s3_engineer_progression": {
+     "health": 2400.0,
+     "armor_special_role": 4800.0,
+     "npc_count": 2
+    },
+    "mil_boss_y7s3_tank_progression": {
+     "health": 9600.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "missions_damageable_bt_device_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm01_attributeprogression_barricade": {
+     "health": 50000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm01_attributeprogression_destructibledebris": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm01_comm_progression": {
+     "health": 2800.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm05_destroyablewindow_progression": {
+     "health": 18000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm06_blood_container_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm08_destroyablewindow_progression": {
+     "health": 18000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm10_dishbox_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm11_TVStudio_Terminal_progression": {
+     "health": 6000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm12_armoredhumvee_progression": {
+     "health": 30000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm12_boss02_minigun_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "mm13_container_L_progression": {
+     "health": 3200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm13_container_progression": {
+     "health": 2200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm13_fishboat_progression": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm13_inv_server_progression": {
+     "health": 0.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm16_boss_weakpoint_progression": {
+     "health": 0.0,
+     "armor_special_role": 0.0,
+     "npc_count": 3
+    },
+    "mm16_generator_weakpoint_progression": {
+     "health": 2500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm16_generator_weakpoint_progression_legendary": {
+     "health": 18760.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm16_helicopter_progression": {
+     "health": 8000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm16_helicopter_progression_tb": {
+     "health": 20000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm18_damageable_bt_device_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm18_damageable_bt_device_progression_boss": {
+     "health": 14000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm18_damageable_bt_device_progression_normaldifficultyboss": {
+     "health": 8000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "mm18_dishbox_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm18_mountedweapon_progression": {
+     "health": 30000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "mm19_y5s2_weakpoint_hunter_progression": {
+     "health": 10000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm20_destructibleconsole_progression": {
+     "health": 8000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "mm21_destructibledroneconsole_progression": {
+     "health": 6000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm31_assaultdrone_progression": {
+     "health": 600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm32_destructiblecrane_progression": {
+     "health": 42000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm32_fallingdebris_progression": {
+     "health": 42000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm32_pump_progression": {
+     "health": 100.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mm33_armoured_personel_carrier_progression": {
+     "health": 35000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "mm42_generator_weakpoint_progression": {
+     "health": 2500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "mortar_ammunition_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "ninc01_boss02_alpha_progression": {
+     "health": 10000.0,
+     "armor_special_role": 60000.0,
+     "npc_count": 1
+    },
+    "ninc01_boss02_drone_assault_progression": {
+     "health": 500.0,
+     "armor_special_role": 3000.0,
+     "npc_count": 9
+    },
+    "ninc01_boss02_drone_guardian_progression": {
+     "health": 500.0,
+     "armor_special_role": 1500.0,
+     "npc_count": 1
+    },
+    "ninc01_boss02_support_station_progression": {
+     "health": 500.0,
+     "armor_special_role": 2500.0,
+     "npc_count": 1
+    },
+    "ninc01_default_progression": {
+     "health": 4500.0,
+     "armor_special_role": 5000.0,
+     "npc_count": 8
+    },
+    "ninc01_explosive_ammo_pile_progression": {
+     "health": 10000.0,
+     "armor_special_role": 8000.0,
+     "npc_count": 1
+    },
+    "ninc01_oilTank_npc_progression": {
+     "health": 14400.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "ninc01_tank_b06_progression": {
+     "health": 4500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "ninc01_tank_named_progression": {
+     "health": 9000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "ninc01_tank_progression": {
+     "health": 4500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "ninc02_boss02_bigdog_progression": {
+     "health": 40000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "ninc02_boss02_progression": {
+     "health": 10000.0,
+     "armor_special_role": 60000.0,
+     "npc_count": 1
+    },
+    "ninc02_npc_bigdog_progression": {
+     "health": 7500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_FOX_boss_sniper_progression": {
+     "health": 5000.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "npc_ammo_explosion_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 5
+    },
+    "npc_baltimore_progression": {
+     "health": 500.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "npc_baltimore_weak_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "npc_bigdog_flamer_progression": {
+     "health": 3275.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_bigdog_progression": {
+     "health": 2375.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 27
+    },
+    "npc_bigdog_progression_y8s1_killsquad": {
+     "health": 3500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_bigdog_progression_y8s1_killsquad_mh": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_bigdog_tidalbasin_progression": {
+     "health": 7000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_bigdogsmall_progression": {
+     "health": 2375.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 6
+    },
+    "npc_blackbloc_krampuslauf_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 6
+    },
+    "npc_blackbloc_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 63
+    },
+    "npc_blackbloc_progression_weakboss": {
+     "health": 400.0,
+     "armor_special_role": 400.0,
+     "npc_count": 3
+    },
+    "npc_civilianmilitia_low_hp_intro_vir_progression": {
+     "health": 70.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "npc_civilianmilitia_officer_progression": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 16
+    },
+    "npc_civilianmilitia_progression": {
+     "health": 4500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 327
+    },
+    "npc_civilianmilitia_t3_progression": {
+     "health": 5000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 11
+    },
+    "npc_cleaners_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 56
+    },
+    "npc_controller_progression_y8s1_killsquad": {
+     "health": 1000.0,
+     "armor_special_role": 1700.0,
+     "npc_count": 1
+    },
+    "npc_decoy_distraction_progression": {
+     "health": 200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 11
+    },
+    "npc_decoylensflare_progression": {
+     "health": 50.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "npc_default_cherryevent_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 5
+    },
+    "npc_default_krampuslauf_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 11
+    },
+    "npc_default_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 312
+    },
+    "npc_default_progression_y8s1_mh": {
+     "health": 1600.0,
+     "armor_special_role": 1600.0,
+     "npc_count": 2
+    },
+    "npc_dlcep02_btsu_thrower_progression_proto01": {
+     "health": 3000.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 1
+    },
+    "npc_dog_companion_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_drone_assault_divisionagent_progression": {
+     "health": 3500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_drone_assault_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_drone_bombardier_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_drone_guardian_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_drone_repair_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_emp_jammer_damaging_progression": {
+     "health": 4000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_emp_jammer_damaging_skyscraper_progression": {
+     "health": 4000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_emp_jammer_progression": {
+     "health": 250.0,
+     "armor_special_role": 0.0,
+     "npc_count": 3
+    },
+    "npc_end_supportstation_progression": {
+     "health": 1500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "npc_end_supportstation_skyscraper_progression": {
+     "health": 1750.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_firefly_progression": {
+     "health": 50.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "npc_generator_weakpoint_progression": {
+     "health": 2500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 4
+    },
+    "npc_heavy_krampuslauf_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_heavy_melee_cherryevent_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_heavy_melee_krampuslauf_progression": {
+     "health": 2100.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_heavy_melee_progression": {
+     "health": 2100.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 37
+    },
+    "npc_heavy_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 71
+    },
+    "npc_heavy_shield_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 4
+    },
+    "npc_hunter_nz08sm02_progression": {
+     "health": 10000.0,
+     "armor_special_role": 10000.0,
+     "npc_count": 1
+    },
+    "npc_hunter_progression": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 104
+    },
+    "npc_hunter_y5s1_progression": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "npc_hunter_y5s2_progression": {
+     "health": 7200.0,
+     "armor_special_role": 10800.0,
+     "npc_count": 1
+    },
+    "npc_hunter_y5s3_progression": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 2
+    },
+    "npc_hunter_y6s3_progression": {
+     "health": 2200.0,
+     "armor_special_role": 2200.0,
+     "npc_count": 4
+    },
+    "npc_huntery_7s2_h_progression": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "npc_huntery_7s3_h_progression": {
+     "health": 3600.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 1
+    },
+    "npc_hvt_default_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 24
+    },
+    "npc_hvt_default_progression_grenade_molotov": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_hvt_default_progression_grenade_toxic": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_hvt_default_progression_krampuslauf_adds": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 3
+    },
+    "npc_hvt_heavy_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 5
+    },
+    "npc_hvt_heavy_progression_krampuslauf_boss": {
+     "health": 15000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_hvt_strong_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 2
+    },
+    "npc_hvt_weak_progression": {
+     "health": 800.0,
+     "armor_special_role": 800.0,
+     "npc_count": 4
+    },
+    "npc_ied_progression": {
+     "health": 10.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 12
+    },
+    "npc_jumpercar_progression": {
+     "health": 50.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_legendary_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 20
+    },
+    "npc_lt_crate_launcher_progression": {
+     "health": 10.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_lt_trap_crate_launcher_progression": {
+     "health": 10.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_manhunt_helicopter_damaging_progression": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_minitank_progression": {
+     "health": 3500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 4
+    },
+    "npc_minitank_progression_y8s1_killsquad": {
+     "health": 4000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_mm33_tank_bodyguard_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_mm40_electric_weakpoint_vir_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_mm40_pump_weakpoint_vir_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_nemesis_progression": {
+     "health": 2920.0,
+     "armor_special_role": 2920.0,
+     "npc_count": 2
+    },
+    "npc_nemesis_progression_a": {
+     "health": 2920.0,
+     "armor_special_role": 2920.0,
+     "npc_count": 1
+    },
+    "npc_nemesis_progression_b": {
+     "health": 2920.0,
+     "armor_special_role": 2920.0,
+     "npc_count": 1
+    },
+    "npc_nemesis_progression_c": {
+     "health": 2920.0,
+     "armor_special_role": 2920.0,
+     "npc_count": 1
+    },
+    "npc_nemesis_progression_d": {
+     "health": 2920.0,
+     "armor_special_role": 2920.0,
+     "npc_count": 1
+    },
+    "npc_nemesis_progression_e": {
+     "health": 2920.0,
+     "armor_special_role": 2920.0,
+     "npc_count": 1
+    },
+    "npc_ninc01_boss02_turret_sniper_progression": {
+     "health": 500.0,
+     "armor_special_role": 1500.0,
+     "npc_count": 1
+    },
+    "npc_proto_tank_progression": {
+     "health": 20000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_rccar_progression": {
+     "health": 50.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 4
+    },
+    "npc_rik_rusher_progression": {
+     "health": 800.0,
+     "armor_special_role": 400.0,
+     "npc_count": 11
+    },
+    "npc_rik_tank_heavy_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 17
+    },
+    "npc_rikers_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 52
+    },
+    "npc_rikers_warlockintro_progression": {
+     "health": 1020.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 4
+    },
+    "npc_rog_drone_assault_skill_progression": {
+     "health": 300.0,
+     "armor_special_role": 150.0,
+     "npc_count": 2
+    },
+    "npc_rog_drone_bombardier_skill_progression": {
+     "health": 300.0,
+     "armor_special_role": 150.0,
+     "npc_count": 2
+    },
+    "npc_rog_drone_guardian_keener_escape_progression": {
+     "health": 100000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_rog_drone_guardian_keener_progression": {
+     "health": 250.0,
+     "armor_special_role": 100.0,
+     "npc_count": 1
+    },
+    "npc_rog_missileLauncher_progression": {
+     "health": 2500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_rog_skill_progression": {
+     "health": 300.0,
+     "armor_special_role": 150.0,
+     "npc_count": 4
+    },
+    "npc_rog_skilldeploymentbox_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_rog_turret_assault_skill_progression": {
+     "health": 300.0,
+     "armor_special_role": 150.0,
+     "npc_count": 1
+    },
+    "npc_rog_turret_mortar_skill_progression": {
+     "health": 300.0,
+     "armor_special_role": 150.0,
+     "npc_count": 1
+    },
+    "npc_rog_turret_sniper_progression": {
+     "health": 300.0,
+     "armor_special_role": 150.0,
+     "npc_count": 1
+    },
+    "npc_rogueagent_sd_progression": {
+     "health": 3240.0,
+     "armor_special_role": 3600.0,
+     "npc_count": 2
+    },
+    "npc_rogueagents_dynamic_progression": {
+     "health": 1800.0,
+     "armor_special_role": 2000.0,
+     "npc_count": 8
+    },
+    "npc_rogueagents_keener_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2500.0,
+     "npc_count": 2
+    },
+    "npc_rogueagents_ninc01_boss01_progression": {
+     "health": 10000.0,
+     "armor_special_role": 90000.0,
+     "npc_count": 1
+    },
+    "npc_rogueagents_ninc01_boss02_progression": {
+     "health": 10000.0,
+     "armor_special_role": 40000.0,
+     "npc_count": 1
+    },
+    "npc_rogueagents_ninc02_boss01_progression": {
+     "health": 10000.0,
+     "armor_special_role": 90000.0,
+     "npc_count": 1
+    },
+    "npc_rogueagents_prime_y2s1_progression": {
+     "health": 1800.0,
+     "armor_special_role": 2500.0,
+     "npc_count": 2
+    },
+    "npc_rogueagents_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2300.0,
+     "npc_count": 45
+    },
+    "npc_rusher_cherryevent_progression": {
+     "health": 800.0,
+     "armor_special_role": 400.0,
+     "npc_count": 1
+    },
+    "npc_rusher_krampuslauf_progression": {
+     "health": 800.0,
+     "armor_special_role": 400.0,
+     "npc_count": 3
+    },
+    "npc_rusher_progression": {
+     "health": 800.0,
+     "armor_special_role": 400.0,
+     "npc_count": 55
+    },
+    "npc_rusher_progression_y8s1_killsquad": {
+     "health": 600.0,
+     "armor_special_role": 800.0,
+     "npc_count": 1
+    },
+    "npc_rusher_progression_y8s1_killsquad_mh": {
+     "health": 2350.0,
+     "armor_special_role": 4000.0,
+     "npc_count": 1
+    },
+    "npc_rusher_progression_y8s1_mh": {
+     "health": 1100.0,
+     "armor_special_role": 660.0,
+     "npc_count": 1
+    },
+    "npc_seekermine_airburst_progression": {
+     "health": 25.0,
+     "armor_special_role": 0.0,
+     "npc_count": 3
+    },
+    "npc_seekermine_explosive_divisionagent_progression": {
+     "health": 300.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_skill_turret_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 5
+    },
+    "npc_sniper_progression_y8s1_killsquad": {
+     "health": 800.0,
+     "armor_special_role": 800.0,
+     "npc_count": 1
+    },
+    "npc_steam_turbine_y6s1_progression": {
+     "health": 8000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_strong_cherryevent_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1500.0,
+     "npc_count": 1
+    },
+    "npc_strong_krampuslauf_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 2
+    },
+    "npc_strong_progression": {
+     "health": 1800.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 40
+    },
+    "npc_support_progression_y8s1_killsquad": {
+     "health": 2000.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "npc_support_progression_y8s1_killsquad_mh": {
+     "health": 3000.0,
+     "armor_special_role": 4500.0,
+     "npc_count": 2
+    },
+    "npc_supportstation_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "npc_turret_automated_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 3
+    },
+    "npc_turret_automated_progression_cle_vir": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_turret_automated_progression_mm40": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_turret_automated_progression_ninc01": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 3
+    },
+    "npc_turret_automated_progression_nm": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_turret_automated_progression_rik_vir": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_turret_automated_progression_skyscraper": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "npc_turret_automated_progression_tb": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 6
+    },
+    "npc_turret_automated_progression_tidalbasin": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 7
+    },
+    "npc_turret_automated_pvp_progression": {
+     "health": 35000.0,
+     "armor_special_role": 1000.0,
+     "npc_count": 1
+    },
+    "npc_turret_automated_rocket_launcher_progression_vir": {
+     "health": 110000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "npc_turret_progression": {
+     "health": 3750.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 16
+    },
+    "npc_weak_cherryevent_progression": {
+     "health": 800.0,
+     "armor_special_role": 700.0,
+     "npc_count": 1
+    },
+    "npc_weak_krampuslauf_progression": {
+     "health": 800.0,
+     "armor_special_role": 800.0,
+     "npc_count": 3
+    },
+    "npc_weak_progression": {
+     "health": 800.0,
+     "armor_special_role": 800.0,
+     "npc_count": 106
+    },
+    "npc_wil_deer_progression": {
+     "health": 250.0,
+     "armor_special_role": 0.0,
+     "npc_count": 9
+    },
+    "npc_wil_secondary_progression": {
+     "health": 10.0,
+     "armor_special_role": 0.0,
+     "npc_count": 21
+    },
+    "npc_worldbank_speakerofhouse_progression": {
+     "health": 7000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_decoy_distraction_progression": {
+     "health": 1400.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "player_drone_assault_progression": {
+     "health": 800.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "player_drone_bombardier_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_drone_guardian_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_drone_progression": {
+     "health": 3500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_drone_repair_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_drone_surveyor_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_firefly_base_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_firefly_blind_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_firefly_hardpoint_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_firefly_magneticshrapnel_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_hive_emp_progression": {
+     "health": 11000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_hive_repair_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_hive_revive_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_hive_stims_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_hive_wasp_progression": {
+     "health": 1200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "player_remotepulse_base_progression": {
+     "health": 3000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_seekermine_airburst_progression": {
+     "health": 300.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_seekermine_base_progression": {
+     "health": 300.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_seekermine_cluster_progression": {
+     "health": 300.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_seekermine_explosive_progression": {
+     "health": 300.0,
+     "armor_special_role": 0.0,
+     "npc_count": 4
+    },
+    "player_seekermine_heal_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_skill_smartcover_fortified_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_skill_smartcover_precision_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "player_stickybomb_explosive_progression": {
+     "health": 200.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_trap_explosive_progression": {
+     "health": 10.0,
+     "armor_special_role": 0.0,
+     "npc_count": 12
+    },
+    "player_turret_assault_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 3
+    },
+    "player_turret_base_progression": {
+     "health": 2000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_turret_base_progression_vr": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_turret_flamer_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_turret_mortar_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "player_turret_sniper_progression": {
+     "health": 1600.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "rik_boss_mm41_chainsawman_progression": {
+     "health": 4000.0,
+     "armor_special_role": 5000.0,
+     "npc_count": 1
+    },
+    "rik_boss_mm41_ratqueen_progression": {
+     "health": 4000.0,
+     "armor_special_role": 6400.0,
+     "npc_count": 1
+    },
+    "rik_boss_ninc02_chainsawman_progression": {
+     "health": 10000.0,
+     "armor_special_role": 75000.0,
+     "npc_count": 1
+    },
+    "rik_boss_ninc02_leader_female_progression": {
+     "health": 10000.0,
+     "armor_special_role": 40000.0,
+     "npc_count": 1
+    },
+    "rik_boss_ninc02_rusher_progression": {
+     "health": 10000.0,
+     "armor_special_role": 10000.0,
+     "npc_count": 1
+    },
+    "rik_boss_ninc02_tank_shield_male_progression": {
+     "health": 10000.0,
+     "armor_special_role": 25000.0,
+     "npc_count": 1
+    },
+    "rik_boss_sandstormevent_sniper_progression": {
+     "health": 3000.0,
+     "armor_special_role": 800.0,
+     "npc_count": 1
+    },
+    "rik_boss_sandstormevent_tank_progression": {
+     "health": 12000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "rik_boss_sm42_heavyweapons_vir_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1800.0,
+     "npc_count": 1
+    },
+    "rik_boss_sm43_thrower_vir_progression": {
+     "health": 5000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "rik_boss_sm44_tank_vir_progression": {
+     "health": 2400.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "rik_midboss_mm41_beat05_tank_vir_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "rik_midboss_mm41_beat08_tank_vir_progression": {
+     "health": 1200.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 2
+    },
+    "rog_boss_charlie_rogueagent_progression": {
+     "health": 2000.0,
+     "armor_special_role": 2300.0,
+     "npc_count": 2
+    },
+    "skyscraper_destructibleserver_progression": {
+     "health": 3500.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "sm33_fuelTank_npc_progression": {
+     "health": 1000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 2
+    },
+    "sm33_fulefire_progression": {
+     "health": 100.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "specops_generic_weak_point_progression": {
+     "health": 4000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "specops_lab_core_weakpoint_progression": {
+     "health": 4000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "specops_waste_step1_weakpoint_progression": {
+     "health": 7500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "specops_waste_weak_point_progression": {
+     "health": 8000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "ss01_server_progression": {
+     "health": 0.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "subwaybomb_npc_progression": {
+     "health": 45000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "tur_automated_dz_missions_progression": {
+     "health": 1000.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    },
+    "udg_destructibleserver_vir_progression": {
+     "health": 15000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "virginia_mm40_greek_fire_prop_progression": {
+     "health": 1000.0,
+     "armor_special_role": 500.0,
+     "npc_count": 1
+    },
+    "window_boss_progression": {
+     "health": 10000.0,
+     "armor_special_role": 0.0,
+     "npc_count": 1
+    },
+    "y4s11_npc_bigdog_flamer_boss_progression": {
+     "health": 60500.0,
+     "armor_special_role": 1200.0,
+     "npc_count": 1
+    }
+   }
+  }
+ },
+ "escalation": {
+  "tiers": [
+   {
+    "tier": 0,
+    "zh": "T0",
+    "en": "T0",
+    "hp": 1.0,
+    "armor": 1.0,
+    "damage": 1.0,
+    "global_modifiers": [],
+    "enemy_modifiers": []
+   },
+   {
+    "tier": 1,
+    "zh": "T1",
+    "en": "T1",
+    "hp": 1.6,
+    "armor": 1.6,
+    "damage": 1.5,
+    "global_modifiers": [],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester"
+    ]
+   },
+   {
+    "tier": 2,
+    "zh": "T2",
+    "en": "T2",
+    "hp": 2.0,
+    "armor": 2.0,
+    "damage": 2.0,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_global_unyielding"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester"
+    ]
+   },
+   {
+    "tier": 3,
+    "zh": "T3",
+    "en": "T3",
+    "hp": 2.5,
+    "armor": 2.5,
+    "damage": 2.5,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_global_unyielding"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all"
+    ]
+   },
+   {
+    "tier": 4,
+    "zh": "T4",
+    "en": "T4",
+    "hp": 3.0,
+    "armor": 3.0,
+    "damage": 3.0,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_global_unyielding"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all"
+    ]
+   },
+   {
+    "tier": 5,
+    "zh": "T5",
+    "en": "T5",
+    "hp": 3.5,
+    "armor": 3.5,
+    "damage": 3.5,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_Y8S2_gun_roulette",
+     "gameplaymodifier_infinite_difficulty_global_unyielding"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all"
+    ]
+   },
+   {
+    "tier": 6,
+    "zh": "T6",
+    "en": "T6",
+    "hp": 4.5,
+    "armor": 4.5,
+    "damage": 4.0,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_Y8S2_gun_roulette",
+     "gameplaymodifier_infinite_difficulty_global_unyielding"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all"
+    ]
+   },
+   {
+    "tier": 7,
+    "zh": "T7",
+    "en": "T7",
+    "hp": 5.3,
+    "armor": 5.3,
+    "damage": 4.5,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_Y8S2_gun_roulette",
+     "gameplaymodifier_infinite_difficulty_global_unyielding",
+     "gameplaymodifier_infinite_difficulty_Y8S2_isac_says"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all",
+     "gameplaymodifier_infinite_difficulty_enemy_aidspecialist"
+    ]
+   },
+   {
+    "tier": 8,
+    "zh": "T8",
+    "en": "T8",
+    "hp": 6.5,
+    "armor": 6.5,
+    "damage": 5.0,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_Y8S2_gun_roulette",
+     "gameplaymodifier_infinite_difficulty_global_unyielding",
+     "gameplaymodifier_infinite_difficulty_Y8S2_isac_says"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all",
+     "gameplaymodifier_infinite_difficulty_enemy_aidspecialist"
+    ]
+   },
+   {
+    "tier": 9,
+    "zh": "T9",
+    "en": "T9",
+    "hp": 7.0,
+    "armor": 7.0,
+    "damage": 5.5,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_Y8S2_gun_roulette",
+     "gameplaymodifier_infinite_difficulty_global_unyielding",
+     "gameplaymodifier_infinite_difficulty_Y8S2_isac_says"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all",
+     "gameplaymodifier_infinite_difficulty_enemy_aidspecialist"
+    ]
+   },
+   {
+    "tier": 10,
+    "zh": "T10",
+    "en": "T10",
+    "hp": 8.0,
+    "armor": 8.0,
+    "damage": 5.5,
+    "global_modifiers": [
+     "gameplaymodifier_infinite_difficulty_Y8S2_gun_roulette",
+     "gameplaymodifier_infinite_difficulty_global_unyielding",
+     "gameplaymodifier_infinite_difficulty_Y8S2_isac_says"
+    ],
+    "enemy_modifiers": [
+     "gameplaymodifier_infinite_difficulty_enemy_harvester",
+     "gameplaymodifier_infinite_difficulty_one_for_all",
+     "gameplaymodifier_infinite_difficulty_enemy_aidspecialist"
+    ]
+   }
+  ],
+  "extra_scaling": [
+   {
+    "name": "RogueAgents",
+    "hp": 0.7,
+    "armor": 0.7,
+    "damage": 0.5,
+    "npcs": [
+     "rog_rogueagent_male",
+     "rog_rogueagent_female"
+    ]
+   },
+   {
+    "name": "MM42_Named_Marauder_Drone",
+    "hp": 0.5,
+    "armor": 0.5,
+    "damage": 1.0,
+    "npcs": [
+     "end_dronehelicopter_mm42_vir"
+    ]
+   },
+   {
+    "name": "MM40_Jasinski_Boss",
+    "hp": 0.7,
+    "armor": 0.7,
+    "damage": 1.0,
+    "npcs": [
+     "cle_boss_mm40_firewalker",
+     "cle_boss_mm40_firewalker_vir"
+    ]
+   },
+   {
+    "name": "MM40_Violet_Hound",
+    "hp": 0.4,
+    "armor": 0.4,
+    "damage": 0.5,
+    "npcs": [
+     "cle_boss_mm40_bigdog_flamer_vir"
+    ]
+   }
+  ],
+  "excluded_archetypes": [
+   "Props DestructibleProp",
+   "Wildlife1 Dog",
+   "Wildlife2 Fox",
+   "Wildlife3 Cat",
+   "Wildlife4 FemaleDeer",
+   "Wildlife5 MaleDeer",
+   "Decoy Decoy"
+  ]
+ },
+ "types": [
+  "弱（基础值 800）",
+  "标准（基础值 1200）",
+  "精锐（基础值 1800）",
+  "重装（基础值 2400）"
+ ],
+ "colors": [
+  "普通（红）",
+  "老兵（紫）",
+  "精英（金）",
+  "具名"
+ ],
+ "difficulties": [
+  "一般",
+  "困难",
+  "挑战",
+  "英雄",
+  "传奇",
+  "大师"
+ ],
+ "teams": [
+  "1 人",
+  "2 人",
+  "3 人",
+  "4 人"
+ ],
+ "archetypes": {
+  "Assault": {
+   "en": "Assault",
+   "zh": "突击兵"
+  },
+  "Civilian": {
+   "en": "Civilian",
+   "zh": "平民"
+  },
+  "Controller": {
+   "en": "Controller",
+   "zh": "控制员"
+  },
+  "Disruptor": {
+   "en": "Disruptor",
+   "zh": "干扰者"
+  },
+  "Dog": {
+   "en": "Dog",
+   "zh": "狗"
+  },
+  "HeavyWeapons": {
+   "en": "HeavyWeapons",
+   "zh": "重装兵"
+  },
+  "Hunter": {
+   "en": "Hunter",
+   "zh": "猎人"
+  },
+  "Leader": {
+   "en": "Leader",
+   "zh": "领袖"
+  },
+  "Medic": {
+   "en": "Medic",
+   "zh": "军医"
+  },
+  "Pigeon": {
+   "en": "Pigeon",
+   "zh": "鸽子"
+  },
+  "RPG": {
+   "en": "RPG",
+   "zh": "火箭兵"
+  },
+  "Rat": {
+   "en": "Rat",
+   "zh": "老鼠"
+  },
+  "Raven": {
+   "en": "Raven",
+   "zh": "乌鸦"
+  },
+  "Rusher": {
+   "en": "Rusher",
+   "zh": "猛击兵"
+  },
+  "Seagull": {
+   "en": "Seagull",
+   "zh": "海鸥"
+  },
+  "Sniper": {
+   "en": "Sniper",
+   "zh": "狙击手"
+  },
+  "Special": {
+   "en": "Looter",
+   "zh": "掠夺者"
+  },
+  "StaticTurret": {
+   "en": "StaticTurret",
+   "zh": "固定式炮塔"
+  },
+  "Support": {
+   "en": "Support",
+   "zh": "支援兵"
+  },
+  "SupportStation": {
+   "en": "Support Station",
+   "zh": "支援平台"
+  },
+  "Tank": {
+   "en": "Tank",
+   "zh": "肉盾"
+  },
+  "Thrower": {
+   "en": "Thrower",
+   "zh": "掷弹兵"
+  },
+  "Turret": {
+   "en": "Turret",
+   "zh": "机枪塔"
+  },
+  "Unset": {
+   "en": "Unset",
+   "zh": ""
+  }
+ },
+ "difficulties_guid": [
+  "25B6B8D45AABC1A5000068CF4AFFEF8A",
+  "25B6B8D45AABC1AB000068DA998E1D4C",
+  "25B6B8D45AABC1B1000068E795DE4168",
+  "25B6B8D45AACCEC000011D0C07266FD9",
+  "25B6B8D45AABC1B6000068F62B9593BD",
+  "A560C4E4670FCF860000684C19759266"
+ ]
+}

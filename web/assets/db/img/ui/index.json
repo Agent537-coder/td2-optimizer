@@ -1,0 +1,50 @@
+{
+ "assets": [
+  {
+   "file": "library/ui/hud_elements.png",
+   "note": "HUD 图标集（盾、眼、三角、医疗等）",
+   "source": "spritesheets/ui_hud_elements_spritesheet.png"
+  },
+  {
+   "file": "library/ui/hud_notifications.png",
+   "note": "HUD 通知图标",
+   "source": "spritesheets/ui_hud_notifications.png"
+  },
+  {
+   "file": "library/ui/cards.png",
+   "note": "扑克牌面（亡者手牌牌型用）",
+   "source": "spritesheets/ui_cards_spritesheet.png"
+  },
+  {
+   "file": "library/ui/talents_5.png",
+   "note": "天赋图标（含 prima_donna 玫瑰）",
+   "source": "spritesheets/ui_talents_spritesheet_5.png"
+  },
+  {
+   "file": "library/ui/gradients.png",
+   "note": "光晕（受击/回血闪白用）",
+   "source": "spritesheets/ui_gradients_spritesheet.png"
+  },
+  {
+   "file": "library/ui/armor_parts.png",
+   "note": "可破坏护甲碎片形状",
+   "source": "spritesheets/ui_destructible_armor_parts_spritesheet.png"
+  },
+  {
+   "file": "library/ui/armorplate.png",
+   "note": "单片护甲板图标",
+   "source": "loose_icons/armor/ui_armorplate_destructible.png"
+  },
+  {
+   "file": "library/ui/armor_icon.png",
+   "note": "护甲图标",
+   "source": "loose_icons/armor_loose.png"
+  },
+  {
+   "file": "library/ui/scope_numbers.png",
+   "note": "瞄准镜刻度数字",
+   "source": "spritesheets/ui_scope_numbers.png"
+  }
+ ],
+ "note": "装甲条/血条本身在解包里没有贴图，是引擎实时绘制；本库只提供图标与形状。"
+}

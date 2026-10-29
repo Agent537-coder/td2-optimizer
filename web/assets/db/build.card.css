@@ -1,0 +1,63 @@
+.ah-loadout{--lc-bg:#232426;--lc-text:#e5e5e2;--lc-mut:#afb1ad;--lc-line:#434643;--lc-off:#ff8a80;--lc-def:#71b9ff;--lc-uti:#ffd172;color:var(--lc-text);font-family:var(--ff-body,'Noto Sans SC',sans-serif);font-size:13px;line-height:1.45;container-type:inline-size;text-align:left}
+html.ah-light .ah-loadout,[data-theme=light] .ah-loadout{--lc-bg:#fffefa;--lc-text:#242b33;--lc-mut:#56616d;--lc-line:#b5bdc5;--lc-off:#9b2724;--lc-def:#255b91;--lc-uti:#84600c}
+.ah-loadout-context{color:var(--lc-mut);font-size:13px;margin:0 0 12px;overflow-wrap:anywhere}
+.ah-loadout-heading{margin:18px 0 8px!important;font-size:14px!important;font-weight:600;letter-spacing:0}
+.ah-loadout-weapons,.ah-loadout-gear,.ah-loadout-skills{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.ah-loadout-weapons{grid-template-columns:minmax(0,1fr)}
+.ah-loadout-item{position:relative;min-width:0;box-sizing:border-box;padding:8px;background:var(--lc-bg);border:1px solid var(--lc-line);border-radius:8px;overflow:hidden}
+/* 品质色条（与配装页 `.gcard .topbar` / 资料库 `.r-*` 同一套官方品质色；深色值取自 base.css 的 --rar-*） */
+.ah-loadout-bar{position:absolute;left:0;top:0;right:0;height:3px;background:var(--lc-q,#ea9b24);border-radius:8px 8px 0 0}
+.ah-loadout-item[data-quality=brand],.ah-loadout-item[data-quality=named]{--lc-q:#ea9b24}
+.ah-loadout-item[data-quality=gearset]{--lc-q:#68b672}
+.ah-loadout-item[data-quality=exotic]{--lc-q:#dd5130}
+.ah-loadout-item[data-quality=proto]{--lc-q:#796aef}
+.ah-loadout-item[data-quality=proto] .ah-loadout-name{color:#b4a6ff}.ah-loadout-item[data-quality=exotic] .ah-loadout-name{color:#ff8a65}
+html.ah-light .ah-loadout-item[data-quality=proto] .ah-loadout-name,[data-theme=light] .ah-loadout-item[data-quality=proto] .ah-loadout-name{color:#6350cf}
+html.ah-light .ah-loadout-item[data-quality=exotic] .ah-loadout-name,[data-theme=light] .ah-loadout-item[data-quality=exotic] .ah-loadout-name{color:#a7441e}
+.ah-loadout-slot{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--lc-text);margin-bottom:2px;padding-right:26px}
+.ah-loadout-slot-icon{width:16px!important;height:16px!important;margin:0!important;object-fit:contain;background:none!important;opacity:1!important;flex:none;filter:none!important}
+.ah-loadout-head{display:flex;gap:7px;align-items:center;min-height:32px;margin-bottom:3px;min-width:0}
+.ah-loadout-art{width:32px!important;height:36px!important;max-width:32px!important;object-fit:contain!important;margin:0!important;flex:none;filter:none!important;background:none!important}
+.ah-loadout-name{flex:1;min-width:0;font-size:13px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.ah-loadout-weapons .ah-loadout-item:has(.ah-loadout-head){padding:6px}
+.ah-loadout-weapons .ah-loadout-item:has(.ah-loadout-head)>.ah-loadout-slot{position:absolute;left:80px;right:8px;top:6px;margin:0;padding:0}
+.ah-loadout-weapons .ah-loadout-head{align-items:flex-start;min-height:38px}
+.ah-loadout-weapons .ah-loadout-art{position:relative;top:2px;width:56px!important;max-width:56px!important;height:38px!important}
+.ah-loadout-weapons .ah-loadout-name{padding-top:18px}
+.ah-loadout-brand{position:absolute;right:8px;top:7px;width:22px!important;height:22px!important;object-fit:contain;opacity:.55;margin:0!important}
+/* 官方品牌/装备组水印是**白色线条图**：浅色主题下白底白图 = 看不见（用户 2026-10-19：
+   「分享的配装少了水印」）⇒ 与 `.ah-loadout-glyph` 同一做法压成深色，不另画一套图。 */
+html.ah-light .ah-loadout-brand,[data-theme=light] .ah-loadout-brand{filter:brightness(0)!important;opacity:.22}
+.ah-loadout-attr{display:flex;justify-content:space-between;gap:6px;min-width:0;padding:1px 0;font-size:11.5px;line-height:1.45}
+.ah-loadout-attr>span{min-width:0;overflow-wrap:anywhere;color:var(--lc-text)}.ah-loadout-attr>b{flex:none;white-space:nowrap;font-weight:500;font-variant-numeric:tabular-nums}
+.ah-loadout-attr-label{display:flex;align-items:center;gap:5px;min-width:0}.ah-loadout-attr-icon{width:14px;height:14px;flex:none;background:var(--lc-text);mask:var(--attr-image) center/contain no-repeat;-webkit-mask:var(--attr-image) center/contain no-repeat}
+.ah-loadout-attr[data-kind=off] .ah-loadout-attr-icon{background:var(--lc-off)}.ah-loadout-attr[data-kind=def] .ah-loadout-attr-icon{background:var(--lc-def)}.ah-loadout-attr[data-kind=uti] .ah-loadout-attr-icon{background:var(--lc-uti)}
+.ah-loadout-attr[data-kind=off]>b{color:var(--lc-off)}.ah-loadout-attr[data-kind=def]>b{color:var(--lc-def)}.ah-loadout-attr[data-kind=uti]>b{color:var(--lc-uti)}
+.ah-loadout-effects{display:flex;flex-wrap:wrap;gap:4px 10px;border-top:1px solid var(--lc-line);margin-top:5px;padding-top:5px}
+.ah-loadout-effect{display:inline-flex;gap:5px;align-items:center;min-width:0;color:var(--lc-text);font-size:12px;white-space:nowrap}
+.ah-loadout-weapons .ah-loadout-effect{flex:none;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.ah-loadout-weapons .ah-loadout-effect>span{min-width:0}
+.ah-loadout-glyph{width:16px!important;height:16px!important;margin:0!important;object-fit:contain;flex:none;background:none!important;opacity:1!important;filter:none!important}
+html.ah-light .ah-loadout :is(.ah-loadout-glyph,.ah-loadout-slot-icon),[data-theme=light] .ah-loadout :is(.ah-loadout-glyph,.ah-loadout-slot-icon){filter:brightness(0)!important}
+.ah-loadout-mods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 10px}
+.ah-loadout-weapon-mod{display:flex;flex-direction:row;align-items:baseline;gap:4px;min-width:0;padding:0;font-size:11px;line-height:1.45;color:var(--lc-text);white-space:nowrap;overflow:hidden}
+.ah-loadout-weapon-mod .ah-loadout-mod-slot{display:flex;align-items:center;gap:3px;white-space:nowrap;margin:0;flex:none;font-size:11px;line-height:1.3}
+.ah-loadout-mod-bonus{min-width:0;margin-left:0;text-align:left;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.ah-loadout-mod-stat{display:inline;gap:0}.ah-loadout-mod-stat>span{min-width:0}.ah-loadout-mod-stat>b{white-space:nowrap;font-weight:500}
+.ah-loadout-weapon-mod.has-bonus .ah-loadout-mod-bonus{color:var(--lc-off)}
+.ah-loadout-weapon-mod.is-unavailable{color:var(--lc-mut)}.ah-loadout-weapon-mod.is-unavailable .ah-loadout-slot-icon{opacity:.5!important}
+.ah-loadout-mods,.ah-loadout-mod{margin-top:5px;padding-top:4px;border-top:1px solid var(--lc-line);font-size:12px;color:var(--lc-mut)}
+.ah-loadout-mod-slot{display:block;font-size:11px;margin-bottom:2px}.ah-loadout-mod .ah-loadout-attr{font-size:12px;padding-top:2px}
+.ah-loadout-empty{font-size:13px;color:var(--lc-mut);margin:12px 0!important}.ah-loadout-open{display:flex;align-items:center;min-height:44px;margin-top:14px;text-decoration:none;font-size:14px;font-weight:600}
+@container(min-width:680px){.ah-loadout-weapons,.ah-loadout-gear{grid-template-columns:repeat(3,minmax(0,1fr))}.ah-loadout-mods{grid-template-columns:repeat(2,minmax(0,1fr))}.ah-loadout-art{width:48px!important;max-width:48px!important;height:56px!important}.ah-loadout-name{font-size:14px}}
+@container(max-width:360px){.ah-loadout-gear .ah-loadout-name,.ah-loadout-gear .ah-loadout-attr{font-size:12px}.ah-loadout-gear .ah-loadout-item{padding:8px}.ah-loadout-gear .ah-loadout-effect{white-space:normal;overflow-wrap:break-word}}
+
+/* 技能卡压成一行：Q/E 标签 · 图标 + 名称 · 技能分阶（原来三行各占一行，卡里大半是空的）。 */
+.ah-loadout-skills .ah-loadout-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:8px;row-gap:0;padding:8px 10px}
+.ah-loadout-skills .ah-loadout-slot{margin:0;padding:0;font-size:11px;color:var(--lc-mut)}
+.ah-loadout-skills .ah-loadout-head{min-height:0;margin:0;gap:8px}
+.ah-loadout-skills .ah-loadout-art{width:28px!important;height:28px!important;max-width:28px!important}
+.ah-loadout-skills .ah-loadout-skill-tier{font-size:11px;color:var(--lc-mut);white-space:nowrap;margin:0}
+/* 技能卡里空的词条/效果容器不参与栅格，否则会把「技能分阶」挤到第二行。 */
+.ah-loadout-skills .ah-loadout-attrs:empty,.ah-loadout-skills .ah-loadout-effects:empty,.ah-loadout-skills .ah-loadout-mod:empty{display:none}
+.ah-loadout-skills .ah-loadout-skill-tier{grid-column:3;grid-row:1}

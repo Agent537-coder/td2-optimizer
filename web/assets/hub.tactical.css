@@ -1,0 +1,23 @@
+/* Division UI: existing game-derived Latin fonts + OFL CJK, no decorative text masks. */
+@import url('/assets/fonts/noto-sans-sc.css?v=336');
+:root:root{--ff-display:'Noto Sans SC',system-ui,sans-serif;--ff-body:'Noto Sans SC',system-ui,sans-serif;--ff-europa:'Noto Sans SC',system-ui,sans-serif;--hub-ui:var(--ff-body);--motion-press:100ms;--motion-state:180ms;--motion-panel:220ms;--motion-ease:cubic-bezier(.2,.8,.2,1)}
+html body[data-hub-page],html:root body .hub-shell,html:root body #mobile-catalog{--hub-ui:'Noto Sans SC',system-ui,sans-serif;--ff-body:var(--hub-ui);--ff-display:var(--hub-ui);--ff-europa:var(--hub-ui);font-family:var(--hub-ui)!important}
+html body :is(h1,h2,h3,.sec-lbl,.hub-brand,.shell-transition-status){font-family:var(--ff-display);font-weight:500;letter-spacing:normal}
+html body[data-hub-page] :is(button,input,select,textarea,summary,.meta,.tag,.chip,.badge,.foot,.stat,.banner){font-family:var(--ff-body)!important}
+html:root body .hub-shell :is(a,button){font-family:var(--hub-ui)!important}
+html body :is(.tnum,.rnum,.stat,.wax-v,.gc-stat){font-variant-numeric:tabular-nums}
+html body :is(button,summary,[role=button]){touch-action:manipulation;transition:color var(--motion-state) ease,background-color var(--motion-state) ease,border-color var(--motion-state) ease,box-shadow var(--motion-state) ease,scale var(--motion-press) var(--motion-ease)}
+@media(hover:hover){html body :is(button,summary,[role=button]):not(:disabled):hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}}
+html body :is(button,summary,[role=button]):not(:disabled):active,html body [data-hub-pressed="true"]{scale:.985;box-shadow:inset 0 0 0 2px var(--accent);background-color:var(--accent-soft,rgba(255,106,19,.12))}
+html body :is(button,summary,[role=button],a):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+html body button:disabled{cursor:wait;opacity:.65}
+html body button[aria-busy=true]{box-shadow:inset 0 -2px var(--accent)}
+.hub-action-notice{position:fixed;z-index:1400;inset-inline:16px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:fit-content;max-width:min(560px,calc(100vw - 32px));margin-inline:auto;padding:12px 16px;background:var(--panel);color:var(--fg);border:1px solid var(--line);box-shadow:var(--shadow-popover,0 10px 28px #0004);font:400 14px/1.6 var(--ff-body);pointer-events:none;overflow-wrap:anywhere}
+.hub-action-notice[data-kind=error]{color:var(--bad)}
+.opt-composition{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;line-height:1.65}
+.opt-composition span{padding:3px 8px;border:1px solid var(--line);font-size:13px}
+.opt-composition .opt-set{color:var(--rar-set)}
+html[data-theme=light] .opt-composition .opt-set{color:var(--rar-set-d)}
+.opt-composition-note{font-size:12px;line-height:1.65;color:var(--mut);margin:4px 0 12px}
+@media(max-width:760px){.hub-action-notice{bottom:calc(128px + env(safe-area-inset-bottom,0px))}html body[data-hub-page] :is(input,select,textarea){font-size:16px!important}}
+@media(prefers-reduced-motion:reduce){html body :is(button,summary,[role=button]){transition:none!important;scale:none!important}.shell-transition *{animation:none!important}}

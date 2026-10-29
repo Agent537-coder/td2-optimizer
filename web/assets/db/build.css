@@ -1,0 +1,723 @@
+  /* 配装器页专属（颜色一律走 base.css 主题变量；版式模仿游戏角色面板：
+     顶部武器 3 槽 → 中部装备 6 格(2×3) → 底部技能 2 槽(Q/E)，右侧为条件+实时结果栏） */
+  header{background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 55%,transparent),var(--panel) 70%),url(/assets/img/hero.webp) center 18%/cover no-repeat}
+  input,select,button{background:var(--card);color:var(--fg);border:1.5px solid var(--line);border-radius:3px;padding:7px 10px;font-size:12.5px;outline:none;font-family:var(--ff-europa);letter-spacing:.04em}
+  input[type=search]{min-width:170px;text-transform:none;letter-spacing:0;font-family:var(--ff-body);font-weight:600;font-size:13px}
+  input[type=number]{width:86px;font-variant-numeric:tabular-nums}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  /* 两栏配装台（用户 2026-09-14 拍板重排）：左 = 配装台（武器 3 + 装备 6 + 技能）+ 实时结果 + 手填词条（折叠）
+     · 右 = 战斗条件（先说清「这一套是在什么条件下算的」）→ 一键配装（再给「按条件重配一套」）。
+     ⚠️ 原来常驻左栏的**选件墙整条已下线**（用户原话「左边那栏完全多余」）：选件一律走卡片上的选择器弹窗
+     （`openDlg('g',…)`：类别 → 品牌 / 装备组 → 点行即穿上，同样两次点击）。别再把它加回来。 */
+  main{max-width:1560px;margin:0 auto;padding:14px 16px 90px;display:grid;
+    grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:start}
+  @media(max-width:1120px){main{grid-template-columns:1fr}}
+  .col{min-width:0;display:flex;flex-direction:column;gap:10px}
+  @media(min-width:1121px){
+    #col-desk{display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-areas:"results weapons" "results gear" "results skills" "analysis analysis" "tweaks tweaks";gap:10px;align-items:start}
+    #col-desk>.build-summary{grid-area:results}
+    #col-desk>.loadout-weapons{grid-area:weapons}
+    #col-desk>.loadout-gear{grid-area:gear}
+    #col-desk>.loadout-skills{grid-area:skills}
+    #col-desk>.build-analysis{grid-area:analysis}
+    #col-desk>#fold_tw{grid-area:tweaks}
+  }
+  /* ⚠️ 右栏**整栏吸顶 + 自己滚**（用户把「一键配装」放到下面，但主行动不许被推到首屏之外）：
+     实测「开始配装」原本落在文档 1546px 处（1440×1000 要滚 586px、1280×800 要滚 786px），
+     等于首屏只有条件、没有出口。窄屏（单栏）下退回正常文档流，否则整页会被锁在一屏里。 */
+  #col-res{align-self:start}
+  /* 页头是 `position:sticky`（实测占 69px），页脚 `position:fixed`（实测 30px）：
+     原来写 `top:10px / max-height:calc(100vh - 20px)` ⇒ 栏底边恒超出视口 49px，
+     单滚右栏到底时结果行最后一格永久看不见（实测）。上下各让开一次，且给页脚留位。 */
+  @media(min-width:1121px){#col-res{position:sticky;top:78px;max-height:calc(100vh - 78px - 38px);
+    overflow:auto;padding-right:2px;scrollbar-gutter:stable}}
+  /* 装甲目标设置：四排**各自带标签**（原来四排 chip 挂在一个总标题下，用户要自己记住哪排是兵种 / 难度 / 人数 / 恶化） */
+  .tgrp{display:grid;grid-template-columns:40px minmax(0,1fr);gap:5px 8px;align-items:center;margin-top:2px}
+  .tgrp .chips{gap:5px}
+  .tk{font-family:var(--ff-europa);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+  /* 折叠卡（手填词条）：summary 就是这张卡的标题，展开才占高度 */
+  details.fold{padding:0}
+  details.fold>summary{margin:0;padding:12px;cursor:var(--cur-hover);list-style:none;display:flex;align-items:center;gap:8px}
+  details.fold>summary::-webkit-details-marker{display:none}
+  details.fold>summary::before{content:"＋";font-family:var(--ff-europa);font-size:12px;color:var(--mut)}
+  details.fold[open]>summary::before{content:"－"}
+  details.fold>summary>span{font-family:var(--ff-display);font-size:12px;font-weight:800;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent)}
+  details.fold>summary:hover>span{color:var(--bone)}
+  details.fold[open]>summary{border-bottom:1px solid var(--line)}
+  details.fold>*:not(summary){margin-left:12px;margin-right:12px}
+  /* 卡内的第二层折叠（比 .fold 轻一档：不占卡片标题的视觉重量） */
+  details.fold2{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+  details.fold2>summary{cursor:var(--cur-hover);list-style:none;display:flex;align-items:center;gap:8px;
+    font-family:var(--ff-europa);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+  details.fold2>summary::-webkit-details-marker{display:none}
+  details.fold2>summary::before{content:"＋";font-size:12px}
+  details.fold2[open]>summary::before{content:"－"}
+  details.fold2>summary>span+span::before{content:"·";margin:0 6px}
+  /* 前一段被 JS 隐藏时（没有档位在玩）分隔点也别留（实测出现过「+ · 装甲目标设置」） */
+  details.fold2>summary>span[style*="display: none"]+span::before{content:none}
+  details.fold2[open]>summary{margin-bottom:6px}
+  details.fold[open]>summary{margin-bottom:10px}
+  /* 键盘可达性（本轮把 chip 从 `<span>` 换成 `<button>`）：焦点环必须**看得见**，
+     且浅色 / 深色主题都成立 ⇒ 用 --bone 描边 + 2px 偏移，不靠底色。 */
+  :where(button,[tabindex]):focus-visible{outline:2px solid var(--bone);outline-offset:2px}
+  /* 白线条图标在浅色主题下反色（名单 = 构建期像素检测 `_meta.mono_icons`，与资料库同一套） */
+  [data-theme=light] img.mono{filter:invert(1) drop-shadow(0 1px 1px rgba(0,0,0,.12))}
+  /* 选中态**不许只靠颜色**表达（无障碍红线）：`aria-pressed` 之外再给一个字形标记。 */
+  .chip[aria-pressed="true"]::before,.axc[aria-pressed="true"]::before{content:"✓";margin-right:4px;font-size:.92em}
+  /* 一键配装的「搜索式多选」（替代原来 96 颗品牌 chip 与整池副属性 chip）*/
+  .optadd{display:flex;align-items:center;gap:5px;min-width:0}
+  .optadd input[type=search]{flex:1 1 110px;min-width:0;font-size:12px;padding:4px 7px;text-transform:none;letter-spacing:0}
+  .optadd button{flex:0 0 auto;font-size:11px;padding:3px 8px}
+  .optrun{display:flex;align-items:center;gap:8px;margin:2px 0 8px}
+  /* #optrun 那颗主行动按钮：原来是 `button.mini`（透明无边框）⇒ 与「清空」这种次要动作同权重。
+     给它一层底色描边，让「开始配装 / 应用到配装台」在这一栏里**唯一**突出。 */
+  .optrun button.mini,.optapply{border:1px solid var(--accent);background:var(--accent-soft);color:var(--fg);font-weight:700}
+  .optrun button.mini:hover,.optapply:hover{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+  .chip,.axc,.axpick,.axmore,.taltx,.wmod-row,.axrow,.rcell,.gcard,.wcard,.scard,.prow,.sTile,.trow2,.wtile,.wrow,.tier,.ovrbtn,.modblk,.gclock,.wc-tools button,.scx,.axx{font-family:var(--ff-body)}
+  /* 红线③：本页 chip 上到处是数字（「标准（基础值 1200）」「1 人」「×3」「796,347」），
+     而 `base.css` 给 `.chip` 与所有 `button` 都上了 `font-weight:700` ⇒ 整排**带数字的粗体**。
+     本页一律压到 500（层次靠字号与大写），不改 base.css —— 那本文件另外三页在用。 */
+  .chip,.chip.on{font-weight:500}
+  /* ⚠️ 上面这些类里有一批现在是真正的 `<button>`，而 `base.css` 给所有 `button` 上了
+     `font-weight:700;text-transform:uppercase`。凡**带数字**的（`.axv` `.wmod-a` `.mTile b` `.rnum`）
+     一律在下面按 UI 硬规则③ 压回 ≤500，且 `text-transform:none` —— 否则「点了 chip 数字变粗」= 破红线。 */
+  .axc,.axpick,.axmore,.taltx,.wmod-row,.tier,.optadd button,.gclock,.ovrbtn,.wc-talrow,.modblk{font-weight:500;text-transform:none;letter-spacing:0}
+  /* 这两颗刚由 <span> 升成 <button>：内边距与行高必须自己接管（UA 默认会把 30×22 的插件格撑大） */
+  .wc-talrow{width:100%;padding:1px 4px;line-height:1.5}
+  .modblk{line-height:1}
+  .axc{font-size:11.5px}
+  .axc.on{border-color:var(--accent);background:var(--accent-soft);color:var(--fg)}
+  .axpick,.axmore,.taltx{background:var(--card)}
+  .wmod-row{text-align:left}
+  .wmod-a,.axv,.mTile b,.rnum,.onum b,.wstats b,.wc-stats b,.hgc,.pk-attrs span{font-weight:500}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:12px}
+  h2{margin:0 0 8px;font-family:var(--ff-display);font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  .hint{font-size:12px;color:var(--mut);margin:0 0 8px;line-height:1.5}
+  .hint.tiny{font-size:11px;line-height:1.45;color:var(--mut)}
+  .ic{width:34px;height:34px;flex:0 0 auto;object-fit:contain;border-radius:4px;background:var(--chip);border:1px solid var(--line)}
+  .ic.ph{background:var(--chip)}
+  .ic.sm{width:20px;height:20px}
+  .tph{width:19px;height:19px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;background:var(--chip);border:1px solid var(--line);font-size:11px;font-family:var(--ff-europa);color:var(--mut);font-weight:700}
+  .sec-lbl{font-family:var(--ff-display);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg);margin:2px 0 8px;display:flex;align-items:center;gap:8px}
+  .sec-lbl::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  
+  /* ============ 配装器卡片变量（对齐资料库 DB 卡片） ============ */
+  :root{
+    --build-cz-plate:color-mix(in srgb,var(--bg) 74%,#000);
+    --build-cz-weapon:118px;
+    --build-cz-gear:112px;
+    --build-band:4px;
+  }
+  [data-theme=light]{--build-cz-plate:color-mix(in srgb,var(--card) 90%,#000)}
+  @media (min-width:1200px){:root{--build-cz-weapon:130px;--build-cz-gear:124px}}
+  @media (min-width:768px) and (max-width:1199px){:root{--build-cz-weapon:112px;--build-cz-gear:106px}}
+
+  /* ── 武器 3 槽（DB 卡片风格放大） ── */
+  .wstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:stretch}
+  /* 装上枪的那张横向展开（图左 + 名称/数值/词条/四插槽在右），空槽仍是小方块 */
+  @media(min-width:821px){.wstrip:has(.filled) .wcard.filled{grid-column:1/-1}}
+  @media(min-width:821px){.wstrip:not(:has(.filled)){grid-auto-rows:132px}}
+  @media(max-width:640px){.wstrip{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}}
+  .wcard{position:relative;display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--line);border-radius:7px;overflow:hidden;cursor:var(--cur-hover);transition:transform .08s,border-color .15s,box-shadow .15s;min-height:0}
+  .wcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 12%,transparent),transparent 54%);z-index:0}
+  .wcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--rc,var(--bone)) 60%,var(--line));box-shadow:var(--shadow)}
+  .wcard.on{box-shadow:0 0 0 2px var(--rc,var(--accent)),0 6px 16px rgba(0,0,0,.35)}
+  .wcard.empty{border-style:dashed}
+  .wcard.filled{border-color:var(--rc)}
+  .wcard .topbar{height:var(--build-band,4px);flex:0 0 auto;background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 72%,transparent));pointer-events:none;position:relative;z-index:2}
+  .wcard.empty .topbar{--rc:var(--mut)}
+  .wc-hd{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 12px 0;position:relative;z-index:1}
+  .wc-slotlbl{font-family:var(--ff-europa);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+  .wcard.on .wc-slotlbl{color:var(--accent)}
+  .wc-tools{display:flex;gap:3px;position:relative;z-index:1}
+  .wc-tools button{border:none;background:none;color:var(--mut);padding:1px 5px;font-size:11px;border-radius:3px;font-family:var(--ff-europa);pointer-events:auto}
+  .wc-tools button:hover{color:var(--fg);background:var(--hover)}
+  .wc-mid{position:relative;height:var(--build-cz-weapon);flex:0 0 auto;display:grid;place-items:center;padding:10px 12px 8px;background:radial-gradient(120% 90% at 50% 18%,color-mix(in srgb,var(--rc) 12%,transparent),transparent 70%),var(--build-cz-plate);overflow:hidden;z-index:0}
+  .wc-mid img{max-width:92%;max-height:92%;width:auto;height:auto;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5));transition:transform .15s}
+  .wcard:hover .wc-mid img{transform:scale(1.04)}
+  .wc-mid .wc-empty{font-size:32px;color:var(--mut);font-family:var(--ff-europa)}
+  .wc-tal{position:absolute;right:8px;top:26px;width:22px;height:22px;object-fit:contain;opacity:.95;z-index:1}
+  .wc-talrow{display:flex;align-items:baseline;gap:6px;padding:2px 6px;margin:6px 12px 0;border:1px dashed var(--line);border-radius:3px;cursor:var(--cur-hover);min-width:0;position:relative;z-index:1}
+  .wc-talrow:hover{border-color:var(--bone)}
+  .wc-talrow.has{border-style:solid;border-color:var(--violet)}
+  .wc-talrow .wc-tal-lbl{font-size:11px;color:var(--mut);flex:0 0 auto}
+  .wc-talrow .wc-tal-name{font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .wc-talrow.has .wc-tal-name{color:var(--violet)}
+  .wc-name{font-weight:700;font-size:13.5px;line-height:1.35;padding:8px 12px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:1}
+  .wc-stats{display:flex;gap:8px;font-size:11.5px;color:var(--mut);font-family:var(--ff-europa);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;padding:0 12px;position:relative;z-index:1}
+  .wc-stats b{color:var(--fg);font-weight:500}
+  .wc-att{display:flex;gap:8px;font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;padding:0 12px;position:relative;z-index:1}
+  .wc-att span{display:inline-flex;align-items:center;gap:2px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .wc-att img{width:11px;height:11px;object-fit:contain;opacity:.85;flex:0 0 auto}
+  .wc-affix{display:grid;gap:2px;border-top:1px dashed var(--line);padding:6px 12px 0;margin-top:4px;position:relative;z-index:1}
+  .wc-mod{display:grid;gap:4px;padding:6px 12px 10px;position:relative;z-index:1}
+  .wmod-row{width:100%;display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid var(--line);border-radius:4px;background:var(--chip);cursor:var(--cur-hover);text-align:left;font-size:11.5px;pointer-events:auto}
+  .wmod-row:hover{border-color:var(--bone)}
+  .wmod-row.on{border-color:var(--accent);background:var(--accent-soft)}
+  .wmod-row.fixed,.wmod-row.locked{cursor:default;background:transparent;border-style:dashed}
+  .wmod-ic{flex:0 0 auto}
+  .wmod-k{flex:0 0 auto;color:var(--mut);font-size:11px}
+  .wmod-v{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wmod-a{flex:0 0 auto;color:var(--mut);font-variant-numeric:tabular-nums}
+  .wmod-tag{flex:0 0 auto;font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:2px;padding:0 4px}
+
+  /* ── 装备 6 格（DB 卡片风格放大） ── */
+  .ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:stretch}
+  /* 填充后走 2 列：横向卡需要给右侧信息列留够宽度，否则每条词条都换行、反而更长（第 303 轮实测 395px→170px） */
+  @media(min-width:821px){.ggrid:has(.filled){grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(min-width:821px){.ggrid:not(:has(.filled)){grid-auto-rows:132px}}
+  @media(max-width:640px){.ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}}
+  .gcard{position:relative;display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--line);border-radius:7px;overflow:hidden;cursor:var(--cur-hover);transition:transform .08s,border-color .15s,box-shadow .15s;min-height:0}
+  .gcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 12%,transparent),transparent 54%);z-index:0}
+  .gcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--rc,var(--bone)) 60%,var(--line));box-shadow:var(--shadow)}
+  .gcard.open{box-shadow:0 0 0 2px var(--accent),0 6px 16px rgba(0,0,0,.3)}
+  .gcard.filled{border-color:var(--rc)}
+  .gcard .topbar{height:var(--build-band,4px);flex:0 0 auto;background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 72%,transparent));pointer-events:none;position:relative;z-index:2}
+  .gcard.empty .topbar{--rc:var(--mut)}
+  .gc-hd{display:flex;justify-content:space-between;align-items:center;gap:5px;padding:8px 12px 0;position:relative;z-index:1}
+  .gc-lbl{font-family:var(--ff-europa);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+  .gc-main{display:flex;flex-direction:column;flex:1;min-width:0;gap:0;position:relative;z-index:1}
+  .gc-mid{position:relative;height:var(--build-cz-gear);flex:0 0 auto;display:grid;place-items:center;padding:10px 12px 8px;background:radial-gradient(120% 90% at 50% 18%,color-mix(in srgb,var(--rc) 12%,transparent),transparent 70%),var(--build-cz-plate);overflow:hidden;z-index:0}
+  .gc-mid img{max-width:90%;max-height:90%;width:auto;height:auto;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5));transition:transform .15s}
+  .gcard:hover .gc-mid img{transform:scale(1.04)}
+  .gc-mid .sil{width:56px;height:56px}
+  .gc-mid .gc-ph{width:44px;height:44px;border-radius:5px;background:var(--chip);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--ff-display);font-weight:800;font-size:19px;color:var(--mut)}
+  .gc-info{display:flex;flex-direction:column;gap:4px;padding:7px 10px 6px;flex:1;min-width:0;position:relative;z-index:1}
+  /* ── 填充态 = 横向：图左（固定宽）+ 信息右 ────────────────────────────────────────
+     用户第 302/303 轮：「布局太长了」。根因不是图片大小，而是**填充后仍旧纵向堆叠**：
+     图区整幅 + 名字 + 品牌行 + 3 行词条 + 脚行 全部竖着排 ⇒ 一张卡 ~330px，六张就是两屏。
+     原来仓库里其实**已经有**这套「图左 110px + 信息右」的写法，但它被关在
+     `@media(max-width:640px)` 手机段里（见文件末尾）⇒ 桌面端从来没生效过。
+     这里把它提上来作为**桌面端默认**：卡高从 ~330px 降到 ~150px，六格装备回到一屏内。 */
+  .gcard.filled .gc-main{display:grid;grid-template-columns:var(--build-gear-art,140px) minmax(0,1fr);
+    gap:0;align-items:stretch;min-width:0}
+  .gcard.filled .gc-mid{height:100%;min-height:0;padding:8px;border-right:1px solid var(--line)}
+  .gcard.filled .gc-info{padding:7px 10px 7px;gap:3px}
+  .gcard.filled .gc-name{white-space:normal;font-size:12.5px}
+  @media (min-width:1200px){:root{--build-gear-art:156px}}
+  /* 武器卡填充态同款：图左 + 名称/数值/词条/插槽在右 */
+  .wcard.filled .wc-body{display:grid;grid-template-columns:var(--build-wp-art,150px) minmax(0,1fr);
+    gap:0;align-items:stretch;min-width:0}
+  .wcard.filled .wc-mid{height:100%;min-height:0;border-right:1px solid var(--line)}
+  .wcard.filled .wc-name{padding-top:7px}
+  .wc-col{display:flex;flex-direction:column;min-width:0}
+  /* 武器卡的天赋行在 body 之上（整卡宽），保持原样；body 内部只放图 + 右列 */
+  @media (min-width:1200px){:root{--build-wp-art:168px}}
+  /* 窄屏退回纵向单列：150px 图 + 右列会把 DMG/RPM/MAG 挤成两行 */
+  @media (max-width:820px){
+    .wcard.filled .wc-body{grid-template-columns:1fr}
+    .wcard.filled .wc-mid{border-right:0;border-bottom:1px solid var(--line);height:var(--build-cz-weapon)}
+  }
+  .gc-name{font-weight:700;font-size:13px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gc-bonus{font-size:11.5px;color:var(--accent);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gc-ft{padding:6px 10px 7px;border-top:1px solid var(--line);margin-top:auto;display:flex;align-items:center;gap:5px;min-height:22px;position:relative;z-index:1}
+  .gcard .axblk{margin:0;padding:6px 10px 0;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:3px;position:relative;z-index:1}
+  .axblk{overflow:visible}
+  .axrow{display:flex;align-items:baseline;gap:5px;min-width:0}
+  .axk{flex:0 0 auto;font-size:11px;color:var(--mut)}
+  .axv{font-size:11px;color:var(--fg);font-variant-numeric:tabular-nums;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .axpick{font-size:11.5px;line-height:1.6;color:var(--accent);cursor:var(--cur-hover);border:1px dashed var(--line);border-radius:3px;padding:0 5px;white-space:nowrap;pointer-events:auto}
+  .axpick:hover,.axpick.has:hover{border-color:var(--bone)}
+  .axpick.has{color:var(--fg);border-style:solid}
+  .axx{font-size:11.5px;line-height:1.6;color:var(--mut);cursor:var(--cur-hover);padding:0 3px;border-radius:3px;pointer-events:auto}
+  .axx:hover{color:var(--rar-off);border-color:var(--rar-off)}
+  .axmore{font-size:11px;color:var(--mut);cursor:var(--cur-hover);padding:1px 0;pointer-events:auto}
+  .axmore:hover{color:var(--fg)}
+  .axchips{display:flex;flex-wrap:wrap;gap:3px;min-width:0}
+  .axselect{align-items:center}
+  .gcard:not(.filled) .axselect select,.wax-row select{min-width:0;width:100%;height:26px;border:1px solid var(--line);border-radius:3px;background:var(--chip);color:var(--fg);font-size:11px;padding:2px 24px 2px 6px;cursor:var(--cur-hover)}
+  .axselect.core select{color:var(--accent)}
+  .axselect.off select{color:var(--rar-off);border-color:color-mix(in srgb,var(--rar-off) 55%,var(--line))}
+  .axselect.def select{color:var(--rar-def);border-color:color-mix(in srgb,var(--rar-def) 55%,var(--line))}
+  .axselect.uti select{color:var(--rar-uti);border-color:color-mix(in srgb,var(--rar-uti) 55%,var(--line))}
+  .sil{display:inline-block;border-radius:5px;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;opacity:.92}
+  .gc-mid .sil{width:44px;height:44px}
+  .prow .sil{width:40px;height:40px;flex:0 0 auto}
+  .gc-ph{width:44px;height:44px;border-radius:5px;background:var(--chip);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--ff-display);font-weight:800;font-size:19px;color:var(--mut)}
+  .modblk{width:30px;height:22px;border-radius:4px;flex:0 0 auto;cursor:var(--cur-hover);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;padding:0;background:none;pointer-events:auto}
+  .modblk:hover{border-color:var(--bone)}
+  .modblk.red{background:var(--rar-off);border-color:var(--rar-off)}
+  .modblk.blue{background:var(--rar-def);border-color:var(--rar-def)}
+  .modblk.yellow{background:var(--rar-uti);border-color:var(--rar-uti)}
+  .modblk.empty{background:none;border:1.5px dashed var(--mut)}
+  .modblk.hasic{background:none;border-color:currentColor}
+  .modblk.hasic.red{color:var(--rar-off)}
+  .modblk.hasic.blue{color:var(--rar-def)}
+  .modblk.hasic.yellow{color:var(--rar-uti)}
+  .modblk.hasic .mglyph{width:15px;height:15px;display:block;object-fit:contain}
+  .gc-ft .ictal{width:18px;height:18px;margin-left:auto;object-fit:contain}
+  .gc-ft .taltx{margin-left:auto;font-size:11px;color:var(--violet);max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:var(--cur-hover);border:1px solid transparent;border-radius:8px;padding:1px 5px;pointer-events:auto}
+  .gc-ft .taltx:hover,.gc-ft .taltx:focus-visible{border-color:var(--violet)}
+  .gc-ft .taltx.empty{color:var(--mut);border-style:dashed;border-color:currentColor}
+  .gc-ft .taltx.na{opacity:.62}
+  .gswapn{font-size:11px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--mut);font-weight:500;font-variant-numeric:tabular-nums;line-height:16px;pointer-events:auto}
+  .gswapn:hover{border-color:var(--bone);color:var(--fg)}
+  .ovrbtn{font-size:11px;padding:0 5px;border-radius:2px;letter-spacing:.02em;margin-left:auto;border:1px solid var(--line);background:var(--panel);color:var(--mut);font-family:var(--ff-europa);letter-spacing:.08em;pointer-events:auto}
+  .ovrbtn.on{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+  .badge{font-size:11px;padding:1px 5px;border-radius:2px;border:1px solid var(--line);color:var(--mut);text-transform:uppercase;font-family:var(--ff-europa);letter-spacing:.04em;white-space:nowrap}
+  .badge.rc{color:var(--rc);border-color:var(--rc)}
+  .badge.gold{color:var(--rar-gold);border-color:var(--rar-gold)}
+  .badge.gear{color:var(--rar-set);border-color:var(--rar-set)}
+  .badge.dim{opacity:.7}
+
+
+/* ── 技能 2 槽 ── */
+  .skstrip{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .scard{position:relative;border:1.5px solid var(--line);border-radius:6px;background:var(--card);cursor:var(--cur-hover);padding:8px 9px;display:flex;align-items:center;gap:10px;min-height:58px;transition:border-color .15s}
+  .scard:hover{border-color:var(--bone)}
+  .scard.filled{border-color:var(--accent-2)}
+  #hint_gear,#hint_sk{display:none}
+  .keycap{font-family:var(--ff-display);font-weight:800;font-size:13px;color:var(--accent);border:1.5px solid var(--accent);border-radius:3px;padding:2px 7px;background:var(--accent-soft)}
+  .scard img{width:38px;height:38px;object-fit:contain;border-radius:4px;background:var(--chip);border:1px solid var(--line)}
+  .scnm{font-weight:700;font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .scnm small{display:block;color:var(--mut);font-size:11px;font-weight:400;margin-top:1px}
+  .scx{position:absolute;right:5px;top:5px;border:none;background:none;color:var(--mut);font-size:11px;padding:1px 5px;border-radius:3px}
+  .scx:hover{color:var(--bad);background:var(--hover)}
+
+  /* ── 选择器弹窗 ── */
+  #dlgmask{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(2px);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px 24px}
+  #dlgmask.on{display:flex}
+  #dlg{width:min(880px,96vw);max-height:84vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+  .dlg-hd{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .dlg-title{font-family:var(--ff-display);font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dlg-hd .sp{flex:1}
+  .dlg-bar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .dlg-list{overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  /* 选装备第一屏：一块 = 一个品牌 / 装备组 / 具名 / 奇特，官方图标 + 名字，点一下直接填入。
+     底色按**类型**给（品牌=金 / 装备组=绿 / 奇特=橙，与全站稀有度色同源）—— 参考工具的选件按钮
+     也是按类型上色（`HighendBrand.Color=ColorGolden`），族色只长在词条图标上，不在这里编。 */
+  .gwall-group{border-top:1px solid var(--line)}
+  .gwall-group:first-child{border-top:0}
+  .gwall-group>summary{list-style:none;display:flex;align-items:center;gap:7px;cursor:var(--cur-hover);padding:9px 1px;color:var(--mut);font:700 12px var(--ff-europa);letter-spacing:.06em;text-transform:uppercase}
+  .gwall-group>summary::-webkit-details-marker{display:none}
+  .gwall-group>summary::before{content:'+';color:var(--accent);font-size:15px;font-weight:500}
+  .gwall-group[open]>summary::before{content:'−'}
+  .gwall-group>summary span{font-weight:500;font-variant-numeric:tabular-nums}
+  .gwall-group[open]>summary{color:var(--fg)}
+  .gwall-group>.gwall{margin-bottom:9px}
+  /* 比例照资料库的品牌墙（db.css 的 .bwall/.btile：minmax(112px,1fr) / gap7 / padding4-6 / 圆角2 / 图26）——
+     用户原话「别做成卡片了，越直观越好，比例小一点」。 */
+  .gwall{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px}
+  .gtile{display:flex;align-items:center;gap:5px;min-width:0;text-align:left;background:var(--chip);
+    border:1px solid var(--line);border-radius:2px;padding:4px 6px;color:var(--fg);
+    font-size:11.5px;font-weight:500;text-transform:none;letter-spacing:0;line-height:1.3}
+  .gtile:hover{border-color:var(--bone);background:var(--hover)}
+  .gtile:active{background:var(--accent-soft);border-color:var(--accent)}
+  .gtile img,.gtile .gic{width:26px;height:26px;flex:0 0 auto;object-fit:contain;border-radius:2px}
+  .gtile .gn{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gtile .gc{flex:0 0 auto;margin-left:3px;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;font-weight:500}
+  .gtile.tb{border-color:color-mix(in srgb,var(--rar-gold) 55%,var(--line))}
+  .gtile.ts{border-color:color-mix(in srgb,var(--rar-set) 55%,var(--line))}
+  .gtile.te{border-color:color-mix(in srgb,var(--rar-exotic) 55%,var(--line))}
+  .dlg-foot{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+  .dlg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+  .dlg-grid.mgrid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+  .skill-picker{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px;min-height:480px}
+  .skill-cats{display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line);padding-right:10px}
+  .skill-cats .sTile{width:100%;grid-template-columns:34px minmax(0,1fr);text-align:left}
+  .skill-preview{min-width:0;padding:2px 2px 8px}
+  .skill-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .skill-preview-head>div{display:flex;align-items:center;gap:10px;min-width:0}
+  .skill-preview-head img{width:54px;height:54px;object-fit:contain}
+  .skill-preview-head b{display:block;font-size:16px;color:var(--fg)}
+  .skill-preview-head small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+  .skill-variants{display:flex;gap:5px;overflow-x:auto;padding:10px 0;scrollbar-width:thin}
+  .skill-var{flex:0 0 auto;display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--line);padding:5px 8px;color:var(--mut);font-size:12px;font-weight:500;text-transform:none;letter-spacing:0}
+  .skill-var img{width:22px;height:22px;object-fit:contain}
+  .skill-var.on{border-color:var(--accent);background:var(--accent-soft);color:var(--fg)}
+  .skill-desc{margin:2px 0 12px;color:var(--fg);font-size:13px;line-height:1.6;max-width:68ch}
+  .skill-tier-title{display:flex;align-items:center;justify-content:space-between;color:var(--accent);font:700 12px var(--ff-europa);text-transform:uppercase;border-bottom:1px solid var(--line);padding:7px 0}
+  .skill-tier-title span{color:var(--mut);font-weight:500;font-variant-numeric:tabular-nums}
+  .skill-tiers{display:flex;flex-direction:column}
+  .skill-tier{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;padding:7px 6px;border-bottom:1px solid var(--line)}
+  .skill-tier.current{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
+  .skill-tier>span{color:var(--mut);font:500 12px var(--ff-europa)}
+  .skill-tier.current>span{color:var(--accent)}
+  .skill-tier>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}
+  .skill-tier p{display:flex;justify-content:space-between;gap:8px;margin:0;min-width:0;font-size:12px}
+  .skill-tier p b{color:var(--accent);font-weight:500;font-variant-numeric:tabular-nums}
+  .skill-tier p span{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @media(max-width:720px){.skill-picker{grid-template-columns:1fr}.skill-cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-right:0;border-bottom:1px solid var(--line);padding:0 0 10px}.skill-tier>div{grid-template-columns:1fr}}
+  .prow{display:flex;align-items:flex-start;gap:10px;padding:8px;border:1px solid var(--line);border-radius:4px;margin-bottom:0;background:var(--card);cursor:var(--cur-hover)}
+  .prow:hover{border-color:var(--bone)}
+  .prow.on{border-color:var(--accent);background:var(--accent-soft)}
+  .prow .wbody{min-width:0;flex:1}
+  .wname{font-weight:700;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .walt{color:var(--mut);font-size:11px;font-weight:400;margin-left:5px}
+  .wsub{font-size:11px;color:var(--mut);margin-top:2px;line-height:1.45}
+  .wstats{display:flex;gap:9px;font-size:11px;color:var(--mut);font-family:var(--ff-europa);font-variant-numeric:tabular-nums;flex-wrap:wrap}
+  .wstats b{color:var(--fg);font-weight:500}
+  /* ── 武器插槽区（官方四插槽：瞄具 / 枪口 / 握把 / 弹匣）────────────────────────────
+     取代武器卡上那行只读的「枪口·5.56」（`.wc-att` 的样式留着兼容，页面不再渲染它）。
+     每槽一行：官方槽图标 + 槽名 + 当前那件 + 它的属性值；可换的槽整行可点开官方候选。
+     ⚠️ 上面那行 `.wstats b` 原来写 700 —— 它渲染的是配件属性值，属**数值元素**，
+        按 UI 硬规则⑤ 压回 500（`font-variant-numeric:tabular-nums` 已在外层 `.wstats` 上）。 */
+  /* 四插槽改 2×2（用户：「左右各二不是更好吗」）：首行 = 槽图标 + 槽名 + 属性值，次行 = 件名 */
+  .wc-mod{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;margin-top:3px;border-top:1px dashed var(--line);padding:3px 12px 8px}
+  .wmod-row{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;min-width:0;font-size:11px;line-height:1.5;
+    padding:1px 3px;border:1px solid transparent;border-radius:3px}
+  .wmod-row .wmod-v{flex:1 1 100%;order:3}
+  .wmod-row .wmod-a{order:2;margin-left:auto}
+  .wmod-row .wmic{width:14px;height:14px;object-fit:contain}
+  .wmod-row[data-act]{cursor:var(--cur-hover)}
+  .wmod-row[data-act]:hover{border-color:var(--bone)}
+  .wmod-row.on{background:var(--accent-soft)}
+  .wmod-ic{flex:0 0 auto;display:inline-flex;align-items:center}
+  .wmod-ic img{width:12px;height:12px;flex:0 0 auto}
+  .wmod-k{flex:0 0 auto;color:var(--mut)}
+  .wmod-v{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)}
+  .wmod-v.dim{color:var(--mut)}
+  .wmod-a{flex:0 0 auto;color:var(--accent);font-variant-numeric:tabular-nums;font-weight:500}
+  .wmod-tag{flex:0 0 auto;font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:2px;padding:0 3px}
+  .wmod-none{font-size:11px;color:var(--mut)}
+  .pk-attrs{display:flex;flex-wrap:wrap;gap:5px;font-size:11px;color:var(--mut);margin-top:3px}
+  .pk-attrs span{border:1px solid var(--line);border-radius:2px;padding:1px 6px;background:var(--chip);font-variant-numeric:tabular-nums}
+  .pk-attrs .rnd{color:var(--warn);border-color:var(--warn);background:none}
+  .pk-tal{font-size:11.5px;color:var(--violet);margin-top:3px}
+  .pk-tal.unsup{color:var(--mut)}
+  .pk-empty{font-size:12px;color:var(--mut);padding:8px 2px;line-height:1.6}
+  .sTile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px;border:1px solid var(--line);border-radius:5px;background:var(--card);cursor:var(--cur-hover)}
+  .sTile:hover{border-color:var(--bone)}
+  .sTile.on{border-color:var(--accent);background:var(--accent-soft)}
+  .sTile img{width:40px;height:40px;object-fit:contain;border-radius:4px}
+  .sTile span{font-size:11px;font-weight:700;text-align:center}
+  .mTile{flex-direction:row;justify-content:flex-start;align-items:flex-start;gap:8px;padding:7px 9px}
+  .mTile .mdot{width:14px;height:14px;border-radius:2px;flex:0 0 auto;margin-top:3px}
+  .mTile .mdot.red{background:var(--rar-off)}
+  .mTile .mdot.blue{background:var(--rar-def)}
+  .mTile .mdot.yellow{background:var(--rar-uti)}
+  /* 选择器里的每一行也直接画官方字形（同 `.modblk.hasic`：字形自带颜色，底色让开） */
+  .mTile .mdot.mglyph{background:none;border:1px solid currentColor;border-radius:2px;object-fit:contain;padding:1px}
+  .mTile .mdot.mglyph.red{color:var(--rar-off)}
+  .mTile .mdot.mglyph.blue{color:var(--rar-def)}
+  .mTile .mdot.mglyph.yellow{color:var(--rar-uti)}
+  .mTile b{font-variant-numeric:tabular-nums;color:var(--fg);font-size:11.5px}
+  .mTile .mdesc{font-size:11px;color:var(--mut);line-height:1.45;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:5px}
+  .chip.unsup{opacity:.75;border-style:dashed}
+  .chip.unsup::after{content:"?";color:var(--warn);font-weight:800}
+  .chip .kb-zh{display:inline-flex;align-items:center;justify-content:center;border-radius:3px;background:var(--chip);border:1px solid var(--line);font-family:var(--ff-europa);font-size:11px;padding:0 5px;color:var(--mut);line-height:17px}
+  .chip.tchip{max-width:100%;font-weight:600}
+  .tlist{display:flex;flex-direction:column;gap:5px}
+  .trow2{display:flex;align-items:baseline;gap:8px;padding:6px 9px;border:1px solid var(--line);border-radius:4px;background:var(--card);cursor:var(--cur-hover)}
+  .trow2:hover{border-color:var(--bone)}
+  .trow2.on{border-color:var(--accent);background:var(--accent-soft)}
+  .trow2 .tn{font-weight:700;font-size:12.5px;white-space:nowrap}
+  .trow2 .td{font-size:11px;color:var(--mut);line-height:1.45;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .scroll{overflow:auto;max-height:240px;padding-right:4px}
+  .brow{display:flex;align-items:flex-start;gap:10px;padding:8px;border:1px solid var(--line);border-radius:4px;margin-bottom:6px;background:var(--card)}
+  .bbody{min-width:0;flex:1}
+  .bname{font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .tiers{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .tier{font-size:11px;padding:4px 8px;text-transform:none;letter-spacing:0;font-family:var(--ff-body);font-variant-numeric:tabular-nums}
+  .trow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .trow .tname{flex:1;min-width:0;text-transform:none;letter-spacing:0}
+
+  /* ── 条件 + 结果 ── */
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pf{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--mut)}
+  /* `label.pf` 里裸 `<b>`（`#bp_wexp_v` 专精等级 / `#bp_gexp_v`）走 UA `bolder` ⇒ 700。
+     它们是**数字** ⇒ 红线 #1.1③：≤500 + `tabular-nums`。 */
+  .pf b{font-weight:500;font-variant-numeric:tabular-nums}
+  .pf input,.pf select{width:100%}
+  /* 参数分组小标题（专精 / 专长 / 精通 / 额外参数 / 目标设置）：同义类别文本不重复，靠这一行分区 */
+  .sub-lbl{font-family:var(--ff-europa);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin:10px 0 5px;display:flex;align-items:center;gap:7px}
+  .sub-lbl::after{content:"";flex:1;height:1px;background:var(--line)}  .swrow{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--fg);margin-top:9px;cursor:var(--cur-hover)}
+  .swrow input{width:auto;padding:0;background:none;border:none}
+  .bpb{display:inline-flex;flex-wrap:wrap;gap:5px;margin-left:4px}  .bpb{display:inline-flex;flex-wrap:wrap;gap:5px;margin-left:4px}
+  .bpbadge{font-size:11px;padding:1px 5px;border-radius:2px;border:1px solid var(--line);color:var(--mut);font-family:var(--ff-europa);letter-spacing:.04em;white-space:nowrap}
+  input[type=range]{width:100%;padding:0;background:none;border:none;accent-color:var(--accent)}
+  .result-scope,.result-missed{grid-column:1 / -1;margin:0;color:var(--warn);font-size:12px;line-height:1.45}
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .build-summary{align-self:start}
+  .build-summary .rgrid{grid-template-columns:1fr}
+  .build-summary .rcell{flex-direction:row;align-items:baseline;justify-content:space-between;gap:10px;padding:7px 8px;background:transparent;border-width:0 0 1px;border-radius:0}
+  .build-summary .rcell.k{grid-column:auto}
+  .build-summary .rcell .rnum,.build-summary .rcell.k .rnum{font-size:16px}
+  .build-summary .rcell .rlbl{font-size:12px;letter-spacing:.02em}
+  .build-summary .apnl{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:2px}
+  /* 面板卡里的 12 项固定词条（手填）：两列，行间距压紧；下面的手填行接在它后面 */
+  #bp_extras{margin-bottom:6px}
+  /* ── 结果面：**一套版式**（标签在上、数字在下），三张主指标卡横跨整行 ──────────────────
+     数字用**语义色**（用户第 245 轮「数字需要加颜色，明显一点」）：输出橙 / 中性 / 防御蓝 / 暴击黄。
+     色板直接取 base.css 既有变量（--accent 橙 · --warn 黄 · --violet 紫），防御蓝在下面自己定一个，
+     这样深色与浅色主题**各自生效**（浅色主题的 --accent 是更深的橙，对比度天然够）。 */
+  .rcell{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);
+    border-radius:4px;padding:6px 9px;font-variant-numeric:tabular-nums}
+  .rcell .rlbl{font-size:11px;color:var(--mut);font-family:var(--ff-europa);text-transform:uppercase;letter-spacing:.06em}
+  .rcell .rnum{font-weight:500;font-size:15px;line-height:1.2;word-break:break-all}
+  .rcell.k{grid-column:1/-1;flex-direction:row;align-items:baseline;justify-content:space-between;gap:10px}
+  .rcell.k .rnum{font-size:23px}
+  .r-dmg{color:var(--accent)}
+  .r-def{color:var(--def,#5b8db8)}
+  .r-crit{color:var(--warn)}
+  .r-rate{color:var(--fg)}
+  :root{--def:#5b8db8}
+  html[data-theme="light"]{--def:#2c6a96}
+  /* ── 命中伤害矩阵（4 种命中形态 × 4 种目标状态 = 16 格，口径同 BuildTool 的 Result.*） ── */
+  .hitgrid{margin-top:4px}
+  .hg{display:flex;flex-direction:column;gap:4px}
+  .hgr{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr));gap:4px;align-items:stretch}
+  .hgh{font-size:11px;color:var(--mut);text-align:right;line-height:1.25;font-family:var(--ff-europa);letter-spacing:.02em;padding:0 1px}
+  .hgrow{font-size:11px;color:var(--mut);display:flex;align-items:center}
+  .hgc{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1px;background:var(--card);border:1px solid var(--line);border-radius:3px;padding:4px 5px;font-size:11.5px;font-variant-numeric:tabular-nums;font-weight:500;line-height:1.2;overflow:hidden}
+  .hgn{font-size:11px;color:var(--mut);font-weight:400}
+  #r_warn{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+  .wnote{font-size:11.5px;color:var(--warn);border:1px solid var(--warn);border-radius:3px;padding:5px 8px;line-height:1.5}
+  .wnote.gray{color:var(--mut);border-color:var(--line)}
+  /* 页面顶部的开发状态提示（用户 2026-10-12 要求，双端都要看到）。
+     ⚠️ `main` 是 **grid**（PC 两栏 / 手机一栏）—— 不写 `grid-column:1/-1` 这条提示就只占左栏；
+     而 `build.pen.css` 把 row 1/2/3 显式钉死了，所以还要 `grid-row:1` 并让那三行整体后移一行
+     （跨栏项靠自动排布只会落到隐式第 4 行，PC 上实测 top=882 —— 掉到折叠线下面，等于看不见）。
+     描边**四边一致**：`impeccable detect` 把「单侧粗彩边」判成 `side-tab` 反模式
+     （AI 生成 UI 最典型的痕迹），已按建议去掉；`.wnote` 本来就是这个写法。
+     颜色**不单独承载含义**：文字本身把状态说清楚了，`--warn` 只用来圈出这是一个区块。
+     正文左对齐 —— 左对齐是本站版式契约。 */
+  .build-wip{grid-column:1/-1;grid-row:1;margin:0;padding:9px 12px;background:var(--card);
+    border:1px solid var(--warn);border-radius:3px;
+    color:var(--fg);font-size:12.5px;line-height:1.6;overflow-wrap:anywhere}
+  @media(max-width:1120px){.build-wip{font-size:12px;padding:8px 10px}}
+  .note{font-size:11px;color:var(--mut);line-height:1.6;margin:10px 0 0}
+  .rsub{font-size:12px;color:var(--mut);margin-bottom:4px}
+  .rsub b{color:var(--fg)}
+  /* 天赋描述里的数值：发亮但不加粗（红线③：数字 font-weight ≤ 500） */
+  .tal-params{display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:3px;font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums}
+  .tnum{font-style:normal;color:var(--accent);font-weight:500;font-variant-numeric:tabular-nums}
+  [data-theme=light] .tnum{color:var(--accent-2)}
+  /* 原型档：非奇特件渲官方原型紫 */
+  .gcard.proto,.wcard.proto{border-color:var(--rar-proto)}
+  .gc-bonus.proto{color:var(--rar-proto)}
+  /* 特工面板：生效加成一行一条，左名右值 */
+  .apnl{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+  .agent-fold{border-top:1px solid var(--line);padding-top:4px}
+  .agent-fold>summary{cursor:var(--cur-hover);color:var(--mut);font-family:var(--ff-europa);font-size:11px;letter-spacing:.04em}
+  .apnl .arow{display:flex;gap:8px;align-items:baseline;font-size:11.5px;line-height:1.5}
+  .apnl .ak{flex:0 0 auto;color:var(--mut);font-family:var(--ff-europa);letter-spacing:.02em}
+  .apnl .av{min-width:0;color:var(--fg);font-variant-numeric:tabular-nums}
+  .apnl .av.dim{color:var(--mut)}
+  /* 武器卡上的词条满值行（原型开关切了这里会跟着变） */
+  .wc-ax{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .wc-ax b{color:var(--fg);font-weight:500}
+
+/* ── 伤害曲线（build.charts.js 的内联 SVG）──────────────────────────────────── */
+/* 颜色一律走主题变量；数字守硬规则⑤（≤500 + tabular-nums），层次靠字号与颜色 */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+#ch_hits{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#ch_hits svg{min-width:560px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.chartbox{min-width:0}
+.charttl{font-size:11px;color:var(--tx2);margin-bottom:2px}
+.chart{width:100%;line-height:0}
+.chart svg{width:100%;height:auto;display:block}
+.chart svg .ax{stroke:var(--line);stroke-width:1}
+.chart{--tx2:var(--mut);--tx3:var(--gray)}
+.chart svg .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3;opacity:.5}
+.chart svg .tick{fill:var(--tx3);font-size:11px;font-weight:500;font-variant-numeric:tabular-nums}
+@media(max-width:700px){.chart svg .tick{font-size:13px}.hgr{grid-template-columns:44px repeat(4,minmax(58px,1fr));overflow-x:auto}}
+.chart svg .vt{font-size:11px}
+.chart svg .dmgline{fill:none;stroke:var(--accent);stroke-width:1.6}
+.chart svg .dpsline{fill:none;stroke:var(--tx3);stroke-width:1;stroke-dasharray:3 3}
+.chart svg .bar{opacity:.85}
+.chart svg .bar.b0{fill:var(--accent)}
+.chart svg .bar.b1{fill:#c9a227}
+.chart svg .bar.b2{fill:#5b8db8}
+.chart svg .bar.b3{fill:#8a6fb8}
+
+/* 天赋图标（官方帧）· 一键配装结果面 */
+.tic{width:22px;height:22px;object-fit:contain;border-radius:5px;flex:0 0 auto;background:rgba(255,255,255,.05)}
+.tic-s{width:16px;height:16px;border-radius:4px}
+.tic.ph{background:rgba(255,255,255,.07)}
+.optcons{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+/* 6 条硬条件：行内是 chip 墙（品牌 68 + 装备组 + 属性池），所以每行自己换行、行高比普通 .axrow 松一点 */
+.optreq{display:flex;flex-direction:column;gap:5px;margin:6px 0}
+.optreq .axrow{align-items:center}
+.optreq .axk{flex:0 0 56px;font-size:11px;color:var(--tx3)}
+.optreq .axchips{gap:3px}
+.optreq .minisel,.optreq .wsel{font-size:11px;padding:0 2px;background:transparent;color:var(--tx2);
+  border:1px solid var(--line);border-radius:3px;max-width:100%}
+.optreq .wsel{flex:1 1 130px;min-width:0}
+.optreq .swrow{font-size:11px;gap:4px}
+.orow{display:grid;grid-template-columns:56px 1fr auto auto;gap:6px;align-items:center;padding:3px 0}
+.orow .oslot{font-size:11px;color:var(--tx3)}
+.orow .onm{display:flex;align-items:center;gap:6px;font-size:12px;min-width:0}
+.orow .obn,.orow .obd{font-size:11px;color:var(--tx3)}
+.ohead{font-size:12px;margin:4px 0 2px;color:var(--tx2)}
+.onum{font-size:12px;margin-top:5px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.onum b{font-weight:500}
+.gclock{background:none;border:none;color:var(--tx3);cursor:var(--cur-hover);font-size:11px;padding:0 2px;line-height:1}
+.gclock.on{color:var(--accent)}
+
+  /* ── PvP 标注（用户第 268 轮：「我需要配装器加上 PVP 开关」）──────────────────────────────
+     只在**官方确实为该天赋写了 PvP 数值**时出现；数字本身是 .rnum 那套语义色，这里只做标签。 */
+  .pvpbadge{font-size:11px;line-height:1.4;padding:0 4px;border:1px solid var(--line);border-radius:2px;
+    color:var(--mut);font-family:var(--ff-europa);letter-spacing:.06em;text-transform:uppercase}
+  .pvpbadge.on{color:var(--warn);border-color:var(--warn)}
+  #bp_pvp_note{margin:2px 0 0}
+
+
+  /* ── 资料库卡片布局参考 · 配装器卡片内容区重构 ── */
+  .wc-name{font-weight:700;font-size:13.5px;line-height:1.35;padding:8px 12px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;z-index:1}
+  .wc-stats{display:flex;gap:8px;font-size:11.5px;color:var(--mut);font-family:var(--ff-europa);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;padding:0 12px;z-index:1}
+  .wc-stats b{color:var(--fg);font-weight:500}
+  .wc-affix{padding:6px 12px 0;z-index:1}
+  /* ⚠️ `.wc-mod` 不在这里再写一遍 padding：它的 2×2 网格在上面（「武器插槽区」那节）已经定稿，
+     这里重复声明会以同权重后来居上，把「左右各二」压回单列（用户第 303 轮又点名一次）。 */
+  .wc-talrow{margin:6px 12px 0;z-index:1}
+  .gc-name{font-weight:700;font-size:13px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gc-bonus{font-size:11.5px;color:var(--accent);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* ⚠️ `.gc-ft` / `.axblk` 的内边距同样只在上面写一次 —— 这里再写一遍只会把收紧的值撑回去。 */
+  .wcard .topbar,.gcard .topbar{order:-2}
+  .wc-hd,.gc-hd{order:-1}
+  .wc-mid,.gc-mid{order:0}
+  .wcard.empty .wc-mid{height:auto;min-height:90px;background:none;padding:8px}
+  .wcard.empty .wc-mid .wc-empty{font-size:28px;color:var(--mut)}
+  .wcard.empty .wc-stats{justify-content:center}
+  .gcard.empty .gc-mid{min-height:100px;height:100px}
+
+
+/* ── 手机配装台（≤640px）── */
+@media(max-width:640px){
+  main{padding:8px 8px 72px;gap:8px}
+  .col{gap:8px}
+  #col-desk>.loadout-weapons{order:1}
+  #col-desk>.loadout-gear{order:2}
+  #col-desk>.loadout-skills{order:3}
+  #col-desk>.build-summary{order:4;align-self:stretch}
+  #col-desk>.build-analysis{order:5}
+  #col-desk>#fold_tw{order:6}
+
+  .card{padding:10px}
+  .sec-lbl{margin-bottom:7px}
+
+  .wstrip{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .wcard{height:auto;min-height:0}
+  .wcard.empty{justify-content:space-between;min-height:92px}
+  .wcard.empty .wc-hd{justify-content:center;text-align:center}
+  .wcard.empty .wc-slotlbl{font-size:10px;letter-spacing:.06em}
+  .wcard.empty .wc-mid{height:90px;min-height:90px;justify-content:center}
+  .wcard.empty .wc-mid .wc-empty{font-size:20px}
+  .wcard.empty .wc-stats{justify-content:center!important;font-size:10px;white-space:normal;text-align:center}
+  .wcard.filled{grid-column:1/-1}
+  .wcard.filled .wc-mid{height:128px;min-height:0}
+  .wcard.filled .wc-mid img{max-width:88%;max-height:88%}
+
+  .wc-mod{grid-template-columns:1fr;gap:4px;padding-top:5px}
+  .wmod-row{width:100%;display:grid;grid-template-columns:16px auto minmax(0,1fr);grid-template-rows:auto auto;gap:1px 5px;align-items:center;padding:5px 6px;border-color:var(--line)}
+  .wmod-row .wmod-ic{grid-column:1;grid-row:1}
+  .wmod-row .wmod-k{grid-column:2;grid-row:1}
+  .wmod-row .wmod-a,.wmod-row .wmod-tag{grid-column:3;grid-row:1;justify-self:end;margin:0;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wmod-row .wmod-v{grid-column:2/4;grid-row:2;order:initial;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wmod-row.locked .wmod-v{grid-row:1;grid-column:3;text-align:right}
+
+  .ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .gcard{height:auto;min-height:112px}
+  .gcard.filled{grid-column:1/-1;min-height:0}
+  /* 窄屏仍走横向，但图区收窄到 92px（桌面那份在上面，已是默认） */
+  .gcard.filled .gc-main{grid-template-columns:92px minmax(0,1fr)}
+  .gcard.filled .gc-mid{min-height:0;height:100%;padding:6px}
+  .gcard.filled .gc-mid img{max-width:92%;max-height:92%}
+  .gcard.filled .gc-name{font-size:12.5px;white-space:normal;line-height:1.35}
+  .gcard.filled .axblk{margin-top:3px}
+  .gcard.filled .axselect select{font-size:11.5px;height:100%}
+  .gcard.filled .gc-ft{margin-top:4px;border-top:1px dashed var(--line);padding-top:5px}
+
+  .build-summary .rgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+  .build-summary .rcell,.build-summary .rcell.k{grid-column:span 3;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;padding:7px;background:var(--card);border:1px solid var(--line);border-radius:4px}
+  .build-summary .rcell.k{grid-column:span 2}
+  .build-summary .rcell .rlbl{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .build-summary .rcell .rnum,.build-summary .rcell.k .rnum{font-size:15px;line-height:1.25;word-break:normal;overflow-wrap:anywhere}
+
+  #dlgmask{padding:8px;align-items:stretch}
+  #dlg{width:100%;max-height:calc(100dvh - 16px);border-radius:6px}
+  .dlg-hd{gap:5px;padding:8px}
+  .dlg-title{flex:1;font-size:11.5px;letter-spacing:.05em}
+  .dlg-hd .sp{display:none}
+  .dlg-hd button{flex:0 0 auto;white-space:nowrap;padding:5px 7px;font-size:11px}
+  .dlg-bar{padding:7px 8px}
+  .dlg-bar input[type=search]{width:100%;min-width:0}
+  .dlg-list{padding:8px;gap:5px}
+  .dlg-grid.mgrid{grid-template-columns:1fr;gap:6px}
+  .mTile{min-height:62px;padding:8px}
+}
+
+
+/* ── 配装器卡面：与资料库 `.card .cz` 同一套标记 ────────────────────────────────
+   用户第 302 轮：「应该像资料库一样水印在左边 + 右边图像，底纹背景颜色一致，
+   而不是再加一个颜色」。三条对齐口径：
+     ① 水印（`.gc-wm` / `.wc-wm`）= 品牌 / 装备组标记，压在物图**下层**、**靠左**，
+        深色主题白剪影、浅色主题黑剪影 —— 与 `db.css` 的 `.card .cz .wm` 同一份声明；
+     ② 物图靠**右**（`justify-items:end`），让水印与物图各占一边、不互相压；
+     ③ 底纹只用 `--build-cz-plate`（已与 `--db-cz-plate` 同公式）+ 一层 `--rc` 径向 tint，
+        **不再给整卡叠第二层 `--rc` 底色**（那正是用户说的「再加一个颜色，太难看了」）。
+   ⚠️ 水印走 `mask` 而不是 `filter:brightness(0) invert(1)`：配装器的品牌图里有彩色件，
+      纯 filter 会把彩色洗成灰块；mask 取形状、颜色由 `background` 给，深浅主题各一档。 */
+.gc-mid,.wc-mid{justify-items:end}
+.gc-mid>img,.wc-mid>img{position:relative;z-index:1;justify-self:end}
+.gc-mid .sil,.wc-mid .sil{justify-self:center}
+/* 物图压在剪影上层、居中放大（参考图：剪影铺底，物件本身是主体） */
+.gcard.filled .gc-mid .ic{position:relative;z-index:1}
+.gc-wm,.wc-wm{position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:100%;height:88%;pointer-events:none;z-index:0;opacity:.16;
+  background:#fff;-webkit-mask:var(--wm) left center/contain no-repeat;mask:var(--wm) left center/contain no-repeat}
+[data-theme=light] .gc-wm,[data-theme=light] .wc-wm{background:#000;opacity:.09}
+@media (min-width:1200px){.gc-wm,.wc-wm{width:100%;height:90%}}
+/* 空格子不画水印（没有品牌可言），也不占位 */
+.gcard.empty .gc-wm,.wcard.empty .wc-wm{display:none}
+
+/* ── 词条三色（用户第 302 轮：「词条没有对应颜色」）──────────────────────────────
+   颜色**只用** `--rar-off/def/uti` 这三个既有令牌（与插件 `.modblk.red/blue/yellow`、
+   资料库 `.badge.pg-*` 同源），不新造颜色。每行左端一颗 3px 小圆点表示类别，
+   数值本身吃同一个色 —— 与 `db.css` 的 `.pblk h4::before` 同一种做法
+   （impeccable 把 >1px 的彩色 border-left 列为 refuse，所以用点不用侧边条）。 */
+.axrow{--axc:var(--mut);position:relative;padding-left:9px;min-height:0;line-height:1.5;padding-top:1px;padding-bottom:1px}
+.axrow::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:999px;
+  background:var(--axc);opacity:.95}
+.axrow.off{--axc:var(--rar-off)}
+.axrow.def{--axc:var(--rar-def)}
+.axrow.uti{--axc:var(--rar-uti)}
+.axrow.core{--axc:var(--accent)}
+.axrow.fixed{--axc:var(--bone)}
+.axrow .axchoice{font-size:11px;color:var(--fg);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto}
+.axrow .axvalue{flex:0 0 auto;font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--axc)}
+.axrow.empty .axchoice{color:var(--mut)}
+.axrow.empty .axvalue{color:var(--mut)}
+.axrow .axk{color:var(--mut)}
+/* 下拉盖在整行上（保持原来的点击热区），但不再自己画一遍边框颜色 —— 颜色统一由圆点 + 数值表达 */
+.axselect{position:relative}
+.axselect select{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;border:0;opacity:0;cursor:var(--cur-hover);z-index:2}
+.axselect:hover{background:var(--hover);border-radius:3px}
+.axselect:focus-within{outline:1px solid color-mix(in srgb,var(--axc) 70%,var(--line));outline-offset:1px;border-radius:3px}
+
+/* Compact loadout cards: actions are the card itself; talents stay beside names. */
+.wc-titleline,.gc-titleline{display:flex;align-items:center;gap:6px;min-width:0;padding-right:8px}
+.wc-titleline .wc-name,.gc-titleline .gc-name{flex:1 1 auto;min-width:0}
+.wc-titleline .wc-talrow{flex:0 1 auto;max-width:48%;margin:7px 0 0;padding:1px 5px;gap:4px}
+.wc-titleline .wc-tal-lbl{display:none}
+.wc-titleline .tic{width:14px;height:14px}
+.gc-titleline .taltx{flex:0 1 auto;max-width:48%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;padding:1px 5px}
+.gc-titleline .tal-state{display:none}
+.gc-bonus{display:flex;gap:0}
+.gcard .axblk{gap:1px;padding-top:4px}
+.gcard .axrow,.wax-row{font-size:11px;line-height:1.35}
+.gcard .axrow .axvalue{font-size:11px}
+.wax-row.random select{width:100%}
+.gc-wm{width:67%;height:59%}
+@media (min-width:1200px){.gc-wm{width:67%;height:60%}}
+@media(max-width:640px){
+  .wcard.filled .wc-mid{padding:4px 6px;height:116px}
+  .wcard.filled .wc-mid img{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;object-fit:contain}
+  .wc-titleline,.gc-titleline{gap:4px;padding-right:5px}
+  .wc-titleline .wc-talrow,.gc-titleline .taltx{max-width:46%;font-size:10.5px}
+}
+
+/* Talent icon and compact typography use the same card scale. */
+.gc-titleline .taltx{display:inline-flex;align-items:center;gap:4px;color:var(--violet);border:1px solid transparent;border-radius:5px;cursor:var(--cur-hover);pointer-events:auto}
+.gc-titleline .taltx:hover,.gc-titleline .taltx:focus-visible{border-color:var(--violet)}
+.gc-titleline .taltx.empty{color:var(--mut);border-style:dashed;border-color:currentColor}
+.gc-titleline .taltx.na{opacity:.62}
+.gc-titleline .taltx .tic{width:14px;height:14px;flex:0 0 auto;object-fit:contain}
+.gc-titleline .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gcard .axrow .axk,.gcard .axrow .axchoice,.gcard .axrow .axvalue,.gcard .gc-bonus,.wcard .wax-row,.wcard .wax-row select{font-size:11px;line-height:1.35}

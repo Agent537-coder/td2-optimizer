@@ -1,0 +1,24 @@
+{
+ "weapon_type": {
+  "突击步枪": "wt_ar.png",
+  "冲锋枪": "wt_smg.png",
+  "霰弹枪": "wt_shotgun.png",
+  "手枪": "wt_pistol.png",
+  "神射手步枪": "wt_marksman.png",
+  "轻机枪": "wt_lmg.png",
+  "狙击步枪": "wt_sniper.png"
+ },
+ "gear_slot": {
+  "面具": "gs_mask.png",
+  "背包": "gs_backpack.png",
+  "胸甲": "gs_chest.png",
+  "手套": "gs_gloves.png",
+  "护膝": "gs_knees.png"
+ },
+ "gear_talent": {
+  "进攻": "gtal_off.png",
+  "防御": "gtal_def.png",
+  "通用": "gtal_tac.png",
+  "支撑": "gtal_sup.png"
+ }
+}

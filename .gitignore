@@ -1,0 +1,12 @@
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+*.br
+*.env
+.env.*
+!.env.example
+work/
+playwright-report/
+test-results/

@@ -1,0 +1,48 @@
+.build-share-menu{position:relative}
+body[data-hub-page=build]>header:has(.build-share-menu[open]){z-index:80}
+body[data-hub-page=build]>header .build-share-menu button{min-height:44px;padding:10px 12px}
+.build-share-menu>summary{list-style:none;cursor:var(--cur-hover);display:flex;align-items:center;min-height:44px}
+.build-share-menu>summary::-webkit-details-marker{display:none}
+.build-share-menu>div{position:absolute;z-index:40;right:0;top:calc(100% + 6px);width:200px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px}
+.build-share-menu button{display:block;width:100%;text-align:left;min-height:44px;background:transparent;border:0;color:var(--fg);border-radius:4px;padding:10px 12px;font:inherit;cursor:var(--cur-hover)}
+.build-share-menu button:hover{background:var(--bg)}
+.build-share-menu button:disabled{opacity:.5;cursor:wait}
+.build-share-menu summary:focus-visible,.build-share-menu button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#build-share-status{grid-column:1 / -1;font-size:14px;line-height:1.5;color:var(--mut);margin:0 0 12px}
+#build-share-status:empty{display:none}
+#build-share-status textarea{width:100%;min-height:88px;font:inherit;overflow-wrap:anywhere}
+.build-shared-preview{grid-column:1 / -1;display:flex;align-items:center;gap:20px;justify-content:space-between;padding:18px;background:var(--card);border:1px solid var(--line);border-radius:6px}
+.build-shared-preview p{margin:6px 0 0;font-size:14px;line-height:1.6;color:var(--mut);overflow-wrap:anywhere}
+.build-shared-preview button{flex-shrink:0;min-height:44px}
+.build-share-render{position:fixed;top:0;left:-12000px;pointer-events:none}
+.build-share-sheet{width:960px;background:var(--bg);color:var(--fg);padding:28px 32px;font-family:var(--ff-body,'Microsoft YaHei',sans-serif);box-sizing:border-box}
+.build-share-body{display:grid;gap:12px;margin-top:10px}
+body[data-hub-page=build] .build-share-sheet #wstrip{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-hub-page=build] .build-share-sheet #skstrip{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-hub-page=build] .build-share-sheet #ggrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.build-share-sheet header{position:static;display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding:0 0 12px;background:none}
+.build-share-sheet header::after{display:none}
+.build-share-sheet header>strong{flex:none;white-space:nowrap;color:var(--accent);font-size:22px;letter-spacing:.03em}
+.build-share-sheet header span{font-size:16px;color:var(--mut)}
+.build-share-sheet .share-head-mid{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:center;gap:10px}
+.build-share-sheet .share-name{font-size:18px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.build-share-sheet .share-cond{font-size:12px;color:var(--mut);white-space:nowrap}
+.build-share-sheet h1{margin:16px 0 4px;font-size:26px;line-height:1.2}
+.build-share-sheet h2{margin:26px 0 12px;font-size:20px}
+.build-share-sheet footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;line-height:1.65;color:var(--mut)}
+@media(max-width:640px){.build-shared-preview{align-items:stretch;flex-direction:column;gap:12px}.build-share-menu>div{width:190px}}
+.build-account-dialog{width:min(560px,calc(100% - 32px));max-height:85dvh;overflow:auto;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--panel);color:var(--fg)}
+.build-account-dialog::backdrop{background:#0008}
+.build-account-dialog>header{position:static;display:flex;align-items:center;justify-content:space-between;padding:0 0 16px;gap:12px;background:none}
+.build-account-dialog h2{margin:0;font-size:20px;letter-spacing:0}
+.build-account-dialog :is(button,summary){min-height:44px;min-width:44px;font:inherit;cursor:var(--cur-hover);padding:8px 12px}
+.build-account-dialog form{display:grid;gap:12px}
+.build-account-dialog label{display:grid;gap:8px;font-size:14px}
+.build-account-dialog input{box-sizing:border-box;width:100%;min-height:44px;font-size:16px;padding:10px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px}
+.build-account-dialog p{font-size:14px;line-height:1.6;color:var(--mut);margin:0}
+.build-account-dialog section{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;border-top:1px solid var(--line);padding:16px 0}
+.build-account-dialog section>strong{overflow-wrap:anywhere;font-size:16px}
+.build-account-dialog section>time{grid-column:1/-1;color:var(--mut);font-size:13px}
+.build-account-dialog section>details{grid-column:1/-1}
+.build-account-dialog section>button{justify-self:start}
+.build-record-preview{display:grid;gap:12px;padding:8px 0}

@@ -1,0 +1,370 @@
+/* Approved Pen mLXAp / qSebX: grid, density and current-item editor. */
+/* ⚠️ 行号从 2 起（2026-10-12）：`#build-wip` 那条开发状态提示要占**第 1 行整宽**，
+   而 grid 的自动排布给不了它 —— 跨栏项必须等两栏都空出来，会被挤到隐式第 4 行（实测 top=882，
+   在 900 高的视口里正好掉到折叠线下面、PC 上完全看不见）。所以把原 1/2/3 统一后移一行，
+   并在 `grid-template-rows` 里显式留出 4 行。手机端 `main{display:block}`，行号不起作用。 */
+body[data-hub-page=build] main{max-width:1440px;padding:24px 96px 60px;grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto auto auto auto;gap:14px 24px}
+body[data-hub-page=build] #build-toolbar{grid-column:1;grid-row:2;padding:0;background:none;border:0;box-shadow:none;position:relative}
+#build-toolbar .hd{display:flex;align-items:center;gap:12px;min-height:44px;padding:0}
+#build-toolbar h1{flex:1;min-width:0;margin:0;font:600 26px/1.35 var(--ff-body)}
+#build-toolbar::after,.build-editor-head::after{display:none}
+#build-toolbar .actions{display:flex;align-items:center;gap:12px;margin:0}
+#build-toolbar :is(button,summary){display:flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;border:0;background:transparent;padding:8px 12px;font:500 14px/1.4 var(--ff-body);border-radius:8px;color:var(--fg);box-sizing:border-box}
+#build-toolbar #build-save{background:var(--accent);color:var(--accent-ink);padding-inline:24px}
+#build-toolbar #build-save svg{display:none}
+#build-toolbar #build-more-menu>summary .build-tool-text{display:none}
+#build-toolbar #build-more-menu{position:absolute;right:0;top:100%;z-index:35}
+#build-toolbar :is(#lang,#theme){display:none}
+#build-toolbar .build-share-menu>div{top:calc(100% + 6px);z-index:60;box-shadow:var(--shadow-menu)}
+#build-toolbar .build-share-menu>div button{justify-content:flex-start;width:100%;white-space:normal;text-align:left}
+body[data-hub-page=build] #build-quick{grid-column:1;grid-row:3;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;z-index:40;padding:0 0 12px;border-bottom:1px solid var(--line)}
+body[data-hub-page=build] #build-quick>.build-quick-control{margin:0;border:0;background:var(--card);min-height:44px;padding:0;border-radius:6px;font:13px/1.4 var(--ff-body);color:var(--fg);min-width:0;position:relative}
+body[data-hub-page=build] #build-quick>label.build-quick-control{padding:0 12px}
+#build-quick>label.build-quick-control,#build-quick>button.build-quick-control{display:flex;align-items:center;gap:8px;padding:0 12px}
+#build-quick .build-quick-control>span,#build-spec-menu summary>span{color:var(--mut);flex:0 1 auto;min-width:0}
+html body[data-hub-page=build] #build-quick .build-quick-control select{flex:1;width:0;min-width:0;height:44px;padding:0 4px!important;border:0;background:transparent;box-shadow:none;font:500 13px/1.4 var(--ff-body);color:var(--fg);white-space:nowrap}
+#build-quick .build-quick-control.on{background:var(--accent-soft)}
+#build-quick .build-quick-control.on select{color:var(--accent)}
+body[data-hub-page=build] #build-quick #build-spec-menu>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:0;box-sizing:border-box;list-style:none}
+#build-spec-menu>summary::-webkit-details-marker{display:none}
+#build-spec-menu summary b,#build-condition-open b{font-weight:500;min-width:0;flex:1;overflow-wrap:anywhere}
+/* 「战斗条件」那颗是 `<button>`（不是包 select 的 label）：上面第 21 行那条 `padding:0` 的特异性压过第 23 行，
+   结果文字贴左边缘、箭头贴右边缘（实测 scrollWidth 205 > clientWidth 203）⇒ 看着像箭头"出去了"。 */
+body[data-hub-page=build] #build-quick>button.build-quick-control{padding:0 12px}
+#build-spec-menu summary::after,#build-condition-open::after{content:'';width:6px;height:6px;border-right:1.5px solid var(--mut);border-bottom:1.5px solid var(--mut);transform:rotate(45deg);flex:none}
+#build-spec-menu .build-spec-popover{position:absolute;right:0;top:calc(100% + 8px);width:480px;max-width:calc(100vw - 32px);padding:16px;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow-popover);z-index:70}
+#build-spec-menu #build-spec-direct{margin:0;padding:0;border:0;background:none}
+#build-spec-menu .build-spec-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+#build-spec-menu .build-spec-options button{min-height:44px;font-size:13px}
+#build-spec-menu .build-spec-actions button{min-height:44px}
+#build-spec-menu .build-spec-options button span{overflow-wrap:anywhere}
+/* 右侧栏 = 配装结果 + 一键配装（Pen `ZrW9H`／`PA35I` 的紧凑结果侧栏）。
+   原来这里是 `main>#col-res{display:none}`：一键配装整块只能从「查看条件」弹窗进，
+   关掉弹窗连结果都看不见 ⇒ 用户报的「应用不了」。现在它在页面上直接可见、可点。 */
+body[data-hub-page=build] #build-rail{grid-column:2;grid-row:4;align-self:start;display:flex;flex-direction:column;gap:12px;min-width:0}
+body[data-hub-page=build] #build-rail .build-summary{margin:0;padding:16px;border-radius:10px}
+body[data-hub-page=build] #build-rail #col-res{display:flex;flex-direction:column;gap:12px;padding:0;position:static;max-height:none;overflow:visible;align-self:stretch;width:auto;min-width:0}
+/* 结果栏：三格主指标整宽（大数字），其余按两列摊开 —— 360px 宽里 30 项只占 ~15 行，
+   右侧栏不再是一屏空白加一个编辑器。 */
+body[data-hub-page=build] #build-rail .build-summary #r_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+body[data-hub-page=build] #build-rail .build-summary .rcell,
+body[data-hub-page=build] #build-rail .build-summary .rcell.k{grid-column:auto;display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;padding:5px 0;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0}
+body[data-hub-page=build] #build-rail .build-summary .rcell.k{grid-column:1/-1}
+body[data-hub-page=build] #build-rail .build-summary .rcell .rlbl{font-size:12px;white-space:normal;overflow:visible;text-overflow:clip;max-width:none}
+body[data-hub-page=build] #build-rail .build-summary .rcell .rnum{font-size:14px;line-height:1.3;word-break:normal}
+body[data-hub-page=build] #build-rail .build-summary .rcell.k .rnum{font-size:21px}
+body[data-hub-page=build] #build-rail .build-summary .result-scope{padding:8px 0 2px}
+body[data-hub-page=build] #col-desk{grid-column:1;grid-row:4;gap:16px;display:flex!important;flex-direction:column!important}
+body[data-hub-page=build] .loadout-weapons>.sec-lbl{display:none}
+body[data-hub-page=build] #col-desk>.loadout-weapons{margin:0;padding:0!important}
+body[data-hub-page=build] .sec-lbl{margin:0 0 8px;font:600 16px/1.4 var(--ff-body);color:var(--fg);border:0}
+body[data-hub-page=build] .sec-lbl::after{display:none}
+body[data-hub-page=build] .wcard{border:0;border-radius:8px;background:var(--card)}
+body[data-hub-page=build] .wcard.filled{border:0}
+body[data-hub-page=build] #wstrip{gap:12px}
+body[data-hub-page=build] #wstrip .wcard.filled .wc-body{grid-template-columns:44px minmax(0,1fr) 88px;grid-template-rows:minmax(44px,auto) auto auto 1fr;gap:2px 6px;padding:8px 12px;min-height:248px;height:100%;box-sizing:border-box;align-content:start}
+body[data-hub-page=build] .wcard.filled .wc-mid{height:44px}
+body[data-hub-page=build] .wcard.filled .wc-mid img.ic{height:34px!important}
+body[data-hub-page=build] .wcard.filled .wc-ti{display:none}
+body[data-hub-page=build] .wcard.filled .wc-affix{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:minmax(20px,auto);align-content:start;min-height:60px;gap:0}
+body[data-hub-page=build] .wcard.filled .wax-row{border:0;min-height:20px;padding:0;gap:5px}
+body[data-hub-page=build] .wcard.filled .wax-row>b{color:var(--rar-off)}
+body[data-hub-page=build] .wcard.filled .wax-row.random{position:relative;display:flex;min-height:20px;padding:0}
+body[data-hub-page=build] .wcard.filled .wax-row.random .wax-choice{display:flex;align-items:center;gap:5px;width:100%;padding-right:8px;min-height:20px;min-width:0}
+body[data-hub-page=build] .wax-choice span{flex:1;min-width:0;overflow-wrap:anywhere}
+body[data-hub-page=build] .wax-choice b{color:var(--rar-off);font-weight:400;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wax-row.random select{position:absolute;inset:0;width:100%;height:100%;min-height:24px;opacity:0;cursor:pointer;padding:0}
+body[data-hub-page=build] .wax-row.random:focus-within{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+body[data-hub-page=build] .wcard.filled .wc-effects{display:flex;gap:4px;border-top:1px solid var(--line);min-height:28px;align-items:center}
+body[data-hub-page=build] .wcard.filled .wc-effects:has(.prototype-augment){display:flex}
+body[data-hub-page=build] .wcard.filled .wc-talrow{flex:1;min-height:28px;border:0;padding:0;background:transparent;font-size:12px;min-width:0}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment{flex:1;min-height:28px;padding:0;border:0;grid-template-columns:14px minmax(0,1fr) 30px;min-width:0}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select{width:30px;min-width:30px;min-height:28px;font-size:11px;padding:0;border:0;background:none}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment select[data-act=waugment]{min-height:28px;height:28px;min-width:0}
+body[data-hub-page=build] .wcard.filled .wc-mod{padding:0;border:0;gap:2px 6px;margin:0;align-self:stretch;align-content:start}
+body[data-hub-page=build] .wcard.filled .wmod-row{background:var(--bg);border:0;border-radius:4px;min-height:44px;padding:4px 6px}
+body[data-hub-page=build] .wcard.filled .wmod-row.unavailable{background:color-mix(in srgb,var(--bg) 70%,var(--card));border:0}
+/* 武器槽位徽章：官方原生书签图形，贴在卡片左上角；未选中=1/2/3，计算中=✓，点它切换。
+   颜色随主题切换官方 light/dark 两张（不在 CSS 里染死色）。 */
+body[data-hub-page=build] .wcard.filled .wc-titleline{display:block;min-width:0}
+body[data-hub-page=build] .wcard.filled .wc-slotlbl{position:absolute;left:0;top:0;z-index:2;display:flex;align-items:center;justify-content:center;width:20px;height:28px;padding:0;border:0;background:transparent;cursor:pointer}
+body[data-hub-page=build] .wcard.filled .wc-slotlbl:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:0 0 4px 0}
+body[data-hub-page=build] .wcard.filled .wc-tools{width:28px}
+body[data-hub-page=build] .wcard.filled .wc-tools .wc-remove{width:28px;min-width:28px;height:28px;min-height:28px}
+@media(max-width:760px){
+ body[data-hub-page=build] .wcard.filled .wc-slotlbl{top:8px}
+}
+body[data-hub-page=build] .wc-slot-badge{display:block;width:14px;height:28px;object-fit:contain}
+body[data-hub-page=build] .wc-slot-badge.dark{display:none}
+html[data-theme=dark] body[data-hub-page=build] .wc-slot-badge{display:none}
+html[data-theme=dark] body[data-hub-page=build] .wc-slot-badge.dark{display:block}
+/* 武器卡（桌面）：只压两处 —— 图像放大到 84×56；配件区 2×2 单行（图标 + 数值），
+   卡片不再按同排最高那张拉伸（副武器短名不再留空）。抬头、名称、✓/✗ 保持原位。 */
+@media(min-width:761px){
+ body[data-hub-page=build] #wstrip{align-items:stretch}
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-body{grid-template-columns:84px minmax(0,1fr) 28px;grid-template-rows:28px 1fr auto auto;min-height:0;height:auto;gap:6px 8px;padding:0 10px 10px;align-items:start}
+ body[data-hub-page=build] .wcard.filled .wc-mid,body[data-hub-page=build] .wcard.filled .wc-affix{align-self:center}
+ body[data-hub-page=build] .wcard.filled .wc-titleline{grid-area:1/1/2/3;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;height:28px;padding-left:22px;min-height:0}
+ body[data-hub-page=build] .wcard.filled .wc-tools{grid-area:1/3;align-self:start;justify-self:end;height:28px}
+ body[data-hub-page=build] .wcard.filled .wc-mid{grid-area:2/1;width:84px;height:56px}
+ body[data-hub-page=build] .wcard.filled .wc-mid img.ic{height:52px!important;max-height:52px!important;width:auto!important}
+ body[data-hub-page=build] .wcard.filled .wc-affix{grid-area:2/2/3/4;align-self:start;padding-top:0}
+ body[data-hub-page=build] .wcard.filled .wc-effects{grid-area:3/1/4/-1}
+ body[data-hub-page=build] .wcard.filled .wc-mod{grid-area:4/1/5/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding-top:6px}
+ body[data-hub-page=build] .wcard.filled .wmod-row{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;min-height:32px;padding:4px 6px}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-v{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 40px;column-gap:6px;margin-left:0}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-an{text-align:right;justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a b{justify-self:start;text-align:left}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-k{display:none}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-ic{width:16px;height:16px;flex:none}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a{font-size:12px;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a .wmod-an{color:var(--fg)}
+ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a b{font-weight:400;color:var(--rar-off);font-variant-numeric:tabular-nums}
+ body[data-hub-page=build] .wcard.filled .wmod-row:not(.on) .wmod-a{display:none}
+}
+body[data-hub-page=build] #ggrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 12px;grid-auto-rows:auto;align-items:stretch}
+body[data-hub-page=build] #ggrid .build-gear-card{display:grid;grid-template-areas:'head' 'main' 'footer';grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(28px,auto) 1fr auto;grid-row:auto;margin:0;padding:8px 12px 0;border:0;border-left:3px solid var(--rc,var(--line));border-radius:8px;background:var(--card);min-height:0;gap:0}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{min-height:28px;display:grid;grid-template-columns:minmax(0,1fr) 30px;align-items:start;padding:0;gap:4px}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl{min-width:0;flex:1;color:var(--rc);font:500 13px/1.45 var(--ff-body);align-items:flex-start;gap:5px;white-space:normal;overflow:visible}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl>span{min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-wm{width:30px;height:28px;max-width:30px;flex:0 0 30px;opacity:.65;margin-left:auto}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-main{grid-area:main;display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-areas:none;grid-template-rows:auto;gap:8px;align-items:center;min-height:88px}
+body[data-hub-page=build] #ggrid .build-gear-card :is(.gc-mid,.gc-info){grid-area:auto}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-info{display:block;min-width:0;padding:0}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-mid{width:52px;height:84px;min-height:0;padding:0!important;display:flex;align-items:center;justify-content:center;align-self:center}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-mid img.ic{width:52px!important;height:75px!important;max-height:75px!important}
+.build-gear-summary{display:grid;gap:4px;min-width:0}
+.build-gear-attr{display:flex;align-items:center;gap:4px;min-height:22px;font:12px/1.4 var(--ff-body)}
+.build-gear-attr>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.build-gear-attr>b{font-weight:400;color:var(--rar-off);white-space:nowrap}
+.build-gear-attr[data-fam=def]>b{color:var(--rar-def)}
+.build-gear-attr[data-fam=uti]>b{color:var(--rar-uti)}
+.build-gear-attr{--axc:var(--rar-off)}
+.build-gear-attr[data-fam=def]{--axc:var(--rar-def)}
+.build-gear-attr[data-fam=uti]{--axc:var(--rar-uti)}
+/* 脚行与卡片同栅格：**天赋在左**（占图形列），**插件在右**（与上方词条同一左边缘）。
+   卡片列宽/列间距与 `build.layout.css` 的 gcard 栅格一致（108px + 14px），改一处要同步另一处。 */
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{display:grid;grid-template-columns:108px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:center;align-self:stretch;min-height:0;padding:0;border-top:1px solid var(--line);margin-top:8px}
+/* 有原型天赋时：第一行「原型天赋 + 选择插件」，第二行天赋占满整行；
+   没有原型天赋时天赋仍在第一行。 */
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{grid-column:1;grid-row:1;justify-self:start;min-height:28px;padding:0;gap:6px}
+body[data-hub-page=build] .wcard.filled .wax-row b{font-weight:600}
+/* 长词条名不换行：标签省略，数值固定在最右，行高不被撑开。 */
+body[data-hub-page=build] .wcard.filled .wax-row>span{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body[data-hub-page=build] .wcard.filled .wc-talrow{flex-wrap:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wmod-tag{flex:none;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-state{margin-left:auto;flex:none;color:var(--mut);font-size:11.5px;line-height:1.3;white-space:nowrap}
+/* 固定天赋只读弹窗 */
+.talinfo{display:flex;gap:10px;padding:14px 12px;align-items:flex-start}
+.talinfo .tic{width:28px;height:28px;flex:none}
+.talinfo-body{min-width:0}
+.talinfo-nm{font-weight:600;font-size:14px;margin-bottom:6px}
+.talinfo-body p{margin:0;font-size:13px;line-height:1.7;color:var(--fg)}
+body[data-hub-page=build] .wcard.filled .wax-row>b{flex:none;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wax-row .wax-choice{min-width:0}
+body[data-hub-page=build] .wcard.filled .wax-row .wax-choice>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body[data-hub-page=build] .wcard.filled .wax-row .wax-choice>b{flex:none;white-space:nowrap}
+body[data-hub-page=build] .build-gear-attr>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body[data-hub-page=build] .build-gear-attr>b{flex:none;white-space:nowrap}
+body[data-hub-page=build] .build-gear-attr>b{font-weight:600}
+body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a b{font-weight:600}
+body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a{font-weight:600}
+body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a .wmod-an{font-weight:500}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype small{font-weight:600}
+body[data-hub-page=build] .wcard.filled .wmod-row.locked .wmod-v{display:inline;color:var(--mut);font-size:11.5px;margin-left:auto;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wmod-row.fixed .wmod-a,body[data-hub-page=build] .wcard.filled .wmod-row.on .wmod-a{display:inline;margin-left:auto}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1/-1;grid-row:2;min-width:0;width:100%;border:0;background:none;padding:0;height:auto;min-height:32px;display:flex;gap:4px;align-items:center;overflow:hidden}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:not(:has(.build-gear-prototype)) .taltx{grid-column:1;grid-row:1}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{grid-column:2;grid-row:1;width:100%!important;min-width:0;height:32px;min-height:32px;padding:0 0 0 17px;overflow:hidden;display:flex;align-items:center;gap:6px}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-value{flex:none;font-weight:600}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:600px){
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;row-gap:2px}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1;grid-row:1}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{grid-column:1;grid-row:2}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{grid-column:1;grid-row:3}
+}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-state{display:none}
+body[data-hub-page=build] #ggrid .build-gear-card .taltx::before{display:none}
+.build-gear-prototype{display:flex;align-items:center;gap:4px;min-width:0;min-height:44px;border:0;padding:0;background:transparent;font:12px/1.4 var(--ff-body)}
+.build-gear-prototype>span{min-width:0;overflow-wrap:anywhere}.build-gear-prototype small{font-size:10px;color:var(--mut);white-space:nowrap}
+.build-gear-empty{display:block;text-align:center;font-size:13px;color:var(--mut)}
+body[data-hub-page=build] #ggrid .build-gear-card.editing{box-shadow:inset 0 0 0 1px var(--accent)}
+body[data-hub-page=build] #ggrid .build-gear-card .build-gear-mod-source[hidden]{display:none}
+/* `#dlgmask` 改成 `<dialog>`（为了进 top layer，见 dashboard_build.html 注释）后，
+   先抹掉 UA 自带的居中/边框/内底色，其余定位仍由 `build.css` 那套 `#dlgmask` 规则给。 */
+dialog#dlgmask{position:fixed;inset:0;margin:0;width:auto;height:auto;max-width:none;max-height:none;border:0;color:var(--fg);overflow:auto;box-sizing:border-box}
+dialog#dlgmask::backdrop{background:transparent}
+/* 抽屉里的插件行：原来只有 26px 高，低于本页 44px 触控底线（真机实测）。 */
+body[data-hub-page=build] #build-item-editor .build-editor-mod .modblk{min-height:44px;padding:6px 8px}
+/* 词条编辑 = 抽屉内容（`#build-item-dialog` 里），不再常驻右侧栏当第二块面板。 */
+#build-item-editor{min-width:0;display:flex;flex-direction:column;box-sizing:border-box}
+.build-editor-head{background:none;padding:0;border:0;box-shadow:none;position:static;min-height:0}
+.build-editor-head h2{display:flex;align-items:center;gap:12px;margin:0;color:var(--fg);font:600 22px/1.45 var(--ff-body)}
+.build-editor-head h2 .gc-slot-icon{width:30px;height:30px}
+.build-editor-head h2>span{overflow-wrap:anywhere;min-width:0}
+.build-editor-kind{color:var(--rar-exotic);font-size:14px;line-height:1.5;margin:14px 0}
+.build-editor-change{min-height:44px;font:13px var(--ff-body);border:0;background:transparent;color:var(--accent);padding:0;text-align:left}
+.build-editor-fields h3,.build-editor-mod h3{margin:20px 0 8px;font:600 16px/1.45 var(--ff-body)}
+.build-editor-field{display:grid;grid-template-columns:100px minmax(0,1fr);gap:16px;align-items:center;margin:0 0 16px}
+.build-editor-field>span{font:14px/1.5 var(--ff-body);color:var(--mut)}
+body[data-hub-page=build] #build-item-editor .build-editor-input{margin:0;padding:8px 12px;background:var(--bg);border:0;border-radius:6px;min-height:44px;display:flex;gap:6px;box-sizing:border-box;position:relative;min-width:0}
+#build-item-editor .build-editor-input .axk{display:none}
+#build-item-editor .build-editor-input :is(.axchoice,.axk){flex:1;min-width:0;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+#build-item-editor .build-editor-input .axvalue{font-size:14px;white-space:nowrap}
+body[data-hub-page=build] #build-item-editor .build-editor-input.fixed .axk{display:block}
+#build-item-editor .build-editor-input select:not(.prototype-level-select){position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+/* 抽屉里的原型增幅行：`.axselect select`（`build.css:694`）把原生 select 铺成
+   `position:absolute;inset:0;z-index:2` 的隐形整行覆盖层 —— 只有一条下拉的词条行里那是故意的
+   （点整行=开下拉），但这一行有**两条**下拉：等级那条会盖在增幅那条上面，而它在「还没选增幅」时
+   是 disabled ⇒ 点击全落在那个禁用元素上，整行谁都点不动，增幅也就永远选不出来
+   （2026-10-14 用户报「原型天赋无法点击」，`elementFromPoint` 实测命中的是 `.prototype-level-select`）。
+   ⚠️ 整段必须带 `body[data-hub-page=build]` 前缀：上面那条 `.build-editor-input` 基础规则就是这个
+   特异性，单写 `#build-item-editor …` 打不过它 —— 实测 `display:grid` 会被它的 `display:flex` 盖掉，
+   于是这里顺着 flex 排：图标 | 增幅（吃掉剩余宽）| 等级（定宽），效果说明换一行。 */
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment{flex-wrap:wrap}
+/* ⚠️ 这两条 select 带着 `.axselect` 的类，而 `hub.experience.css:654` 那条统一样式**特意排除了
+   `.axselect select`**（因为该族原本是"隐形 select 铺满整行"）。于是它们退回原生 `appearance:auto`：
+   原生自己画一圈框 + 一个箭头，套进行本身的圆角框里 ⇒ 站长看到的「两层嵌套」。同时
+   `hub.experience.css:474` 的 `.axselect:after` 还在行右缘画**第三个**灰箭头。
+   修法：把 654 那套统一样式显式还给这两条（箭头 data-URI 与 654 逐字符相同，别各画一套），
+   并关掉行级 ::after。 */
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select{position:static;inset:auto;min-width:0;height:44px;min-height:44px;opacity:1;z-index:auto;background-color:transparent;border:0;font-size:14px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%239b9790' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:16px;padding:0 28px 0 8px;text-overflow:ellipsis}
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment::after{display:none;content:none}
+/* 行级 focus 环（下一条 :focus-within）已经够表达焦点，select 自己那圈压掉，避免双环。 */
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select:focus-visible{outline:none}
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select[data-act=gaugment]{flex:1 1 0;min-width:0}
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select.prototype-level-select{flex:0 0 auto;width:64px}
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select:disabled{color:var(--mut);cursor:not-allowed}
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment .axchoice{display:none}
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment .prototype-effect{flex:1 0 100%;color:var(--mut);font-size:13px;line-height:1.4}
+#build-item-editor .build-editor-input:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.build-editor-talent h3{display:flex;align-items:center;gap:12px;margin:28px 0 20px;font:600 16px/1.45 var(--ff-body)}
+/* 抽屉里的天赋选择器：原生 select 直接可见（本页其它词条行用的是"隐形 select 铺满整行"，那一套在这里会让
+   当前值和候选重复一遍）。
+   ⚠️ 选择器必须带 `#build-item-editor`：`hub.experience.css:647` 那条
+   `html body[data-hub-page] select:not([multiple]):not([size]):not(.axselect select)`
+   把 `min-height:40px` 与 `padding:8px 12px!important` 铺给全站所有 select，
+   单写 `.build-editor-gtal` 打不过它 ⇒ 本页 44px 触控底线会静默掉到 40px。
+   padding 不跟它抢（用 !important 才能赢，不值当），只抬高度。 */
+body[data-hub-page=build] #build-item-editor select.build-editor-gtal{display:block;width:100%;min-height:44px;margin:0 0 10px;background:var(--bg);border:0;border-radius:6px;color:var(--fg);font:14px/1.4 var(--ff-body);box-sizing:border-box}
+.build-editor-gtal:disabled{color:var(--mut)}
+.build-editor-talent .tic{width:20px;height:20px}
+.build-editor-talent p{white-space:pre-line;color:var(--mut);font:14px/1.65 var(--ff-body);margin:0 0 24px}
+.build-editor-actions{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:auto;padding-top:24px}
+.build-editor-actions button{min-height:48px;border:0;border-radius:8px;background:var(--bg);font:500 15px/1.4 var(--ff-body)}
+.build-editor-actions [data-build-edit-apply]{background:var(--accent);color:var(--accent-ink)}
+/* 抽屉脏提示条（2026-10-15）：dialog 本体 `overflow:auto` 且 editor `min-height:100%`，
+   提示若跟着内容滚走等于没提示 ⇒ 常驻 dialog 顶部 sticky。live region 在 `build.layout.js` 创建。 */
+#build-editor-dirty{position:sticky;top:0;z-index:3;margin:0;padding:10px 24px;background:var(--bg);border-bottom:1px solid var(--line);color:var(--fg);font:500 14px/1.5 var(--ff-body)}
+#build-editor-dirty[hidden]{display:none}
+@keyframes buildDirtyNudge{0%,100%{transform:none}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.build-editor-dirty.warn{animation:buildDirtyNudge .3s ease-in-out}
+@media(prefers-reduced-motion:reduce){.build-editor-dirty.warn{animation:none}}
+/* 「应用」待办态：按钮本体已是 accent 实底，同色描边等于没有 ⇒ 用墨色外环（深浅主题都随 token 走）。 */
+body[data-hub-page=build] #build-item-editor [data-build-edit-apply].pending{outline:2px solid var(--accent-ink);outline-offset:2px}
+/* 「不计入」行（判据=引擎未收录该归一键，见 `build.view.js` 的 `affixEngineRead`）：数值转灰 + 小字如实标，
+   文案沿用效果面板/档位既有的「不计入」，不另造说法；抽屉与装备卡展开区同一套样式。
+   ⚠️ 必须带 `body[data-hub-page=build]`：`hub.experience.css` 的 `body[data-hub-page=build] .axrow[data-fam] .axvalue`
+   是 (0,4,1)，单写 `.axrow.uncounted .axvalue` 只有 (0,3,0) ⇒ 打不过它，实测数值仍取 `--axc`（骨白）。 */
+body[data-hub-page=build] .axrow.uncounted .axvalue{color:var(--mut)}
+/* 装备卡摘要（`.build-gear-attr` 由 `buildGearSummaryBlock` 从同一批 `.axrow` 重排而来）：只转灰 + title，
+   不往卡面塞那颗 chip —— 卡面一行只有 22px 高、宽度按内容挤，加字会顶掉数值。 */
+body[data-hub-page=build] .build-gear-attr.uncounted>b{color:var(--mut)}
+.ax-uncount{flex:none;align-self:center;margin-left:4px;color:var(--mut);font:12px/1.3 var(--ff-body);white-space:nowrap}
+.build-editor-empty p{color:var(--mut);font-size:14px}
+#build-conditions-dialog{width:min(720px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;overflow:auto;box-sizing:border-box}
+/* 词条抽屉：PC 贴右边、满高、456px（与 Pen `oi7LN` 的抽屉稿一致），手机变底部抽屉。
+   遮罩用原生 `::backdrop` ⇒ 点外即关、Esc 即关、焦点锁在抽屉里，不用再写一套共用层。 */
+#build-item-dialog{position:fixed;inset:0 0 0 auto;margin:0;width:min(456px,100vw);height:100dvh;max-width:100vw;max-height:none;padding:0;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--card);color:var(--fg);overflow:auto;box-sizing:border-box}
+#build-item-dialog::backdrop,#build-conditions-dialog::backdrop{background:#0009}
+#build-item-dialog #build-item-editor{padding:24px 24px 20px;min-height:100%;box-sizing:border-box}
+/* header 必须 sticky：dialog 自己是 `overflow:auto`（上面 :171），原来是 `static` ⇒
+   内容一长，唯一那颗 ✕ 就跟着滚出视口，用户在手机上根本关不掉。 */
+#build-conditions-dialog>header{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2;padding:16px 24px;background:var(--card);border-bottom:1px solid var(--line)}
+#build-conditions-dialog h2{font-size:20px;margin:0}
+#build-conditions-dialog [data-build-close]{min-width:44px;min-height:44px;padding:0;border:0;background:none}
+/* 弹窗里现在只装「战斗条件」这一块（一键配装留在页面上）。弹窗标题已经是「战斗条件」，
+   那块自己的 `<summary>` 就收掉，避免同一个标题在弹窗里出现两遍。 */
+body[data-hub-page=build] #build-conditions-dialog #fold_cond{display:block;padding:16px 24px;border:0;background:none}
+body[data-hub-page=build] #build-conditions-dialog #fold_cond>summary{display:none}
+#build-conditions-dialog .card{border:0;background:none}
+#build-toolbar:has(details[open]){z-index:80}
+[data-theme=light] .build-editor-kind{color:#9b2724}
+[data-theme=light] :is(.build-gear-attr,.wax-row,.wax-choice)[data-fam=off]>b,[data-theme=light] body[data-hub-page=build] .wax-choice b{color:#9b2724}
+[data-theme=light] .build-gear-attr[data-fam=def]>b{color:#205f94}
+[data-theme=light] .build-gear-attr[data-fam=uti]>b{color:#806000}
+@media(max-width:1100px){
+ body[data-hub-page=build] main{grid-template-columns:minmax(0,1fr);padding:16px 24px 80px}
+ /* ≤1100 单栏：右侧栏不再占独立列，让它的两块直接回到主列流里（结果块由 JS 搬回 `#col-desk`）。 */
+ body[data-hub-page=build] #build-rail{display:contents}
+ #build-toolbar #build-more-menu{position:static}
+ body[data-hub-page=build] #build-quick{grid-template-columns:repeat(4,minmax(0,1fr))}
+ body[data-hub-page=build] #wstrip{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ body.mobile-enabled[data-hub-page=build] main{padding:6px 16px 170px;display:block}
+ #build-toolbar{border-radius:8px!important;background:var(--card)!important;padding:0 4px 0 12px!important;margin-bottom:4px}
+ #build-toolbar .hd{flex-wrap:nowrap;gap:0;min-height:44px}
+ #build-toolbar h1{font-size:14px;line-height:1.45;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #build-toolbar .actions{gap:0;flex-wrap:nowrap;flex:none}
+ #build-toolbar :is(button,summary){padding:0;width:44px;height:44px}
+ #build-toolbar .build-tool-text{display:none}
+ #build-toolbar #build-save{background:none;color:var(--accent);padding:0}
+ #build-toolbar #build-save svg{display:block}
+ #build-toolbar #build-more-menu{display:none}
+ body[data-hub-page=build] #build-quick{display:grid;grid-template-columns:88px auto minmax(0,1fr);gap:8px;margin:0 0 8px;padding:0;border:0}
+ body[data-hub-page=build] #build-quick>#build-spec-menu{grid-column:auto;grid-row:auto}
+ body[data-hub-page=build] #build-quick>.build-quick-control{font-size:12px}
+ body[data-hub-page=build] #build-quick>label.build-quick-control,#build-quick #build-spec-menu>summary{padding:0 8px;gap:4px}
+ html body[data-hub-page=build] #build-quick .build-quick-control select{font-size:16px;letter-spacing:-.5px}
+ /* ⚠️ 「原型」这一格必须按内容宽排：上面第 25 行把 select 写成 `flex:1;width:0`，
+    手机档又给 16px 字号（iOS 聚焦不放大），于是 80px 的格子里 select 只剩 36px，
+    而「关闭」+ 原生下拉箭头要 58px ⇒ **箭头画到框外、压在隔壁「专长」框的左缘上**
+    （2026-10-15 站长截图点名）。模式那一格不动：它的值是「PvE」，撑满 88px 是对的。 */
+ html body[data-hub-page=build] #build-quick #build-prototype{flex:0 0 auto;width:auto}
+ #build-quick #build-mode-label{display:none}
+ html[lang=en] #build-quick #build-prototype-label{font-size:0}
+ html[lang=en] #build-quick #build-prototype-label::after{content:'Proto';font-size:12px}
+ body[data-hub-page=build] #build-condition-open{display:none}
+ #build-spec-menu .build-spec-popover{position:fixed;left:16px;right:16px;top:166px;width:auto;max-width:none;max-height:calc(100dvh - 300px);overflow:auto}
+ #build-spec-menu summary>span{display:none}
+ #build-spec-menu summary b{font-size:12px}
+ body[data-hub-page=build] #wstrip{grid-template-columns:minmax(0,1fr);gap:12px}
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-body{grid-template-columns:44px minmax(0,1fr) 88px;min-height:274px;padding:8px 12px;grid-template-rows:auto auto auto 1fr;row-gap:0}
+ body[data-hub-page=build] .wcard.filled .wax-row.random,body[data-hub-page=build] .wcard.filled .wc-talrow,body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment{min-height:44px}
+ body[data-hub-page=build] .wcard.filled .wc-affix{min-height:84px}
+ body[data-hub-page=build] .wcard.filled .wc-effects{border:0;box-shadow:inset 0 1px var(--line)}
+ body[data-hub-page=build] .wcard.filled .wc-mod{row-gap:0}
+ body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select,body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment select[data-act=waugment]{min-height:44px;height:44px}
+ body[data-hub-page=build] #ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body[data-hub-page=build] #ggrid .build-gear-card{padding:8px 7px 0;min-height:192px}
+ body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl{font-size:12px}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-slot-icon-header{display:block;flex:none}
+ body[data-hub-page=build] #ggrid .build-gear-card .gc-main{grid-template-columns:minmax(0,1fr);gap:4px;min-height:76px}
+ body[data-hub-page=build] #ggrid .build-gear-card .gc-mid{display:none}
+ body[data-hub-page=build] #ggrid .build-gear-card .gc-mid img.ic{width:36px!important;height:60px!important;max-height:60px!important}
+ .build-gear-attr{font-size:11.5px;gap:3px;align-items:flex-start}
+ .build-gear-attr .axic{width:12px;height:12px;flex-basis:12px;margin-top:2px}
+ .build-gear-attr>b{font-size:11.5px}
+ body[data-hub-page=build] #ggrid .build-gear-card .gc-ft{gap:4px}
+ .build-gear-prototype{font-size:11.5px}
+ #build-item-dialog #build-item-editor{padding:20px 16px}
+ .build-editor-field{grid-template-columns:76px minmax(0,1fr);gap:8px}
+ /* 词条抽屉在手机上改成底部抽屉（与 Pen `WpGkT` 手机稿同形）；步骤流靠 `.mobile-build-inactive`
+    隐藏非当前步，`#col-res` 的显隐已由 `#build-rail #col-res` 那条统一给，不再单写一份。 */
+ #build-item-dialog{inset:auto 0 0 0;width:100vw;height:min(88dvh,100dvh);border:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0}
+ body[data-hub-page=build] #mobile-build-steps button[aria-pressed=false]{background:transparent;color:var(--mobile-muted)}
+}
+@media(max-width:359px){
+ .build-gear-attr{align-items:center;flex-wrap:wrap;row-gap:0}
+ .build-gear-attr>span{flex:1;overflow-wrap:normal}
+}
+
+/* 词条行左侧字形槽：没有家族色也保留同宽空槽（`.axic-empty`），让整列文字起点对齐。 */
+body[data-hub-page=build] .axic.axic-empty{display:block;width:13px;height:13px;flex:0 0 13px;background:none!important;-webkit-mask:none!important;mask:none!important}
+@media(max-width:600px){body[data-hub-page=build] .axic.axic-empty{width:12px;height:12px;flex-basis:12px}}

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>配装器 · Agent Hub</title>
+<meta name="description" content="全境封锁2配装计算。结果是当前条件下的枪械弹匣快照，不是实战持续 DPS。The Division 2 build planner. Results are a firearm magazine snapshot, not sustained combat DPS.">
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=245" sizes="16x16 32x32">
+<link rel="icon" type="image/png" href="/assets/img/favicon.png?v=245" sizes="228x228">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=245">
+<link rel="stylesheet" href="/assets/base.css?v=349">
+<link rel="stylesheet" href="/assets/db/build.css?v=349">
+<link rel="stylesheet" href="/assets/hub.navigation.css?v=349">
+<link rel="stylesheet" href="/assets/hub.experience.css?v=349">
+<link rel="stylesheet" href="/assets/hub.layout.css?v=349">
+<link rel="stylesheet" href="/assets/db/build.layout.css?v=349">
+<link rel="stylesheet" href="/assets/db/build.share.css?v=349">
+<link rel="stylesheet" href="/assets/db/build.card.css?v=349">
+<link rel="stylesheet" href="/assets/mobile.css?v=349">
+<link rel="stylesheet" href="/assets/db/build.pen.css?v=349">
+<link rel="stylesheet" href="/assets/db/build.picker.css?v=349">
+</head>
+<body>
+<header>
+  <div class="hd">
+    <h1><span id="hdrt">配装器</span></h1>
+    <div class="actions">
+      <button id="build-save" class="mini" type="button">保存配装</button>
+      <button id="build-records" class="mini" type="button">我的配装</button>
+      <details id="build-share-menu" class="build-share-menu"><summary class="mini">分享</summary><div><button type="button" data-build-share="image">导出图片</button><button type="button" data-build-share="link">复制配装链接</button><button type="button" data-build-share="forum">分享到论坛</button></div></details>
+      <button id="exp" class="mini" title="导出当前配装">导出</button>
+      <button id="imp" class="mini" title="导入配装">导入</button>
+      <input type="file" id="impf" accept="application/json,.json" hidden>
+      <button id="lang" class="mini" title="切换中文 / 原文">中文</button>
+      <button id="theme" class="mini" title="切换深浅色">浅色</button>
+      <button id="reset" class="mini ghost" data-act="reset">清空</button>
+    </div>
+  </div>
+</header>
+<main>
+  <!-- 开发状态提示：文案由 build.app.js 的 applyLangText() 按语言重设；这里先写好中文，
+       这样即使脚本没跑起来，访客也能看到状态（与 #hdrt 同口径）。 -->
+  <p id="build-wip" class="build-wip">配装器仍在开发中，部分功能尚未完善，结果仅供参考。</p>
+  <p id="build-share-status" role="status" aria-live="polite"></p>
+  <!-- 左：配装总览；中：武器 / 装备 / 技能；右：条件与一键配装。 -->
+  <section class="col" id="col-desk">
+    <div class="card build-summary">
+      <h2 id="h_res">配装总览</h2>
+      <div class="rsub" id="r_build"></div>
+      <div class="rgrid" id="r_grid"></div>
+      <div class="apnl" id="r_agent"></div>
+      <div id="r_warn"></div>
+    </div>
+    <div class="card loadout-weapons">
+      <div class="sec-lbl" id="s_weapons">武器</div>
+      <div class="wstrip" id="wstrip"></div>
+    </div>
+    <div class="card loadout-gear">
+      <div class="sec-lbl" id="s_gear">装备</div>
+      <p class="hint" id="hint_gear"></p>
+      <div class="ggrid" id="ggrid"></div>
+      <p class="hint tiny" id="hint_gear_vals"></p>
+    </div>
+    <div class="card loadout-skills">
+      <div class="sec-lbl" id="s_skills">技能</div>
+      <p class="hint" id="hint_sk"></p>
+      <div class="skstrip" id="skstrip"></div>
+    </div>
+    <details class="card fold build-analysis" id="fold_analysis">
+      <summary><span id="h_analysis">伤害分析</span></summary>
+      <div class="sub-lbl" id="l_hitgrid">命中伤害</div>
+      <div class="hitgrid" id="r_hits"></div>
+      <div class="charts">
+        <div class="chartbox"><div class="charttl" id="l_chcyc">当前条件的弹匣快照</div><div class="chart" id="ch_cycle"></div><p class="hint tiny" id="ch_cycle_note"></p></div>
+        <div class="chartbox"><div class="charttl" id="l_chhit">命中伤害对照</div><div class="chart" id="ch_hits"></div><p class="hint tiny" id="ch_hits_note"></p></div>
+      </div>
+    </details>
+    <details class="card fold" id="fold_tw">
+      <summary><span id="h_tw">手填词条</span></summary>
+      <p class="hint" id="hint_tw"></p>
+      <div class="pgrid" id="bp_extras"></div>
+      <div id="tweaks"></div>
+      <button class="mini ghost" data-act="tw-add" id="twadd">＋ 添加一行</button>
+      <datalist id="attrnames"></datalist>
+    </details>
+  </section>
+
+  <!-- 右：先摆「这一套是在什么条件下算的」，再摆「按条件重配一套」 -->
+  <aside class="col" id="col-res">
+    <details class="card fold" id="fold_cond" open>
+      <summary><span id="h_cond">战斗条件</span></summary>
+      <div class="pgrid">
+        <label class="pf"><span id="l_hit">命中率 %</span><input id="p_hit" type="number" value="100" min="0" max="100" step="1"></label>
+        <label class="pf"><span id="l_hs">爆头率 %</span><input id="p_hs" type="number" value="10" min="0" max="100" step="1"></label>
+        <label class="pf"><span id="l_oc">掩体外比例 %</span><input id="p_oc" type="number" value="100" min="0" max="100" step="1"></label>
+        <label class="pf"><span id="l_ar">装甲比例 %</span><input id="p_ar" type="number" value="60" min="0" max="100" step="1"></label>
+        <label class="pf" style="grid-column:1/-1"><span id="l_sp">当前天赋的弹匣循环</span>
+          <select id="p_sp" disabled>
+            <option value="">标准（无）</option>
+            <option value="计算">计算</option>
+            <option value="完美计算">完美计算</option>
+            <option value="疯狂">疯狂</option>
+            <option value="完美疯狂">完美疯狂</option>
+          </select>
+        </label>
+      </div>
+      <div class="sub-lbl" id="l_bspec">专长</div>
+      <div class="chips" id="bp_spec"></div>
+      <p class="hint tiny" id="bp_spec_eff"></p><div class="pgrid" id="bp_skill_exp"></div>
+      <div class="sub-lbl" id="l_bsp">专长加成 15%</div>
+      <div class="chips" id="bp_sp"></div>
+      <div class="sub-lbl" id="l_bexp">精通</div>
+      <div class="pgrid">
+        <label class="pf"><span id="l_bwexp">武器精通 <b id="bp_wexp_v">30</b></span><input id="bp_wexp" type="range" min="0" max="30" step="1" value="30"></label>
+        <label class="pf"><span id="l_bgexp">防具精通 <b id="bp_gexp_v">0</b></span><input id="bp_gexp" type="range" min="0" max="30" step="1" value="0"></label>
+      </div>
+      <label class="swrow"><input type="checkbox" id="bp_watch" checked><span id="l_bwatch">手表（一千级）</span></label>
+      <label class="swrow"><input type="checkbox" id="bp_proto"><span id="l_bproto">原型升级（黄色核心 1.5）</span></label>
+      <label class="swrow"><input type="checkbox" id="bp_pvp"><span id="l_bpvp">PvP 模式（天赋取官方 PvP 数值）</span></label>
+      <p class="hint tiny" id="bp_pvp_note"></p>
+      <!-- 这两块实测占 330px，正是把「开始配装」顶出首屏的那一段 ⇒ 折进第二层，
+           默认收起；展开状态跟着配装一起进存档（`folds`），不用每次回来再点一遍。 -->
+      <details class="fold2" id="fold_tgt">
+        <summary><span id="l_btier">装备天赋档位</span><span id="l_be">装甲目标设置</span></summary>
+        <div class="chips" id="bp_tier"></div>
+        <div class="tgrp">
+          <span class="tk" id="l_be_prog">兵种</span><div class="chips" id="bp_ecolor"></div>
+          <span class="tk" id="l_be_diff">难度</span><div class="chips" id="bp_ediff"></div>
+          <span class="tk" id="l_be_team">人数</span><div class="chips" id="bp_eteam"></div>
+          <span class="tk" id="l_be_esc">恶化</span><div class="chips" id="bp_eesc"></div>
+        </div>
+        <p class="hint tiny" id="bp_target"></p>
+      </details>
+    </details>
+    <div class="card">
+      <h2 id="h_opt">一键配装</h2>
+      <!-- 主行动放在标题下面第一行：原来它压在「五个下拉 + 条件条 + 六行硬条件」之后（实测距视口顶 1211px），
+           这一页的动词是「算一套」，不该比它的参数还靠后。 -->
+      <div class="optrun"><button class="mini" data-act="optrun" id="optrun">开始配装</button><span id="optspin"></span></div>
+      <div id="optres"></div>
+      <details class="fold2" id="fold_opt">
+        <summary><span id="h_optreq">目标与条件</span><span id="optreq_sum"></span></summary>
+        <p class="hint" id="hint_opt"></p>
+        <div class="pgrid">
+        <label class="pf"><span id="l_oflow">常规流派</span><select id="bp_oflow"></select></label>
+        <label class="pf"><span id="l_otarget">优化目标</span><select id="bp_otarget"></select></label>
+        <p class="hint" id="optflowhint" style="grid-column:1/-1"></p>
+        <label class="pf"><span id="l_owtype">武器类别</span><select id="bp_owtype"></select></label>
+        <label class="pf"><span id="l_ocon">条件量</span><select id="bp_ocon"></select></label>
+        <label class="pf"><span id="l_ocmp">条件</span><select id="bp_ocmp">
+          <option value="min">≥</option><option value="max">≤</option></select></label>
+        <label class="pf"><span id="l_oval">数值</span><input id="bp_oval" type="number" value="0" step="1"></label>
+      </div>
+      <button class="mini ghost" data-act="optcadd" id="optcadd">＋ 加一条条件</button>
+      <div id="optcons" class="optcons"></div>
+      <div id="optreq" class="optreq"></div>
+        <label class="swrow"><input type="checkbox" id="bp_olockw"><span id="l_olockw">锁定当前武器</span></label>
+      </details>
+    </div>
+  </aside>
+</main>
+
+<!-- 通用选择器弹窗。用 `<dialog>` 而不是 `<div>`：配装器的词条抽屉本身是 `<dialog>`，
+     原生对话框在 top layer 里，普通层的 `z-index` 再高也盖不过它 ⇒ 抽屉里点「选择插件」时
+     选择器会开了但完全看不见、点不到（2026-10-14 真机 elementFromPoint 实测命中 HTML）。
+     同成 top layer 后，后开的自然压在先开的上面，Esc 也只关最上面那层。 -->
+<dialog id="dlgmask"><div id="dlg" data-act="noop"></div></dialog>
+
+<div class="foot" id="foot"></div>
+<script src="/assets/base.js?v=349"></script>
+<script src="/assets/hub.navigation.js?v=349"></script>
+<script src="/assets/db/engine.js?v=349"></script>
+<script src="/assets/db/build.attrs.js?v=349"></script>
+<script src="/assets/db/build.data.js?v=349"></script>
+<script src="/assets/db/build.gtal.js?v=349"></script>
+<script src="/assets/db/build.mods.js?v=349"></script>
+<script src="/assets/db/build.params.js?v=349"></script>
+<script src="/assets/db/build.tiers.js?v=349"></script>
+<script src="/assets/db/build.triggers.js?v=349"></script>
+<script src="/assets/db/build.req.js?v=349"></script>
+<script src="/assets/db/build.links.js?v=349"></script>
+<script src="/assets/db/build.view.js?v=349"></script>
+<script src="/assets/db/build.charts.js?v=349"></script>
+<script src="/assets/db/build.opt.defs.js?v=349"></script>
+<script src="/assets/db/build.opt.cand.js?v=349"></script>
+<script src="/assets/db/build.opt.js?v=349"></script>
+<script src="/assets/db/build.audit.js?v=349"></script>
+<script src="/assets/db/build.specialization.js?v=349"></script>
+<script src="/assets/db/build.picker.js?v=349"></script>
+<script src="/assets/db/build.app.js?v=349"></script>
+<script src="/assets/hub.experience.js?v=349"></script>
+<script src="/assets/db/build.layout.js?v=349"></script>
+<script src="/assets/db/build.account.js?v=349"></script>
+<script src="/assets/db/build.card.js?v=349"></script>
+<script src="/assets/db/build.share.js?v=349"></script>
+<script src="/assets/mobile.js?v=349"></script>
+<script src="/standalone.js"></script>
+</body>
+</html>

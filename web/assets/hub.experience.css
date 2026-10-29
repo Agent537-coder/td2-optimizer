@@ -1,0 +1,820 @@
+/* Agent Hub refinement: shared tokens and scoped responsive presentation. */
+:root{--hub-muted:#aeb4bd;--hub-panel:#191c22;--hub-line:#ffffff24;--hub-focus:#f6a36b;--hub-text:#eceef1;--hub-bg:#111317;scroll-padding-top:90px}
+:root[data-theme=light]{--hub-muted:#555e69;--hub-panel:#fff;--hub-line:#252c3430;--hub-focus:#a84308;--hub-text:#262b32;--hub-bg:#f5f4f0}
+/* A category column is one scanning rail; labels have equal edges and padding. */
+body[data-hub-page=loot] .data-table :is(th,td):has(>.category){text-align:center}
+body[data-hub-page=loot] .data-table .category{display:flex;justify-content:center;width:100%;box-sizing:border-box;min-height:32px;padding:5px 10px;border-radius:7px;line-height:20px}
+/* Native superelliptic corners have zero curvature at the straight-edge joins.
+   Unsupported browsers retain the existing rounded-box fallback. Circular
+   avatars, brand rings, progress marks and navigation underlines stay circular. */
+@supports(corner-shape:superellipse(2)){
+ body :is(.category,.status-tag,.mission-code,.pool-kind,.tag,.mini,.chip,.subchip,.shell-control,.hub-menu-button,.nav-child-toggle,.shell-subnav,.shell-subnav a,.table-scroll,.current-board,.current-vendor,.reset-row>div,.season-state>div,.week-panel,.home-caches a,.home-events article,.home-update,.season-gear-card,.season-image-card,.home-feature-card,.pool-row,.pool-note,.hub-fold,.hub-pagination button,.hub-current-week,.gcard,.wcard,.build-mobile-settings,.dlg,.dialog,.hub-reader,.hub-account-panel,.hub-build-card){corner-shape:superellipse(2)}
+ body :is(input[type=search],input[type=text],input[type=number],input[type=date],select,textarea){corner-shape:superellipse(2)}
+ body :is(.set-card,.sets-controls button,.support-method,.support-method-mark,.support-benefit-grid article,.support-total,.support-table-wrap,.support-qr,.support-tools button,.se-count,.se-chip,.se-grp,.se-gno,.se-reward,.se-preview,.search-dropdown,.search-item,.key-drawer,.sample-chip,.card-badge,.hero-platform,#dlgbox,#build-spec-dialog){corner-shape:superellipse(2)}
+ body :is(.card,.row,.v-card,.v-dlg,.v-detail .dsec,.task-card,.se-art,.se-pass-card,.reward-card,.sets-switch button,.star,.chip-btn,.tagbtn,.plat-segment,.query-btn){corner-shape:superellipse(2)}
+ body button,body :is(#dlg,#build-mobile-settings){corner-shape:superellipse(2)}
+ body .to-top{corner-shape:round}
+}
+body :is(.category.brand,[data-loot-category=brand]){--loot-category-color:var(--category-brand);color:var(--loot-category-color)}
+body :is(.category.set,[data-loot-category=set]){--loot-category-color:var(--category-set);color:var(--loot-category-color)}
+body :is(.category.weapon,[data-loot-category=weapon]){--loot-category-color:var(--category-weapon);color:var(--loot-category-color)}
+body :is(.category.slot,[data-loot-category=slot]){--loot-category-color:var(--category-slot);color:var(--loot-category-color)}
+:root[data-theme=light] body .status-tag{color:var(--rar-gold-d)}
+[hidden]{display:none!important}
+body{padding-bottom:24px;color:var(--hub-text)}
+body :is(button,input,select,textarea){font-family:var(--ff-body);text-transform:none;font-weight:500;letter-spacing:normal}
+body :is(button,[role=button],summary,a,input,select,textarea):focus-visible{outline:2px solid var(--hub-focus);outline-offset:3px}
+body :is(button,summary,[role=button]){touch-action:manipulation}
+body :is(input[type=search],input[type=text],input[type=date],select){min-height:38px}
+body :is(.mini,.chip,.subchip,.tag,.stat,.hint,.hint2,.head-sub,.meta,.snapshot){text-transform:none;letter-spacing:normal}
+body :is(.hint,.hint2,.head-sub,.meta,.snapshot,.statlbl,.sec-sub){color:var(--hub-muted);line-height:1.65}
+body :is(.stats b,.metric-strip b,.v-overview b,.rgrid b,.tnum,.ptag b){font-weight:500;font-variant-numeric:tabular-nums}
+body .foot{position:static!important;line-height:1.6;white-space:normal!important;overflow:visible;font-size:12px;padding:20px 16px;margin-top:24px;max-width:100%;height:auto}
+body .to-top{bottom:max(18px,env(safe-area-inset-bottom));width:44px;height:44px;z-index:30}
+body :is(h1,h2,h3){text-transform:none;letter-spacing:normal;overflow-wrap:break-word}
+body :is(.loot-head,.vendor-head,.tasks-head)> .hd{padding-block:18px}
+body .banner{font-family:var(--ff-body);line-height:1.65}
+body .hub-fold{display:block;border:1px solid var(--hub-line);border-radius:6px;background:var(--hub-panel);margin:16px 0;min-width:0;max-width:100%;overflow:clip}
+body .hub-fold>summary{padding:13px 16px;cursor:var(--cur-hover);font-family:var(--ff-body);font-weight:500;font-size:14px;line-height:1.5;color:var(--hub-text);min-height:48px}
+body .hub-fold>summary:hover{color:var(--hub-focus)}
+body .hub-fold[open]>summary{border-bottom:1px solid var(--hub-line)}
+body .hub-fold>section,body .hub-fold>div{margin:0;border:0;border-radius:0}
+body .hub-fold> .src-row{padding:16px}
+body .hub-fold:has(>#sec-raw[hidden]),body .hub-fold:has(>#sec-missions[hidden]){display:none}
+body .hub-filter-fold{flex-basis:100%;width:100%;grid-column:1/-1;background:transparent}
+body .hub-filter-fold[open]>.chip-group{padding:8px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+body .hub-filter-fold>#chips{padding:12px}
+body .hub-pagination{display:flex;justify-content:center;align-items:center;gap:16px;padding:22px 12px;font:13px system-ui;color:var(--hub-muted)}
+body .hub-pagination button,body .hub-current-week{border:1px solid var(--hub-line);border-radius:5px;padding:10px 18px;min-height:44px;background:var(--hub-panel);color:var(--hub-text);cursor:var(--cur-hover)}
+body .hub-pagination button:hover,body .hub-current-week:hover{border-color:var(--hub-focus)}
+body #hub-navigation{display:flex;align-items:center;flex-wrap:wrap;background:var(--hub-bg);border-bottom:1px solid var(--hub-line);font:13px system-ui;padding:8px 16px;gap:14px;overflow:visible;position:relative;z-index:35}
+body #hub-route-list{display:flex;flex-wrap:wrap;gap:3px;align-items:center;flex:1}
+body #hub-navigation a{min-height:40px;display:inline-flex;align-items:center;white-space:nowrap;padding:8px;color:var(--hub-text)}
+body #hub-navigation .hub-brand{font-size:15px;font-weight:600;letter-spacing:.3px;padding-inline:4px 12px}
+body #hub-navigation a[aria-current=page]{color:var(--hub-focus);background:transparent;box-shadow:inset 0 -2px var(--hub-focus);border-radius:0}
+.hub-menu-button{display:none}
+body[data-hub-page=home]{padding:0;overflow:hidden}
+body[data-hub-page=home] .bar{z-index:40}
+body[data-hub-page=home] .shell-control{min-height:38px;font-size:13px}
+body[data-hub-page=home] .primary-nav .tab{text-transform:none;font-family:var(--ff-body)}
+body[data-hub-page=home] .primary-nav .tab.on{color:var(--hub-focus);background:transparent;box-shadow:inset 0 -2px var(--hub-focus)}
+/* Cards retain item identity and meaningful rarity colours; secondary names live in detail. */
+body[data-hub-page=db] .grid .card .alt,body[data-hub-page=vendor] .v-grid .alt{display:none}
+body[data-hub-page=db] .grid .card .cv-sockets{display:none}
+body[data-hub-page=db] .grid .card .cz,body[data-hub-page=vendor] .v-grid .cz{height:125px;min-height:0}
+
+
+
+body[data-hub-page=vendor] .v-grid .stats{font-family:var(--ff-body)}
+body[data-hub-page=vendor] .hub-vendor-place{color:var(--hub-text);font-size:12px;border:0;padding-left:0}
+body[data-hub-page=vendor] .v-filters .chip.on,body[data-hub-page=vendor] .chips .chip.on{background:transparent;color:var(--hub-focus);border-color:var(--hub-focus)}
+body[data-hub-page=vendor] .chips .chip.on::before{content:"✓ ";font-weight:500}
+body[data-hub-page=vendor] .v-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
+body :is(.v-dlgb,.dlgb){line-height:1.65;font-family:var(--ff-body)}
+body :is(.v-dlgb,.dlgb) .quote{font-size:14px}
+body[data-hub-page=vendor] .v-dlgx,body[data-hub-page=db] #dlgx{min-width:44px;min-height:44px}
+body[data-hub-page=tasks] #week-nav{gap:8px;align-items:center;margin-block:12px}
+body[data-hub-page=tasks] #week-nav button{min-width:54px;min-height:40px;font-size:13px}
+body[data-hub-page=tasks] .obj-text{font-size:16px;line-height:1.65}
+body[data-hub-page=tasks] .obj-clue{font-size:13px;color:var(--hub-muted)}
+body[data-hub-page=tasks] .board-block>#allweeks-title{display:none}
+body.season-refined[data-hub-page=tasks]>header.tasks-head{position:sticky;top:var(--hub-navigation-height,72px);z-index:19;background-color:var(--bg);box-shadow:0 10px 16px -14px #00000040}
+body.season-refined[data-hub-page=tasks] header.tasks-head nav#subnav a{min-width:44px;justify-content:center;box-sizing:border-box}
+body.season-refined[data-hub-page] header.se-head{position:sticky;top:var(--hub-navigation-height,72px);z-index:19;background-color:var(--bg);box-shadow:0 10px 16px -14px #00000040}
+body[data-hub-page=stats] .agent-empty{min-height:160px;padding:24px 0}
+body[data-hub-page=stats] .empty-steps{display:none}
+body[data-hub-page=stats] .analytics-section.awaiting-data{display:none}
+body[data-hub-page=stats] #analytics-state{font-size:13px}
+body[data-hub-page=stats] .stats-jump{flex-wrap:wrap;position:static}
+body[data-hub-page=stats] .stats-jump a{min-height:40px;padding:10px 12px}
+body[data-hub-page=stats] .search-panel{max-width:100%}
+.hub-build-jump{display:none}
+body[data-hub-page=build] .modblk{min-width:36px;min-height:36px}
+body[data-hub-page=build] .gc-hd [data-act]{min-height:32px;min-width:36px}
+body[data-hub-page=build] #dlg :is(button,.chip,[role=button]){font-family:var(--ff-body);text-transform:none}
+body:is([data-hub-page=steam],[data-hub-page=bug]) #list{max-width:1100px;margin-inline:auto}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row .orig{display:none}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row.open .orig{display:block;font-size:13px;color:var(--hub-muted);margin-block:8px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .ttl{font:500 16px/1.6 system-ui,"Microsoft YaHei",sans-serif;cursor:var(--cur-hover);text-transform:none}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .meta{font:12px/1.8 system-ui,sans-serif;text-transform:none}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row{padding-block:16px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row .detail{max-width:78ch;line-height:1.8;font-family:var(--ff-body)}
+body[data-hub-page=bug] .row:not(.open) .meta .m{display:none}
+body[data-hub-page=bug] .row:not(.open) .meta .m:last-child{display:inline}
+body[data-hub-page=admin] .admin-hint{font-size:13px;line-height:1.7}
+body[data-hub-page=admin] #la-save{background:var(--accent,#ed7929);color:#101114;min-height:44px}
+@media (max-width:700px){
+ :root{scroll-padding-top:70px}
+ body{font-size:15px}
+ body :is(input[type=search],input[type=text],input[type=date],input[type=number],select,textarea){font-size:16px;min-height:44px;max-width:100%}
+ body :is(button,.mini,.chip,.subchip,.tag[role=button],[role=tab],summary){min-height:44px;line-height:1.4}
+ body button{min-width:44px}
+ body header .hd,body header .actions{gap:10px;flex-wrap:wrap}
+ body :is(.head-sub,.sec-sub){font-size:13px}
+ body h1{font-size:23px;line-height:1.35}
+ body #hub-navigation{padding:8px 12px;gap:8px;justify-content:space-between}
+ body #hub-navigation .hub-menu-button,.hub-menu-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--hub-line);border-radius:5px;background:var(--hub-panel);color:var(--hub-text);font:13px system-ui;padding:8px 12px}
+ body #hub-route-list{display:none;flex-basis:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-block:10px}
+ body #hub-navigation.menu-open #hub-route-list{display:grid}
+ body #hub-navigation a{white-space:normal;min-height:44px}
+ body[data-hub-page=home] .bar{height:auto;min-height:64px;display:flex;flex-wrap:wrap;align-items:center;padding:8px 12px;gap:6px}
+ body[data-hub-page=home] .brand{flex:1;min-width:130px}
+ body[data-hub-page=home] .brand .blogo{width:72px;max-height:26px;object-fit:contain}
+ body[data-hub-page=home] .brand>span{font-size:15px}
+ body[data-hub-page=home] .brand small{display:none}
+ body[data-hub-page=home] .primary-nav{display:none;order:5;flex:0 0 100%;width:100%;overflow:visible;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body[data-hub-page=home] .hub-open .primary-nav{display:grid}
+ body[data-hub-page=home] .primary-nav .tab{width:100%;height:auto;min-height:46px;white-space:normal;padding:10px;text-align:left}
+ body[data-hub-page=home] .shell-actions{display:flex;gap:6px}
+ body[data-hub-page=home] #shell-menu{max-width:190px;white-space:normal}
+ body[data-hub-page=home] #ubistatus,body[data-hub-page=home] #hbadge,body[data-hub-page=home] .sp{display:none}
+ body[data-hub-page=home]{display:flex;flex-direction:column;height:100dvh}
+ body[data-hub-page=home] #fr{position:static!important;flex:1;min-height:0;width:100%;height:auto;border:0}
+ body[data-hub-page=loot] .current-layout,body[data-hub-page=loot] .current-grid{display:flex;flex-direction:column}
+ body[data-hub-page=loot] .current-side,body[data-hub-page=loot] .current-aside{order:2}
+ body[data-hub-page=loot] #current-body tr{padding:12px;min-height:84px}
+ body[data-hub-page=loot] #current-vendor .vendor-item{min-height:0}
+ body[data-hub-page=loot] .section-nav,body[data-hub-page=admin] .section-nav{flex-wrap:wrap;overflow:visible;gap:4px}
+ body .section-nav a{padding:10px;min-height:44px}
+ body[data-hub-page=vendor] .v-grid{grid-template-columns:1fr;gap:12px}
+ body[data-hub-page=vendor] .v-card{display:grid;grid-template-columns:94px minmax(0,1fr);position:relative}
+ body[data-hub-page=vendor] .v-card>.topbar{position:absolute;inset:0 0 auto;height:3px}
+ body[data-hub-page=vendor] .v-card>.cz{height:100%;min-height:110px;width:94px}
+ body[data-hub-page=vendor] .v-card .cz .bi{max-height:80px}
+ body[data-hub-page=vendor] .v-card .cbody{padding:12px;min-width:0}
+ body[data-hub-page=vendor] .v-card .stats{display:none}
+ body[data-hub-page=vendor] .v-card .cname{font:500 15px/1.5 system-ui}
+ body[data-hub-page=vendor] .v-card .dbattrs{font-size:12px;gap:5px}
+ 
+ 
+ 
+ 
+ body[data-hub-page=db] .grid{grid-template-columns:1fr;gap:12px}
+ body[data-hub-page=db] .grid .card{display:grid;grid-template-columns:100px minmax(0,1fr);min-height:125px;position:relative}
+ body[data-hub-page=db] .grid .card>.topbar{position:absolute;inset:0 0 auto;height:3px}
+ body[data-hub-page=db] .grid .card>.cz{width:100px;height:100%;min-height:100px}
+ body[data-hub-page=db] .grid .card .cbody{padding:12px;min-width:0}
+ body[data-hub-page=db] .grid .card :is(.cname,.cn){font:500 15px/1.5 system-ui}
+ body[data-hub-page=db] .grid .card .stats{font-size:12px;gap:7px}
+ body[data-hub-page=db] .grid .card .stats>span:nth-child(n/**/+4){display:none}
+ body[data-hub-page=tasks] #week-nav{display:flex;flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}
+ body[data-hub-page=tasks] #week-nav button{flex-shrink:0;scroll-snap-align:center;min-height:44px}
+ body[data-hub-page=tasks] .obj-clue{display:block}
+ body[data-hub-page=tasks] .obj-text{font-size:15px}
+ body[data-hub-page=stats] .empty-mark{display:none}
+ body[data-hub-page=stats] .agent-empty{min-height:120px;padding:18px 0}
+ body[data-hub-page=stats] .empty-copy h2{font-size:20px}
+ body[data-hub-page=stats] .head-sub{max-width:34ch}
+ body[data-hub-page=stats] .analytics-ring-grid{grid-template-columns:1fr 1fr}
+ body[data-hub-page=build] .hub-build-jump{display:flex;position:sticky;top:0;z-index:25;background:var(--hub-bg);gap:8px;padding:8px 12px;border-bottom:1px solid var(--hub-line)}
+ body[data-hub-page=build] .hub-build-jump a{flex:1;text-align:center;min-height:44px;padding:12px 8px;color:var(--hub-text);text-decoration:none;border:1px solid var(--hub-line);border-radius:4px;font-size:13px}
+ body[data-hub-page=build] .gcard{min-height:0!important;height:auto!important}
+ body[data-hub-page=build] .gc-mid{height:70px;min-height:0}
+ body[data-hub-page=build] .gcard .sil{height:72px;width:72px}
+ body[data-hub-page=build] .modblk,body[data-hub-page=build] .gc-hd [data-act]{min-width:44px;min-height:44px}
+ body[data-hub-page=build] #dlg{width:100%;max-width:100%;max-height:100dvh;border-radius:0}
+ body :is(.v-dlg,.dlg){max-height:100dvh;max-width:100%}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .row .star{font:12px system-ui;min-width:44px;min-height:44px;align-self:start}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .row{gap:10px;padding:14px 10px}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .ttl{font-size:15px;line-height:1.65}
+ body[data-hub-page=bug] #statline{font-size:12px;line-height:1.8;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+ body[data-hub-page=admin] #entry .table-scroll{overflow:visible}
+ body[data-hub-page=admin] #entry table,body[data-hub-page=admin] #la-rows{display:block;min-width:0;width:100%}
+ body[data-hub-page=admin] #entry thead{display:none}
+ body[data-hub-page=admin] #la-rows tr{display:grid;grid-template-columns:1fr;gap:10px;padding:14px;margin:14px 0;border:1px solid var(--hub-line);background:var(--hub-panel)}
+ body[data-hub-page=admin] #la-rows td{display:block;padding:0;white-space:normal;width:100%}
+ body[data-hub-page=admin] #la-rows td:before{content:attr(data-label);display:block;font:13px system-ui;margin-bottom:6px;color:var(--hub-muted)}
+ body[data-hub-page=admin] #la-rows :is(input,select){width:100%;min-width:0}
+ body[data-hub-page=admin] .load-row{display:flex;flex-wrap:wrap;gap:10px}
+ body[data-hub-page=admin] #la-msg{flex-basis:100%;line-height:1.7}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+.hub-db-categories{display:none}.hub-clue summary{font:13px system-ui;color:var(--hub-muted);cursor:var(--cur-hover);padding:9px 0;min-height:36px}.hub-clue{margin-top:5px}
+@media (max-width:700px){}
+/* Round two: shared reading rhythm. Identity colors remain in base.css. */
+:root{--hub-ui:'Noto Sans SC',system-ui,sans-serif;--hub-muted:var(--mut);--hub-panel:var(--panel);--hub-line:var(--line);--hub-text:var(--fg);--hub-bg:var(--bg);color-scheme:dark}
+:root[data-theme=light]{--hub-muted:var(--mut);--hub-panel:var(--panel);--hub-line:var(--line);--hub-text:var(--fg);--hub-bg:var(--bg);color-scheme:light}
+body[data-hub-page]{font-family:var(--hub-ui);font-size:14px}
+body[data-hub-page] :is(button,input,select,textarea,.chip,.badge,.tag,.meta,.date,.statlbl,.snapshot,.foot,.fglbl,.sec-lbl,.sub-lbl,.rlbl){font-family:var(--hub-ui)!important;letter-spacing:normal;text-transform:none;text-shadow:none}
+body[data-hub-page] :is(.chip,.badge,.tag,.meta,.date,.statlbl,.snapshot,.foot){font-weight:400}
+body[data-hub-page] :is(button,input[type=search],input[type=text],input[type=date],select,textarea){border-radius:5px;font-size:13px}
+body[data-hub-page] :is(input[type=search],input[type=text],input[type=date],select,textarea){background:var(--card);color:var(--fg);border:1px solid var(--line);padding:10px 12px}
+body[data-hub-page] :is(input,textarea)::placeholder{font-family:var(--hub-ui);font-weight:400;color:var(--mut);opacity:1}
+body[data-hub-page] :is(button,a,summary,input,select,textarea){transition:background-color .14s ease,border-color .14s ease,color .14s ease}
+body[data-hub-page] :is(button,[role=button],summary):focus-visible{outline:2px solid var(--hub-focus);outline-offset:3px}
+body[data-hub-page] button:disabled{opacity:.5;cursor:not-allowed}
+body[data-hub-page] button:not(:disabled):active{filter:brightness(.92)}
+body[data-hub-page]>header{border-bottom:1px solid var(--line);box-shadow:none}
+body[data-hub-page]>header:after{display:none}
+body[data-hub-page]>header .hd{padding:22px 24px 16px;gap:14px;align-items:center}
+body[data-hub-page]>header h1{font-size:23px;line-height:1.35;font-weight:700;letter-spacing:0}
+body[data-hub-page]>header .head-sub{font:14px/1.6 var(--hub-ui);margin:6px 0 0;max-width:65ch}
+body[data-hub-page]>header .actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+body[data-hub-page] :is(#lang,#theme){font:13px/1.4 var(--hub-ui)!important;min-width:52px;min-height:40px;padding:8px;color:var(--mut)}
+body[data-hub-page] :is(#lang,#theme):hover{color:var(--fg);background:var(--hover)}
+body[data-hub-page] .hub-fold{background:transparent;border:0;border-block:1px solid var(--line);border-radius:0;margin:16px 0;overflow:visible}
+body[data-hub-page] .hub-fold>summary{padding:14px 4px;font-size:14px}
+body[data-hub-page] .hub-fold>summary:hover{background:var(--hover)}
+body[data-hub-page] .hub-fold[open]>summary{border-bottom:0}
+body[data-hub-page] .hub-fold>section,body[data-hub-page] .hub-fold>div{padding:16px}
+body[data-hub-page] .foot{font:12px/1.7 var(--hub-ui);background:transparent;color:var(--mut);margin-top:28px}
+/* Same item color, same response on both browsing surfaces. */
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card){border-radius:6px;box-shadow:none;transition:border-color .14s,background-color .14s;transform:none}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card):before{background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 5%,transparent),transparent 45%)}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card):hover{transform:none;box-shadow:none;border-color:var(--rc);background:var(--hover)}
+/* 稿子「08 / 鼠标三态」四态里缺的第三态：按下比悬停再实一档。用 `--press`（hub.layout.css
+   的梯级令牌，深 #3b3c38 / 浅 #d4d2cb），方向两套主题自动都成立，不新增色值。 */
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card):active{background:var(--press)}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card):focus-visible{outline:2px solid var(--rc);outline-offset:3px}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .cbody{padding:16px;gap:9px}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .cname{font:600 16px/1.5 var(--hub-ui)}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .dbattr{font:13px/1.65 var(--hub-ui);border-color:transparent;padding:0 3px;background:transparent;white-space:normal}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .dbattrs{gap:3px 7px}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .tal{border-top:1px solid var(--line);font:13px/1.6 var(--hub-ui);padding-top:9px}
+body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .tal i{font:12px/1.7 var(--hub-ui);color:var(--mut)}
+/* Light-theme text uses the same ink adjustment on DB and vendor; bands keep the approved hues. */
+[data-theme=light] body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.r-named,.r-exotic,.r-set) .cname{color:color-mix(in srgb,var(--rc) 62%,var(--fg))}
+/* Vendor: content-first controls, optional metadata rather than stacked preamble cards. */
+body[data-hub-page=vendor] main{max-width:1440px;padding:20px 24px 60px}
+body[data-hub-page=vendor] .vendor-board{padding:0;border:0;background:transparent}
+body[data-hub-page=vendor] .vendor-head .hd{padding-bottom:8px}
+body[data-hub-page=vendor] .v-meta-line{max-width:1440px;margin:auto;padding:0 24px 14px;display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;font-size:12px;color:var(--mut)}
+body[data-hub-page=vendor] .v-context>summary{min-height:36px;padding:8px 0;cursor:var(--cur-hover);font-size:12px;color:var(--mut)}
+body[data-hub-page=vendor] .v-context>summary:hover{color:var(--fg)}
+body[data-hub-page=vendor] .v-context[open]{flex-basis:100%}
+body[data-hub-page=vendor] .v-context-body{padding:12px;background:var(--card);border:1px solid var(--line);border-radius:5px}
+body[data-hub-page=vendor] .src-row{padding:0;margin:0 0 12px}
+body[data-hub-page=vendor] .src-card{padding:10px;border:0;background:transparent}
+body[data-hub-page=vendor] .v-overview{gap:12px;margin:0;padding:0;border:0}
+body[data-hub-page=vendor] .v-kpi{padding:10px;border:0;background:transparent;box-shadow:none}
+body[data-hub-page=vendor] .v-kpi[data-rec]:hover{background:var(--hover)}
+body[data-hub-page=vendor] .v-kpi.on{background:var(--accent-soft);outline:1px solid var(--accent)}
+body[data-hub-page=vendor] .v-kpi.on :is(b,small){color:var(--fg)}
+body[data-hub-page=vendor] .filters{display:grid;grid-template-columns:minmax(0,1fr) 200px 145px;gap:12px;align-items:start;margin:0}
+body[data-hub-page=vendor] .filters>label{margin:0;display:flex;min-width:0;gap:0}
+body[data-hub-page=vendor] .filters>label>span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+body[data-hub-page=vendor] .filters :is(input,select){width:100%;min-width:0;min-height:44px;margin:0;box-sizing:border-box}
+body[data-hub-page=vendor] .hub-filter-fold{grid-column:auto;flex-basis:auto;margin:0;border:1px solid var(--line);border-radius:5px;width:auto;background:var(--card)}
+body[data-hub-page=vendor] .hub-filter-fold>summary{padding:11px 14px;min-height:42px;font-size:13px;white-space:nowrap}
+body[data-hub-page=vendor] .hub-filter-fold[open]{grid-column:1/-1}
+body[data-hub-page=vendor] .hub-filter-fold[open]>.chip-group{padding:8px 14px;display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px}
+body[data-hub-page=vendor] .hub-filter-fold .chips{display:flex;gap:6px;flex-wrap:wrap}
+body[data-hub-page=vendor] .hub-filter-fold .chip{font-size:13px;min-height:40px;display:inline-flex;align-items:center}
+body[data-hub-page=vendor] .v-active-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+body[data-hub-page=vendor] .v-active-row:has(#v-active[hidden]){display:none}
+body[data-hub-page=vendor] #v-active{display:flex;gap:6px;flex-wrap:wrap;flex:1;padding-top:12px}
+body[data-hub-page=vendor] .v-filter-token{background:var(--accent-soft);border:1px solid var(--line);padding:8px 10px;min-height:36px;max-width:100%;overflow-wrap:anywhere;color:var(--fg);cursor:var(--cur-hover)}
+body[data-hub-page=vendor] #v-clear{min-height:40px;margin-top:12px;background:transparent;border:0;color:var(--mut);padding:8px}
+body[data-hub-page=vendor] .v-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;margin:0;border:0}
+body[data-hub-page=vendor] #v-count{font:12px/1.5 var(--hub-ui);margin:0 auto 0 0;padding:0}
+body[data-hub-page=vendor] .v-toolbar .chip-group{display:flex;gap:7px;align-items:center}
+body[data-hub-page=vendor] #v-sort-label{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+body[data-hub-page=vendor] #v-sort{min-height:40px;max-width:170px}
+body[data-hub-page=vendor] .v-views{padding:2px;background:var(--card);border:1px solid var(--line);border-radius:5px;display:flex;gap:2px}
+body[data-hub-page=vendor] .v-view{font:13px var(--hub-ui);padding:8px 11px;min-height:36px;border:0;box-shadow:none;background:transparent;color:var(--mut)}
+body[data-hub-page=vendor] .v-view.on{background:var(--accent);color:var(--accent-ink)}
+body[data-hub-page=vendor] :is(.badge.score,.v-rec,.v-rec-label){background:transparent;color:var(--mut);border:0;font:12px/1.6 var(--hub-ui);padding:0}
+body[data-hub-page=vendor] .badge.score{margin-left:auto}
+body[data-hub-page=vendor] .rarity-tag{background:transparent;color:var(--rc);font:13px var(--hub-ui);padding:0}
+body[data-hub-page=vendor] .t-name{color:var(--fg)}
+body[data-hub-page=vendor] tr:is(.r-named,.r-exotic) .t-name{color:var(--rc)}
+body[data-hub-page=vendor] .v-detail{border-top:4px solid var(--rc)}
+body[data-hub-page=vendor] .v-detail:is(.r-named,.r-exotic) .t h2{color:var(--rc)}
+[data-theme=light] body[data-hub-page=vendor] :is(.rarity-tag,tr:is(.r-named,.r-exotic) .t-name,.v-detail:is(.r-named,.r-exotic) .t h2){color:color-mix(in srgb,var(--rc) 62%,var(--fg))}
+/* Reading pages: title first, secondary actions in the metadata line. */
+body:is([data-hub-page=steam],[data-hub-page=bug]) #list{max-width:1080px;padding:20px 24px 40px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) header :is(.hd,.sub){max-width:1080px;margin-inline:auto}
+body:is([data-hub-page=steam],[data-hub-page=bug]) header .sub{padding:8px 24px;gap:10px;align-items:center}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row{padding:20px 8px;margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;gap:20px}
+/* 悬停必须带 `#list`：`hub.layout.css` 的 `body:is(...) #list .row`（ID 级）把面层底色钉死，
+   不带它就永远看不到悬停；`.open` 行保持展开的强调边，不参与悬停。按下 = 再实一档（Pen 08）。 */
+@media(hover:hover){body:is([data-hub-page=steam],[data-hub-page=bug]) #list .row:not(.open):hover{background:var(--hover);box-shadow:none}}
+body:is([data-hub-page=steam],[data-hub-page=bug]) #list .row:not(.open):active{background:var(--press)}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row.open{background:var(--panel)}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .ttl{font:600 16px/1.65 var(--hub-ui);padding:0 24px 0 0;position:relative}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .ttl:after{content:"";position:absolute;right:5px;top:9px;width:7px;height:7px;border:solid var(--mut);border-width:0 1.5px 1.5px 0;transform:rotate(45deg);transition:transform .14s}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .row.open .ttl:after{transform:rotate(225deg);top:13px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .meta{font-size:12px;gap:6px 10px;align-items:center;margin-top:10px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .meta .star{margin-left:auto;font:12px var(--hub-ui);min-height:36px;padding:7px 10px;min-width:64px;align-self:center}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .tag{font:12px/1.5 var(--hub-ui);display:inline-block;vertical-align:middle;padding:2px 6px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) .detail{font:15px/1.85 var(--hub-ui);padding-top:18px;margin-top:12px}
+body[data-hub-page=steam] .body{max-width:78ch;margin-inline:auto;padding:0;border:0;background:transparent;font:15px/1.85 var(--hub-ui)}
+body[data-hub-page=steam] .body :is(h2,h3){font:600 20px/1.5 var(--hub-ui);margin:24px 0 12px}
+body[data-hub-page=steam] .body p{margin:12px 0}
+body[data-hub-page=steam] #chips{gap:6px}
+/* Workbench: hierarchy without hiding or changing any computed result. */
+body[data-hub-page=build] .build-summary .rcell{padding:9px 4px;border-color:color-mix(in srgb,var(--line) 60%,transparent)}
+body[data-hub-page=build] .build-summary .rcell.k{padding-block:14px}
+body[data-hub-page=build] .build-summary .rcell.k .rnum{font-size:23px;font-weight:500}
+body[data-hub-page=build] .build-summary .rcell .rlbl{font-size:12px}
+body[data-hub-page=build] :is(.wcard,.gcard):hover{transform:none;box-shadow:none}
+/* 工作台卡片：悬停 = 主色描边 + 实一档；按下 = 再实一档（稿子「08 / 鼠标三态」二、三态）。
+   ⚠️ 悬停与按下都必须带 `#ggrid`：`build.pen.css` 的 `body[data-hub-page=build] #ggrid .build-gear-card`
+   是 ID 级特异性，不带它这两条会被那张表的 `background` / `border-color` 压回去（实测无变化）。 */
+@media(hover:hover){body[data-hub-page=build] #ggrid .gcard.filled:hover,body[data-hub-page=build] .wcard.filled:hover{border-color:color-mix(in srgb,var(--rc) 60%,var(--line));background:var(--hover)}}
+body[data-hub-page=build] #ggrid .gcard:active,body[data-hub-page=build] .wcard:active{border-color:var(--rc);background:var(--press)}
+/* 空槽：`＋` 与「点击选择」原来一个靠右、一个被裁掉（用户第 304 轮截图）⇒ 整卡居中成一列 */
+body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled)){border:1px dashed var(--line);background:transparent}
+body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled)){display:flex;flex-direction:column}
+body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled)) :is(.wc-mid,.gc-mid){flex:1;display:grid;place-items:center;background:transparent;min-height:84px;height:auto}
+body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled)) :is(.wc-empty,.gc-empty){display:block;font-size:26px;line-height:1;color:var(--mut)}
+body[data-hub-page=build] .wcard.empty .wc-stats{justify-content:center;text-align:center;padding:0 8px 10px;overflow:visible;white-space:nowrap}
+body[data-hub-page=build] .gcard:not(.filled) .sil{opacity:.55}
+body[data-hub-page=build] :is(.wcard.on,.gcard.open){outline:2px solid var(--accent);outline-offset:3px;box-shadow:none}
+body[data-hub-page=build] .card:has(>.sec-lbl){background:transparent;border-color:transparent;padding:12px 0}
+body[data-hub-page=build] .sec-lbl{font:600 14px var(--hub-ui);color:var(--fg);margin-bottom:12px}
+body[data-hub-page=build] .hub-build-jump a:focus-visible{outline-offset:-3px}
+body[data-hub-page=build] .hub-build-jump a:hover{background:var(--hover)}
+/* Remaining pages inherit the rhythm without replacing their specialist layouts. */
+body[data-hub-page=tasks] .obj-clue{line-height:1.8}
+body[data-hub-page=loot] #current-body .loot-name{font-size:15px}
+body[data-hub-page=admin] #entry :is(input,select){font:14px var(--hub-ui);background:var(--card);color:var(--fg)}
+body[data-hub-page=admin] #entry .admin-hint{max-width:70ch;line-height:1.75}
+body[data-hub-page=stats] .search-bar{max-width:1000px;gap:14px}
+body[data-hub-page=stats] .empty-copy{max-width:65ch}
+body[data-hub-page=stats] .empty-copy h2{font-family:var(--hub-ui);font-size:23px;line-height:1.45}
+@media (hover:hover){body[data-hub-page] button:not(:disabled):not(.on):hover{border-color:var(--mut)}}
+@media (max-width:700px){
+ body[data-hub-page]>header .hd{padding:18px 16px 10px;gap:10px;flex-wrap:wrap}
+ body[data-hub-page]>header h1{font-size:22px}
+ body[data-hub-page]>header .head-sub{font-size:13px}
+ body[data-hub-page] :is(input[type=search],input[type=text],input[type=date],select,textarea){font-size:16px;min-height:44px}
+ body[data-hub-page] :is(#lang,#theme){min-height:44px}
+ body[data-hub-page] .hub-fold>section,body[data-hub-page] .hub-fold>div{padding:12px 0}
+ body[data-hub-page=vendor] main{padding:16px 16px 40px}
+ body[data-hub-page=vendor] .vendor-head .hd>div:first-child{flex:1;min-width:175px}
+ body[data-hub-page=vendor] #vendor-subtitle{display:none}
+ body[data-hub-page=vendor] .v-meta-line{padding:0 16px 8px;gap:4px 14px}
+ body[data-hub-page=vendor] .filters{grid-template-columns:minmax(0,1fr) 128px;gap:10px}
+ body[data-hub-page=vendor] .search-field{grid-column:1/-1}
+ body[data-hub-page=vendor] .filters .hub-filter-fold{grid-column:auto;min-width:0}
+ body[data-hub-page=vendor] .filters .hub-filter-fold[open]{grid-column:1/-1}
+ body[data-hub-page=vendor] .hub-filter-fold>summary{min-height:44px}
+ body[data-hub-page=vendor] .hub-filter-fold[open]>.chip-group{display:block;padding:10px 12px}
+ body[data-hub-page=vendor] .hub-filter-fold .chips{margin-top:8px}
+ body[data-hub-page=vendor] .v-toolbar{gap:8px;padding:12px 0}
+ body[data-hub-page=vendor] #v-sort{font-size:13px;min-height:44px;padding:8px;max-width:132px}
+ body[data-hub-page=vendor] .v-view{min-height:40px;padding:7px 9px}
+ body[data-hub-page=vendor] #v-count{font-size:12px}
+ body[data-hub-page=vendor] .v-card .badge.score{margin-left:0}
+ body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .cbody{padding:14px 12px}
+ body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .cname{font-size:15px;font-weight:500}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) #list{padding:12px 16px 36px}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) header .sub{padding:6px 16px;gap:8px}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) header input[type=search]{width:100%;min-width:0;flex:1 1 100%}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .row{padding:18px 2px;gap:10px}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .ttl{font-size:16px;line-height:1.6}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .meta .star{min-height:44px}
+ body:is([data-hub-page=steam],[data-hub-page=bug]) .body{font-size:15px}
+ body[data-hub-page=build] .build-summary .rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-hub-page=build] .build-summary .rcell{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px}
+ body[data-hub-page=build] .build-summary .rcell.k{grid-column:auto}
+ body[data-hub-page=build] .build-summary .rcell.k .rnum{font-size:21px}
+ body[data-hub-page=stats] .search-bar{gap:12px}
+ body[data-hub-page=stats] .input-wrap{display:flex;flex-wrap:wrap;gap:8px;background:transparent;border:0}
+ body[data-hub-page=stats] #agent-input{width:100%;flex:1 1 100%;border:1px solid var(--line);border-radius:5px}
+ body[data-hub-page=stats] #btn-search{width:100%;min-height:44px;border-radius:5px}
+ body[data-hub-page=admin] #la-rows tr{border:0;border-top:1px solid var(--line);padding:18px 0;margin:12px 0;background:transparent}
+}
+/* Final alignment pass: no double padding / nested search boxes. */
+body[data-hub-page]>header{padding:0}
+
+body[data-hub-page=vendor] .filters>.search-field{padding:0;border:0;background:transparent;border-radius:0}
+body[data-hub-page=vendor] #v-count{flex:1 1 auto;width:auto;min-width:0}
+body[data-hub-page=vendor] .v-card .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;font:13px var(--hub-ui)}
+body[data-hub-page=vendor] .v-card .stats>span{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+body[data-hub-page=vendor] .v-card .stats>span:nth-child(n/**/+4){display:none}
+body[data-hub-page=vendor] .v-card .stats b{font:500 14px/1.4 var(--hub-ui)}
+body[data-hub-page=vendor] .v-card .tal{margin-top:auto}
+body[data-hub-page=build] :is(.wc-slotlbl,.gc-lbl,.wc-stats,.gc-name,.wc-name,.wc-tal-lbl,.wc-tal-name){font-family:var(--hub-ui)!important;font-weight:500;letter-spacing:normal;text-transform:none}
+body[data-hub-page=build] :is(.wc-slotlbl,.gc-lbl,.wcard.empty .wc-stats){font-size:12px}
+body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled))>.topbar{opacity:.35;height:2px}
+body:is([data-hub-page=steam],[data-hub-page=bug]) header h1{display:block}
+body:is([data-hub-page=steam],[data-hub-page=bug]) header h1 .stat{display:block;margin-top:6px;font:12px/1.5 var(--hub-ui)}
+body[data-hub-page=steam] header .sub>.hub-filter-fold{flex:1 1 auto;width:auto;margin:0;border:1px solid var(--line);border-radius:5px;background:var(--card)}
+body[data-hub-page=steam] header .hub-filter-fold>summary{padding:10px 12px;min-height:42px;font-size:13px}
+body[data-hub-page=steam] header .sub>.hub-filter-fold[open]{flex-basis:100%}
+body[data-hub-page=steam] header .hub-filter-fold>#chips{padding:12px;display:flex;flex-wrap:wrap;gap:8px}
+@media (min-width:701px){body:is([data-hub-page=db],[data-hub-page=vendor]) :is(.grid>.card,.v-card) .cname{min-height:3em}}
+/* Full-loadout refinement. Identity hues remain in base.css; text and selection are separate. */
+:root{--hub-selected:#f2914c;--hub-selected-ink:#17110d}
+:root[data-theme=light]{--accent:#ac4208;--accent-ink:#fff;--warn:#825600;--hub-focus:#973d09;--hub-selected:#f2914c;--hub-selected-ink:#17110d}
+
+body[data-hub-page=home] .primary-nav .tab.on::before{background:none}
+body[data-hub-page] :is(.v-view.active,#viewbox button.on,.talnav-item.on){background:var(--hub-selected);color:var(--hub-selected-ink);border-color:var(--hub-selected);box-shadow:inset 0 -3px #8f3805}
+body[data-hub-page] :is(.mini,.chip,.subchip,.hint,.meta,.axk,.wc-stats,.rlbl){font-family:var(--hub-ui);font-size:12px}
+.hub-loot-entry{display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;border:1px solid var(--accent);border-radius:5px;color:var(--fg);background:var(--card);font:500 14px var(--hub-ui);text-decoration:none}
+.hub-loot-entry:hover{background:var(--hover)}
+/* Native desktop facets replace the wall of chips, not its underlying state. */
+.hub-facet-select{display:none}
+@media (min-width:701px){
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ body[data-hub-page=steam] header .sub:has(>#q){display:grid;grid-template-columns:minmax(200px,1fr) auto auto}
+ body[data-hub-page=steam] header #q{width:100%;min-width:0}
+ body[data-hub-page=steam] header .sub>.hub-filter-fold{width:auto;min-width:150px;position:relative}
+ body[data-hub-page=steam] header .sub>.hub-filter-fold[open]{grid-column:1/-1}
+ body[data-hub-page=steam] header .sub>.hub-filter-fold:not([open]){flex:none}
+ body[data-hub-page=vendor] .filters{grid-template-columns:minmax(250px,1fr) minmax(160px,230px) 160px auto;gap:12px}
+ body[data-hub-page=vendor] .filters .hub-filter-fold:not([open]){grid-column:auto;width:160px}
+ body[data-hub-page=vendor] .filters .hub-filter-fold[open]{grid-column:1/-1;width:auto}
+ body[data-hub-page=loot] #history .filters{display:flex;flex-wrap:nowrap;align-items:end;gap:12px}
+ body[data-hub-page=loot] #history .filters>label{flex:1;min-width:0}
+ body[data-hub-page=loot] #history .filters>.search-field{flex:1.7}
+ body[data-hub-page=loot] #history .filters :is(input,select){width:100%;min-width:0}
+}
+/* Equipped cards: neutral plates, readable numbers, no nested hyperlink/mod boxes. */
+/* ── 卡色 = 品质身份（2026-09-18，用户：「和资料库完全对不上颜色」）─────────────────
+   配装卡改吃 `base.css` 的 `.r-brand/.r-named/.r-set/.r-exotic/.r-proto{--rc}`（class 由 build.view.js 给），
+   与资料库 `.card.r-*` 同源；不再按核心属性（红/蓝/黄）给整卡上色 —— 那三色只留给词条行的圆点与数值。 */
+body[data-hub-page=build] .gcard.filled{border-color:var(--line)}
+body[data-hub-page=build] .gcard.filled>.topbar{background:var(--rc);opacity:1;height:3px}
+body[data-hub-page=build] .gcard.filled:hover{border-color:color-mix(in srgb,var(--rc) 60%,var(--line))}
+/* 名字着色口径照抄 db.css：具名/奇特/原型=身份色，装备组=72% 混白，品牌/普通=正文色 */
+body[data-hub-page=build] .gcard.filled .gc-name{color:var(--fg)}
+body[data-hub-page=build] .gcard.filled:is(.r-named,.r-exotic,.r-proto) .gc-name{color:var(--rc)}
+body[data-hub-page=build] .gcard.filled.r-set .gc-name{color:color-mix(in srgb,var(--rc) 72%,var(--fg))}
+/* 武器卡：不要底纹（用户明确「武器不要底纹」）—— 图区与卡同背景，仅靠边框分隔 */
+body[data-hub-page=build] .wcard.filled .wc-mid{background:var(--card);border-right:1px solid var(--line)}
+body[data-hub-page=build] :is(.gcard,.wcard)::before{display:none}
+body[data-hub-page=build] .gc-mid{background:var(--panel)}
+body[data-hub-page=build] .gc-main{min-width:0}
+body[data-hub-page=build] .gc-name{font-size:12.5px;white-space:normal;overflow:visible;line-height:1.35}
+body[data-hub-page=build] .gc-info{padding:6px 10px;gap:2px}
+body[data-hub-page=build] .build-db-link{align-self:flex-start;border:0;border-radius:0;padding:0;margin:0;color:var(--mut);font:11px/1.4 var(--hub-ui);background:none}
+body[data-hub-page=build] .wcard>.build-db-link{margin-left:12px}
+body[data-hub-page=build] .build-db-link:hover{text-decoration:underline;color:var(--fg)}
+body[data-hub-page=build] .gcard .axblk{padding:2px 0 0;gap:0;border-top:0}
+body[data-hub-page=build] .axrow{font:11.5px/1.45 var(--hub-ui);min-height:0;align-items:center;gap:6px}
+body[data-hub-page=build] .gcard .axrow:not(.axselect){display:grid;grid-template-columns:13px auto minmax(0,1fr);align-items:center;gap:6px}
+body[data-hub-page=build] .gcard .axrow:not(.axselect) .axk{white-space:nowrap;flex:0 0 auto}
+body[data-hub-page=build] .gcard .axrow:not(.axselect) .axv{white-space:normal;min-width:0}
+body[data-hub-page=build] .axrow[data-fam] .axic{display:block;width:13px;height:13px;flex:0 0 13px;
+  background:var(--axc,var(--mut));-webkit-mask:var(--axm) center/contain no-repeat;mask:var(--axm) center/contain no-repeat}
+body[data-hub-page=build] .axrow[data-fam=off]{--axc:var(--rar-off)}
+body[data-hub-page=build] .axrow[data-fam=def]{--axc:var(--rar-def)}
+body[data-hub-page=build] .axrow[data-fam=uti]{--axc:var(--rar-uti)}
+body[data-hub-page=build] .axrow[data-fam] .axvalue{color:var(--axc)}
+body[data-hub-page=build] .axselect{position:relative;display:grid;grid-template-columns:13px minmax(0,1fr) auto;align-items:center;gap:6px;border-bottom:1px solid var(--line);padding:3px 12px 3px 9px;min-height:24px}
+body[data-hub-page=build] .axselect>.axk{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+body[data-hub-page=build] .axrow.axselect{grid-template-columns:13px minmax(0,1fr) auto}
+body[data-hub-page=build] .axchoice{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg);font:11.5px/1.45 var(--hub-ui);min-width:0}
+body[data-hub-page=build] .axvalue{color:var(--axc,var(--fg));font:500 11.5px/1.45 var(--hub-ui);font-variant-numeric:tabular-nums;white-space:nowrap}
+body[data-hub-page=build] .axselect:after{content:"";width:4px;height:4px;opacity:.6;border:solid var(--mut);border-width:0 1px 1px 0;transform:rotate(45deg);position:absolute;right:2px;top:calc(50% - 3px);pointer-events:none}
+body[data-hub-page=build] .axselect>select{position:absolute;inset:0;width:100%;height:100%;opacity:0;z-index:1;font:16px var(--hub-ui);cursor:var(--cur-hover)}
+body[data-hub-page=build] .axselect:focus-within{outline:2px solid var(--hub-focus);outline-offset:2px;border-radius:3px}
+body[data-hub-page=build] .axselect:hover{background:var(--hover)}
+body[data-hub-page=build] .axv{font:11.5px/1.45 var(--hub-ui);white-space:normal;overflow:visible;min-width:0}
+body[data-hub-page=build] .gc-ft{display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:3px 10px 5px;border-top:1px solid var(--line)}
+body[data-hub-page=build] .modblk{width:100%;min-height:0;height:auto;display:flex;gap:6px;justify-content:flex-start;align-items:center;border:0!important;border-radius:0;padding:2px 0;background:transparent!important;color:var(--fg)!important;font:11.5px/1.45 var(--hub-ui);text-align:left}
+body[data-hub-page=build] .modblk .mod-label{flex:1;white-space:normal;overflow-wrap:anywhere;min-width:0}
+body[data-hub-page=build] .modblk .mod-value{font:500 13px var(--hub-ui);white-space:nowrap}
+body[data-hub-page=build] .modblk .mglyph{width:18px;height:18px;flex:0 0 18px}
+body[data-hub-page=build] .modblk:hover{background:var(--hover)!important}
+body[data-hub-page=build] .gc-ft .taltx{margin:0;max-width:100%;white-space:normal;overflow:visible;text-align:left;min-height:0;padding:2px 0;font:11.5px/1.45 var(--hub-ui);border:0;color:var(--violet)}
+body[data-hub-page=build] .wc-stats{flex-wrap:wrap;white-space:normal;gap:3px 10px;font-size:11.5px;padding-block:3px}
+body[data-hub-page=build] .wc-mod{gap:0}
+body[data-hub-page=build] .wmod-row,body[data-hub-page=build] .wmod-row.on{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;min-height:0;color:var(--fg);padding:3px 0;gap:2px 6px;font:11.5px/1.45 var(--hub-ui)}
+body[data-hub-page=build] .wmod-row:hover{background:var(--hover)}
+body[data-hub-page=build] .wmod-v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+body[data-hub-page=build] .wmod-row .wmod-a{font:500 11.5px/1.45 var(--hub-ui);color:var(--fg);white-space:nowrap}
+body[data-hub-page=build] .wmod-k{font-size:12px}
+body[data-hub-page=build] .wc-talrow{margin:3px 12px;min-height:0;width:calc(100% - 24px);border:0;border-bottom:1px solid var(--line);padding:2px 0;flex-wrap:wrap}
+body[data-hub-page=build] .wc-tal-name{font-size:13px;white-space:normal;overflow:visible}
+body[data-hub-page=build] .build-summary .rcell{grid-column:auto;min-width:0}
+body[data-hub-page=build] .build-summary .rlbl{white-space:normal;overflow:visible}
+body[data-hub-page=build] :is(.r_dmg,.r-dmg){color:var(--accent)}
+[data-theme=light] body[data-hub-page=build] .r-def{color:#225a89}
+[data-theme=light] body[data-hub-page=build] .r-crit{color:#765209}
+[data-theme=light] body[data-hub-page=build] .axchoice,[data-theme=light] body[data-hub-page=build] .axvalue{color:var(--fg)}
+@media (max-width:700px){
+ body[data-hub-page=build]>header{position:relative}
+ body[data-hub-page=build] main{padding:14px 12px 40px}
+ body[data-hub-page=build] #col-desk>.loadout-gear{order:1}
+ body[data-hub-page=build] #col-desk>.loadout-weapons{order:2}
+ body[data-hub-page=build] .hub-build-jump{gap:4px;padding:6px 10px}
+ body[data-hub-page=build] .hub-build-jump a{border:0;border-radius:0;padding:10px 3px;min-width:0;font-size:12px}
+ body[data-hub-page=build] .ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+ body[data-hub-page=build] .gcard.filled{grid-column:auto}
+ body[data-hub-page=build] .gcard.filled .gc-main{display:flex;flex-direction:column;gap:0}
+ body[data-hub-page=build] .gc-hd{flex-wrap:wrap;gap:4px;padding:5px 8px}
+ body[data-hub-page=build] .gc-lbl{flex:1}
+ body[data-hub-page=build] .gc-hd :is(.badge,.gswapn){display:none}
+ body[data-hub-page=build] .gc-hd .ovrbtn{order:2}
+ body[data-hub-page=build] .gc-hd [data-act]{padding:2px;font:11px var(--hub-ui)}
+ body[data-hub-page=build] .gcard.filled .gc-mid{height:68px;min-height:68px;width:100%;padding:5px}
+ body[data-hub-page=build] .gcard.filled .gc-info{padding:8px;gap:4px;width:100%}
+ body[data-hub-page=build] .gc-name{min-height:3em;font-size:13px!important}
+ body[data-hub-page=build] .gc-ft{padding:4px 8px 8px}
+ body[data-hub-page=build] .gc-bonus{font-size:12px}
+ body[data-hub-page=build] .modblk{gap:5px;flex-wrap:wrap}
+ body[data-hub-page=build] .modblk .mod-value{margin-left:auto}
+ body[data-hub-page=build] .modblk .mod-label{font-size:12px}
+ body[data-hub-page=build] .wcard.filled .wc-mid{height:90px;min-height:90px}
+ body[data-hub-page=build] .wmod-row .wmod-a{max-width:100%;font-size:13px}
+ body[data-hub-page=build] .build-summary .rgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body[data-hub-page=build] .build-summary :is(.rcell,.rcell.k){grid-column:auto;min-width:0;gap:6px}
+ body[data-hub-page=build] .build-summary .rcell.k .rnum{font-size:19px}
+}
+body[data-hub-page=build] .wc-mod{grid-template-columns:1fr 1fr;column-gap:10px}
+body[data-hub-page=build] .wc-mid{height:110px}
+body[data-hub-page=build] .gc-mid{height:90px}
+/* 横排填充态（build.css 里 `.gcard.filled .gc-main` 改成 图左+信息右）：图区跟随整列高度，
+   不要再按纵排时代的 90/110px 写死，否则图下方留白、卡反而更长。 */
+body[data-hub-page=build] .gcard.filled .gc-mid{height:auto;min-height:100%;padding:6px;position:relative;display:grid;place-items:center}
+body[data-hub-page=build] .wcard.filled .wc-mid{height:auto;min-height:100%;padding:4px}
+body[data-hub-page=build] .gcard.filled .gc-mid .ic{max-width:100%;max-height:100%}
+body[data-hub-page=build] .wcard.filled .wc-mid .ic{max-width:100%;max-height:100%}
+body[data-hub-page=build] .wmod-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:start}
+body[data-hub-page=build] .wmod-row .wmod-ic{grid-column:1;grid-row:1}
+body[data-hub-page=build] .wmod-row .wmod-k{grid-column:2;grid-row:1}
+body[data-hub-page=build] .wmod-row :is(.wmod-a,.wmod-tag){grid-column:3;grid-row:1/3;align-self:center;text-align:right;max-width:100px;white-space:normal}
+body[data-hub-page=build] .wmod-row .wmod-v{grid-column:2;grid-row:2;white-space:normal;overflow-wrap:anywhere}
+body[data-hub-page=build] .gc-bonus{white-space:normal;overflow:visible;font:11px/1.4 var(--hub-ui);color:var(--mut)}
+body[data-hub-page=build] .gc-bonus span{display:block}
+body[data-hub-page=build] .gc-name{font-size:14px!important}
+/* WCAG text contrast: regular text >=4.5:1, large text >=3:1 on measured solid surfaces. */
+:root[data-theme=light]{--mut:var(--mobile-muted,#56616d);--hub-muted:var(--mobile-muted,#56616d);--bad:#ac2934;--ok:#176c43;--violet:#6540aa;--accent-2:#9b1c59}
+body[data-hub-page=build] .badge.rc{color:var(--mut);opacity:1}
+body[data-hub-page=db] .csstat-src,body[data-hub-page=db] .csstat-foot{opacity:1}
+body:is([data-hub-page=loot],[data-hub-page=admin]) .action-btn{background:var(--card);color:var(--fg);border:1px solid var(--line)}
+body:is([data-hub-page=loot],[data-hub-page=admin]) .action-btn.ghost{background:transparent;color:var(--fg)}
+body[data-hub-page=loot] .esc-panel summary{color:var(--fg)}
+body[data-hub-page=admin] #la-save{background:var(--hub-selected);color:var(--hub-selected-ink);border-color:var(--hub-selected)}
+[data-theme=light] body[data-hub-page=loot] .category.set{color:#285f33}
+[data-theme=light] body[data-hub-page=loot] .category.brand{color:#80500d}
+[data-theme=light] body[data-hub-page=loot] .category.weapon{color:#a02c2a}
+[data-theme=light] body:is([data-hub-page=steam],[data-hub-page=bug]) .tag{background:var(--card)}
+:root:not([data-theme=light]) body[data-hub-page=bug] .tag.s-Planned{color:#fb82bc}
+[data-theme=light] body[data-hub-page=stats] .plat-btn.on{color:#833306}
+body[data-hub-page=db] .csrc{opacity:1}
+@media (min-width:701px){body[data-hub-page=steam] header .sub>.hub-filter-fold:not([open]){grid-column:auto}}
+/* Numeric data uses the same readable UI face, not condensed display glyphs. */
+body[data-hub-page=db] :is(.stats,.stats b,.stats span,.dbattrs,.dbattr,.dbattr b,.kvs,.kvs b,.fcell,.fcell b,.tier,.ptab){font-family:var(--hub-ui)!important;font-variant-numeric:tabular-nums}
+body[data-hub-page=db] .stats b{font-size:14px;font-weight:500}
+body[data-hub-page=build] :is(.rnum,.rsub,.apnl,.arow,.ak,.av,.bpb,.wax-row,.wax-row b,.wc-att,.hgc,.rgrid){font-family:var(--hub-ui)!important;font-variant-numeric:tabular-nums}
+body[data-hub-page=build] .gc-ft .taltx.na{opacity:1;color:var(--mut)}
+body[data-hub-page=build] .tal-state{display:block;font:12px/1.5 var(--hub-ui);color:var(--mut)}
+[data-theme=light] body[data-hub-page=db] .rel-badge.rel-dz{color:#8a451b}
+
+/* ── 配装卡面重排（2026-09-18，用户第二轮）────────────────────────────────────
+   ① 颜色只来自品质身份；② 图区**不加底纹**、不加分隔线，物图直接坐在卡面上；
+   ③ 品牌/装备组水印 = 左上角一枚小标；④ 卡头只剩「部位 · ● 品质」（OVR / 锁上已按用户要求去掉）；
+   ⑤ 右列 = 名称 → 品牌行 → 词条 → 插件 → 天赋，全部同一种行（24px），天赋不再单独占一行脚栏；
+   ⑥ 手机两列竖排，词条 10.5px。 */
+body[data-hub-page=build] .gcard{border-radius:6px}
+body[data-hub-page=build] .gcard.filled .gc-main{grid-template-columns:var(--build-gear-art,104px) minmax(0,1fr);align-items:start}
+body[data-hub-page=build] .gcard.filled .gc-mid{background:transparent;border:0;padding:16px 6px 8px;min-height:0;height:auto;align-self:stretch;display:grid;place-items:center}
+body[data-hub-page=build] .gcard.filled .gc-mid>img,body[data-hub-page=build] .gcard.filled .gc-mid .ic{justify-self:center;max-width:92%;max-height:96px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+[data-theme=light] body[data-hub-page=build] .gcard.filled .gc-mid .ic{filter:drop-shadow(0 2px 4px rgba(40,30,10,.25))}
+body[data-hub-page=build] .gc-wm,body[data-hub-page=build] .wc-wm{left:8px;top:6px;transform:none;width:88px;height:48px;opacity:.85;
+  -webkit-mask:var(--wm) left top/contain no-repeat;mask:var(--wm) left top/contain no-repeat;z-index:2}
+[data-theme=light] body[data-hub-page=build] .gc-wm,[data-theme=light] body[data-hub-page=build] .wc-wm{opacity:.55}
+/* 卡头 */
+body[data-hub-page=build] .gc-hd{padding:6px 10px 0;gap:6px;min-height:0}
+body[data-hub-page=build] .gc-hd .gc-lbl{color:var(--fg);font-size:12.5px;font-weight:600}
+body[data-hub-page=build] .gc-hd .badge{border:0;padding:0;background:none;font:11.5px/1.4 var(--hub-ui);letter-spacing:0;text-transform:none;color:var(--rc);opacity:1;margin-left:auto}
+body[data-hub-page=build] .gc-hd .badge.rc::before{content:"●";margin-right:4px;font-size:9px}
+body[data-hub-page=build] .gc-hd .gswapn{min-height:18px;min-width:0;line-height:16px;padding:0 5px;border-color:var(--line);color:var(--mut);background:transparent;font-size:10.5px}
+body[data-hub-page=build] .gc-hd :is(.ovrbtn,.gclock){display:none}
+/* 右列：统一行高 */
+body[data-hub-page=build] .gcard.filled .gc-info{padding:4px 10px 6px 0;gap:1px}
+body[data-hub-page=build] .gc-name{font-size:13px!important;font-weight:600;line-height:1.3;margin-bottom:1px}
+body[data-hub-page=build] .gc-bonus{color:var(--mut);font-size:11px;line-height:1.4}
+body[data-hub-page=build] .gc-bonus span{display:inline;margin-right:5px}
+body[data-hub-page=build] .gcard .axblk{margin-top:2px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+body[data-hub-page=build] .gcard .axrow:not(.axselect){padding:3px 0 3px 9px;min-height:23px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+body[data-hub-page=build] .gcard .axrow:not(.axselect) .axv{margin-left:auto;text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+body[data-hub-page=build] .axselect{padding:3px 12px 3px 9px;min-height:23px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+/* 插件 + 天赋：与词条同款的行，放在右列末尾（脚栏不再横跨整卡） */
+body[data-hub-page=build] .gc-ft{display:flex;flex-direction:column;gap:0;padding:0;border:0;margin:0}
+body[data-hub-page=build] .modblk{padding:3px 0 3px 9px;min-height:23px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;border-radius:0;font:11.5px/1.45 var(--hub-ui)}
+body[data-hub-page=build] .modblk .mglyph{width:13px;height:13px;flex:0 0 13px;margin-right:0}
+body[data-hub-page=build] .modblk .mod-label{flex:1 1 auto}
+body[data-hub-page=build] .modblk .mod-value{font:500 11.5px/1.45 var(--hub-ui);margin-left:auto}
+body[data-hub-page=build] .gc-ft .taltx{display:flex;align-items:center;gap:6px;padding:3px 0 3px 9px;min-height:23px;border:0;font:11.5px/1.45 var(--hub-ui);color:var(--violet)}
+body[data-hub-page=build] .gc-ft .taltx::before{content:"";width:13px;height:13px;flex:0 0 13px;border-radius:999px;border:1.5px solid currentColor;opacity:.8;box-sizing:border-box}
+body[data-hub-page=build] .gc-ft .taltx[aria-pressed="true"]::before{content:"";margin:0}
+body[data-hub-page=build] .gc-ft .taltx .tal-state{display:inline;margin-left:auto;font-size:10.5px}
+body[data-hub-page=build] .gc-ft .taltx.empty{color:var(--mut)}
+body[data-hub-page=build] .gc-ft>:last-child{border-bottom:0!important}
+body[data-hub-page=build] .gcard:not(.filled)>.topbar{display:none}
+/* 手机：两列竖排，词条 10.5px */
+@media (max-width:700px){
+ body[data-hub-page=build] .ggrid{gap:8px}
+ body[data-hub-page=build] .gcard.filled .gc-main{display:flex;flex-direction:column}
+ body[data-hub-page=build] .gcard.filled .gc-mid{height:84px;min-height:84px;padding:10px 6px 2px;width:100%}
+ body[data-hub-page=build] .gcard.filled .gc-mid .ic{max-width:64%;max-height:72px}
+ body[data-hub-page=build] .gc-wm{width:76px;height:40px;left:7px;top:5px}
+ body[data-hub-page=build] .gc-hd{padding:5px 8px 0;flex-wrap:nowrap;gap:5px}
+ body[data-hub-page=build] .gc-hd .gc-lbl{flex:0 0 auto;font-size:12px;white-space:nowrap}
+ body[data-hub-page=build] .gc-hd .badge{display:inline-block;margin-left:auto;font-size:11px;white-space:nowrap}
+ body[data-hub-page=build] .gc-hd .gswapn{display:none}
+ body[data-hub-page=build] .gc-hd [data-act]{min-height:18px;min-width:0}
+ body[data-hub-page=build] .gcard.filled .gc-ft{margin:0;padding:0;border:0}
+ body[data-hub-page=build] .modblk{flex-wrap:nowrap}
+ body[data-hub-page=build] .gcard.filled .gc-info{padding:2px 8px 5px;gap:0;width:100%}
+ body[data-hub-page=build] .gc-name{min-height:0;font-size:12px!important}
+ body[data-hub-page=build] .gc-bonus{font-size:10.5px}
+ body[data-hub-page=build] .gcard .axrow:not(.axselect),body[data-hub-page=build] .axselect,body[data-hub-page=build] .modblk,body[data-hub-page=build] .gc-ft .taltx{font-size:10.5px;min-height:21px;padding-top:2px;padding-bottom:2px}
+ body[data-hub-page=build] .gcard :is(.axchoice,.axvalue,.axv,.axk,.mod-label,.mod-value){font-size:10.5px}
+ body[data-hub-page=build] .gcard .axrow:not(.axselect){grid-template-columns:12px auto minmax(0,1fr)}
+ body[data-hub-page=build] .axrow[data-fam] .axic{width:12px;height:12px;flex-basis:12px}
+ body[data-hub-page=build] .modblk .mglyph{width:12px;height:12px;flex-basis:12px}
+}
+
+/* ── 固定词条行：与随机词条同一网格（图标格 · 名称 · 右对齐数值），图标格画一颗骨白小点 ── */
+body[data-hub-page=build] .axrow[data-fam=fixed] .axic{display:block;width:13px;height:13px;flex:0 0 13px;background:none;-webkit-mask:none;mask:none;position:relative}
+body[data-hub-page=build] .axrow[data-fam=fixed] .axic::after{content:"";position:absolute;left:4px;top:4px;width:5px;height:5px;border-radius:999px;background:var(--bone)}
+body[data-hub-page=build] .axrow[data-fam=fixed] .axk{color:var(--fg);white-space:normal}
+body[data-hub-page=build] .axrow[data-fam=fixed] .axv{color:var(--fg)}
+body[data-hub-page=build] .axrow[data-fam=fixed]::before{display:none}
+
+/* Weapon layout is owned by db/build.layout.css. */
+
+/* Shared secondary navigation. The season tabs establish this pattern. */
+body :is(.subnav,.se-subnav,.hub-subnavigation){display:flex;flex-wrap:nowrap;align-items:stretch;gap:2px;margin:8px auto 0;padding:0 18px;max-width:1240px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent;border:0;background:transparent;scroll-padding-inline:18px}
+body :is(.subnav,.se-subnav,.hub-subnavigation) a{display:flex;flex:0 0 auto;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;padding:10px 14px;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--mut);background:transparent;font:500 13px/1.4 var(--ff-body);white-space:nowrap;text-decoration:none;transition:color .16s ease,background-color .16s ease,border-color .16s ease}
+body :is(.subnav,.se-subnav,.hub-subnavigation) a:hover{color:var(--fg);background:color-mix(in srgb,var(--fg) 5%,transparent)}
+body :is(.subnav,.se-subnav,.hub-subnavigation) a:is(.on,[aria-current=page]){color:var(--fg);border-bottom-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+body :is(.subnav,.se-subnav,.hub-subnavigation) a:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+body :is(.loot-head,.vendor-head){padding-bottom:0}
+/* Keep native select menus, keyboard/type-ahead and mobile pickers. */
+html body[data-hub-page] select:not([multiple]):not([size]):not(.axselect select){appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%239b9790' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:16px!important;padding-right:34px!important;min-height:40px;border-radius:6px;box-sizing:border-box;max-width:100%;text-overflow:ellipsis;transition:border-color .16s ease,box-shadow .16s ease}
+html body[data-hub-page] select:not(.axselect select):hover:not(:disabled){border-color:var(--mut)}
+html body[data-hub-page] :is(select,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:none}
+html body[data-hub-page] select:disabled{opacity:.6;cursor:not-allowed}
+html body[data-hub-page] select,html body[data-hub-page] select :is(option,optgroup){font-family:var(--ff-body);font-size:14px;line-height:1.5}
+html body[data-hub-page] select option{color:var(--fg);background:var(--panel)}
+/* Native select semantics, with a themed browser picker where supported. */
+@supports(appearance:base-select){
+ html body[data-hub-page] select:not([multiple]):not([size]):not(.axselect select),
+ html body[data-hub-page] select:not([multiple]):not([size]):not(.axselect select)::picker(select){appearance:base-select}
+ html body[data-hub-page] select:not([multiple]):not([size]):not(.axselect select){display:inline-flex!important;background-image:none!important;padding:8px 12px!important;align-items:center;justify-content:space-between;gap:12px;cursor:var(--cur-hover)}
+ html body[data-hub-page] select::picker-icon{color:var(--mut);transition:rotate .16s ease}
+ html body[data-hub-page] select:open::picker-icon{rotate:180deg}
+ html body[data-hub-page] select::picker(select){margin:6px 0;padding:5px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);box-shadow:var(--shadow-menu);max-height:min(440px,60dvh);max-width:calc(100vw - 24px);overflow:auto;overscroll-behavior:contain}
+ html body[data-hub-page] select option{min-height:38px;padding:8px 12px;border-radius:4px;gap:10px;white-space:normal;overflow-wrap:anywhere}
+ html body[data-hub-page] select option:checked{background:var(--accent-soft);color:var(--fg);font-weight:600}
+ html body[data-hub-page] select option:is(:hover,:focus-visible){background:color-mix(in srgb,var(--fg) 9%,var(--panel));color:var(--fg);outline:none}
+ html body[data-hub-page] select option::checkmark{color:var(--accent)}
+ html body[data-hub-page] select optgroup{padding:6px 4px;font-weight:600;color:var(--mut)}
+}
+html body[data-hub-page] input[type=checkbox]{appearance:none;display:inline-grid;place-content:center;flex:0 0 18px;width:18px;height:18px;min-height:18px;margin:0;border:1px solid var(--mut);border-radius:4px;background:var(--card);color:var(--accent-ink);cursor:var(--cur-hover);vertical-align:middle}
+html body[data-hub-page] input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+html body[data-hub-page] input[type=checkbox]:checked:before{content:'';width:9px;height:5px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-1px) rotate(-45deg)}
+html body[data-hub-page] input[type=checkbox]:disabled{opacity:.5;cursor:not-allowed}
+/* Filter disclosures share outside-click and Escape behavior. */
+body .hub-menu-panel>summary{list-style:none;display:flex;align-items:center;gap:10px;cursor:var(--cur-hover);min-height:40px;color:var(--fg)}
+body .hub-menu-panel>summary::-webkit-details-marker{display:none}
+body .hub-menu-panel>summary::after{content:''!important;display:block;width:7px;height:7px;flex:0 0 7px;margin-left:auto;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .16s ease}
+body .hub-menu-panel[open]>summary::after{transform:translateY(2px) rotate(225deg)}
+body .hub-menu-panel>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body .hub-menu-panel[open]>summary{color:var(--accent)}
+/* Reading rails are generated from the page's real section anchors. */
+.hub-reading-layout{display:grid;grid-template-columns:172px minmax(0,1fr);align-items:start;gap:28px;max-width:1400px;margin:0 auto;padding:20px 20px 0}
+.hub-reading-content{min-width:0;width:100%;max-width:none!important;margin:0!important;padding:0!important}
+.proto-page>.hub-reading-layout{padding:0;gap:24px;grid-template-columns:156px minmax(0,1fr)}
+.hub-reader{position:sticky;top:calc(var(--hub-reading-top,48px) + 20px);min-width:0;z-index:20;align-self:start}
+.hub-reader>details{border:0;padding:0;background:transparent}
+.hub-reader summary{display:none}
+body .hub-reader .hub-reader-label{font:600 12px/1.5 var(--ff-body);color:var(--mut);margin:0 0 12px;padding:0 12px}
+body .hub-reader nav{display:flex;flex-direction:column;gap:4px;padding:0;margin:0;overflow:visible;max-width:none;background:transparent;border:0}
+body .hub-reader nav a{display:block;min-height:40px;box-sizing:border-box;padding:10px 12px;border:0;border-radius:6px;color:var(--mut);font:400 13px/1.5 var(--ff-body);white-space:normal;text-decoration:none;transition:background-color .16s ease,color .16s ease}
+body .hub-reader nav a:hover{color:var(--fg);background:color-mix(in srgb,var(--fg) 5%,transparent)}
+body .hub-reader nav a:is(.on,[aria-current=location]){color:var(--fg);background:color-mix(in srgb,var(--accent) 12%,var(--card));font-weight:600;box-shadow:none}
+body .hub-reader nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.hub-reading-content :is(section[id],details[id],tr[id]){scroll-margin-top:calc(var(--hub-reading-top,48px) + 72px)}
+.hub-reading-content :is(section,details,tr)[tabindex="-1"]:focus{outline:none}
+/* Loot contents stay beside the article, below both frozen navigation rows. */
+html:has(body[data-hub-page=loot]){scroll-padding-top:0}
+body[data-hub-page=loot]>.loot-head{top:var(--hub-navigation-height,0px)}
+body[data-hub-page=loot] .hub-reading-content :is(section[id],details[id]){scroll-margin-top:calc(var(--hub-reading-top,48px) + 20px)}
+@media(min-width:1000px){
+ body[data-hub-page=loot]>.hub-reading-layout{grid-template-columns:172px minmax(0,1fr)}
+ body[data-hub-page=loot] .hub-reader{position:sticky;top:calc(var(--hub-reading-top,48px) + 16px);max-height:calc(100dvh - var(--hub-reading-top,48px) - 32px);overflow:auto;padding:14px 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:0}
+ body[data-hub-page=loot] .hub-reader summary{display:none}
+ body[data-hub-page=loot] .hub-reader .hub-reader-label{display:block}
+ body[data-hub-page=loot] .hub-reader details>nav{display:flex;max-height:none}
+}
+@media(max-width:999px){body[data-hub-page=loot] .hub-reader{position:static;top:auto}}
+@media(max-width:1199px){
+ .hub-reading-layout,.proto-page>.hub-reading-layout{grid-template-columns:minmax(0,1fr);gap:16px;padding:12px 16px 0}
+ .proto-page>.hub-reading-layout{padding:0}
+ .hub-reader{top:var(--hub-reading-top,48px);margin:0 -4px;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+ .hub-reader summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;box-sizing:border-box;padding:10px 14px;list-style:none;font:500 13px/1.5 var(--ff-body);cursor:var(--cur-hover)}
+ .hub-reader summary::-webkit-details-marker{display:none}
+ .hub-reader summary:after{content:'';width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg)}
+ .hub-reader details[open] summary:after{transform:rotate(225deg)}
+ body .hub-reader .hub-reader-label{display:none}
+ body .hub-reader nav{padding:4px 6px 8px;max-height:55dvh;overflow:auto}
+ .hub-reader details[open]{box-shadow:0 8px 18px #0002}
+ body .hub-reader nav a{min-height:44px}
+}
+@media(max-width:700px){
+ body :is(.subnav,.se-subnav,.hub-subnavigation){padding-inline:12px;scroll-padding-inline:12px}
+ body :is(.subnav,.se-subnav,.hub-subnavigation) a{padding-inline:12px;font-size:13px}
+ html body[data-hub-page] select:not(.axselect select){min-height:44px;font-size:16px}
+ .hub-reading-layout{padding-inline:12px;gap:12px}
+}
+@media(prefers-reduced-motion:reduce){body :is(.hub-reader a,.hub-menu-panel>summary,.subnav a,.se-subnav a,.hub-subnavigation a,select){transition:none}}
+@media(forced-colors:active){html body[data-hub-page] input[type=checkbox]{appearance:auto}html body[data-hub-page] select{appearance:auto;background-image:none!important}}
+/* Mobile controls share a physical minimum, including seasonal subpages,
+   result tables and opened filters; labels and ordinary prose links stay text. */
+@media(max-width:760px){
+ html body[data-hub-page] :is(.se-subnav,.section-nav,.hub-reader nav,.stats-jump) a{min-height:44px;display:inline-flex;align-items:center;box-sizing:border-box}
+}
+
+/* ── 08 · 交互状态补齐：悬停 / 按下（2026-10-15 全站探针，Pen「08 / 鼠标三态与交互节点图」）──
+   梯级令牌在 `hub.layout.css`（--hover / --press，深 #30312e/#3b3c38，浅 #e1dfd8/#d4d2cb）。
+   本段只补三类真实缺口（证据 `work/interaction-20261015/probe/`）：
+   ① 悬停规则被 ID 级页面规则压掉的控件（build 工具栏、首页查找、资料库大类条、供应商目录）；
+   ② 从来没有悬停/按下规则的控件（summary、chip、平台段、目录与文本链接）；
+   ③ 未选中才有悬停/按下 —— 选中态（.on / aria-pressed）持续可见，不随指针改变。
+   悬停全部包在 (hover:hover) 里：手机点击与手势不依赖悬停；按下（:active）双端都成立；
+   减少动态效果时只有过渡被关掉，颜色状态仍在（base.css 的 reduced-motion 段）。 */
+
+/* 可折叠标题：展开/收起是可操作控件，悬停实一档、按下再一档。 */
+@media(hover:hover){body summary:hover{background:var(--hover)}}
+body summary:active{background:var(--press)}
+
+/* 芯片：未选中才有悬停/按下（选中态见 hub.layout.css 的 .chip.on）。 */
+@media(hover:hover){body :is(.chip,.subchip):not(.on):not([aria-pressed=true]):hover{border-color:var(--mut);background:var(--hover)}}
+body :is(.chip,.subchip):not(.on):not([aria-pressed=true]):active{background:var(--press)}
+/* 资料库大类条是瑞士风无边框页签（db.swiss.css 钉了 background:transparent）⇒ 必须同带 #cattabs。 */
+@media(hover:hover){body #cattabs .chip:not(.on):hover{background:var(--hover)}}
+body #cattabs .chip:not(.on):active{background:var(--press)}
+
+/* 平台分段（stats）：这是个切换器，未选中一档实；选中态（.on）是既有的持续可见状态。 */
+@media(hover:hover){body[data-hub-page=stats] .plat-btn:not(.on):hover{background:var(--hover)}}
+body[data-hub-page=stats] .plat-btn:active{background:var(--press)}
+
+/* 首页查找：`body[data-hub-page=today] #home-find-go` 是 ID 级，悬停必须同级。 */
+@media(hover:hover){body[data-hub-page=today] #home-find-go:hover{background:var(--hover)}}
+body[data-hub-page=today] #home-find-go:active{background:var(--press)}
+/* 首页表格里的战利品链接与「更新」卡：链接给下划线（不引入新颜色），按下即时反馈。 */
+@media(hover:hover){body .home-table .loot-name:hover{text-decoration:underline;text-underline-offset:3px}}
+body :is(.home-table .loot-name,.hub-loot-entry):active{background:var(--press)}
+body[data-hub-page=today] .home-update:active{background:var(--press)}
+
+/* 供应商：目录项与视图切换器没有悬停/按下（.v-kpi 的悬停已可见，只补按下）。
+   `.v-view` 必须带 `#vendor-board`：vendor.refinement.css 用 ID 级钉了透明底（实测悬停无变化）。 */
+@media(hover:hover){body[data-hub-page=vendor] .v-region-nav .v-directory-item:not([aria-disabled]):hover{background:var(--hover)}}
+body[data-hub-page=vendor] .v-region-nav .v-directory-item:not([aria-disabled]):active{background:var(--press)}
+@media(hover:hover){body[data-hub-page=vendor] #vendor-board .v-view:not(.on):hover{background:var(--hover);color:var(--fg)}}
+body[data-hub-page=vendor] #vendor-board .v-view:not(.on):active{background:var(--press)}
+body[data-hub-page=vendor] .v-kpi[data-rec]:not(.on):active{background:var(--press)}
+
+/* 工作台按钮：`#build-toolbar :is(button,summary)` / `.wc-tools :is(.wc-use,.wc-remove)` 都是 ID 级
+   或近 ID 级的透明底，通用按钮悬停被压掉（实测）。这里按容器补齐悬停，按下由全局亮度承接。 */
+@media(hover:hover){
+ body[data-hub-page=build] :is(#build-toolbar,#build-quick) :is(button,summary):not(:disabled):not(.on):hover{background:var(--hover)}
+ body[data-hub-page=build] .wc-tools :is(.wc-use,.wc-remove):hover{background:var(--hover)}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx:hover,
+ body[data-hub-page=build] #ggrid .gcard .gc-titleline .taltx:hover{background:var(--hover)}
+}
+
+/* 支持页：文本链接（.support-contact）本身已有下划线 ⇒ 悬停改用墨色切换；按下即时反馈。 */
+@media(hover:hover){body .support-contact:hover{color:var(--fg)}}
+body :is(.support-method,.support-contact):active{background:var(--press)}
+@media(prefers-reduced-motion:reduce){body .support-method:active{background:var(--press)}}
+
+/* 赛季旅程的奖励链接：`season.refinement.css` 是 (0,3,0) 的常态规则，悬停/按下必须带上 data-hub-page。 */
+@media(hover:hover){body[data-hub-page] .se-rw-link:hover{color:var(--fg)}}
+body[data-hub-page] .se-rw-link:active{color:var(--fg)}
+
+/* ── 鼠标三态 · 游戏原生光标（与 `base.css` 同一份，index.html 不加载 base.css 故在此镜像）──
+   图与热点、例外口径的说明写在 base.css 那一段，两处必须逐字同值；改一处要同批改另一处。 */
+:root{
+  --cur-default:url('/assets/cursors/cursor-default-dark.png?v=328') 2 2,default;
+  --cur-hover:url('/assets/cursors/cursor-hover-dark.png?v=328') 2 2,pointer;
+  --cur-press:url('/assets/cursors/cursor-pressed-dark.png?v=328') 2 2,pointer;
+}
+[data-theme=light]{
+  --cur-default:url('/assets/cursors/cursor-default-light.png?v=328') 2 2,default;
+  --cur-hover:url('/assets/cursors/cursor-hover-light.png?v=328') 2 2,pointer;
+  --cur-press:url('/assets/cursors/cursor-pressed-light.png?v=328') 2 2,pointer;
+}
+@media (hover:hover) and (pointer:fine){
+  html{cursor:var(--cur-default)}
+  html :is(a[href],button,summary,select,label[for],[role=button],[role=tab],input[type=checkbox],input[type=radio]):not(:disabled):not([aria-disabled=true]){cursor:var(--cur-hover)}
+  html :is(a[href],button,summary,select,label[for],[role=button],[role=tab],input[type=checkbox],input[type=radio]):not(:disabled):not([aria-disabled=true]):active{cursor:var(--cur-press)}
+}
+/* 配装器里三处「透明 select 铺满整行」（`build.pen.css` 是在途 WIP 文件，本批不动它）：
+   它的规则是 (0,5,1) 级，通用规则压不住 ⇒ 定点 + !important 兜住，保持全站一致。 */
+body[data-hub-page=build] :is(.wax-row.random select,.build-editor-input select){cursor:var(--cur-hover)!important}
