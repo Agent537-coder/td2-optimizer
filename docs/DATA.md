@@ -22,4 +22,3 @@
 ```sh
 python scripts/check_snapshot.py --report docs/ASSET-INVENTORY.json
 ```
-
