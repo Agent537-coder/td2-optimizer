@@ -152,10 +152,12 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-proto
 body[data-hub-page=build] .wcard.filled .wax-row b{font-weight:600}
 /* 长词条名不换行：标签省略，数值固定在最右，行高不被撑开。 */
 body[data-hub-page=build] .wcard.filled .wax-row>span{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 天赋行优先保名称：开启原型后天赋行只剩半行宽，收缩优先级必须反过来 ——
+   名称 flex-shrink:0 永不截断，长状态文字（「数值部分已计入」等）先省略，完整口径在 title 里。 */
 body[data-hub-page=build] .wcard.filled .wc-talrow{flex-wrap:nowrap}
-body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-name{min-width:0;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body[data-hub-page=build] .wcard.filled .wc-talrow .wmod-tag{flex:none;white-space:nowrap}
-body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-state{margin-left:auto;flex:none;color:var(--mut);font-size:11.5px;line-height:1.3;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-state{margin-left:auto;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--mut);font-size:11.5px;line-height:1.3;white-space:nowrap}
 /* 固定天赋只读弹窗 */
 .talinfo{display:flex;gap:10px;padding:14px 12px;align-items:flex-start}
 .talinfo .tic{width:28px;height:28px;flex:none}

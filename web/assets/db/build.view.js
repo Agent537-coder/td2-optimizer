@@ -79,7 +79,10 @@ function talentPickerPool(slot){
   return plainRow.length?plainRow:all;
 }
 function talentRowsFor(slot){
-  const q=(state.tq||'').trim().toLowerCase();
+  /* 搜索真值统一取弹窗自己的 `state.dlg.q`（`#dlgq` 输入即写它、`renderDlgList` 即读它），
+     与武器/装备/配件分支同一口径。旧的全局 `state.tq` 随 `#tq` 卡片删除后已无人写入，
+     以前这里误读 `state.tq` ⇒ 天赋弹窗搜索框输入被静默忽略（2026-10-29 修复）。 */
+  const q=((state.dlg&&state.dlg.q)||'').trim().toLowerCase();
   const rows=[];
   talentPickerPool(slot).forEach(([t,i])=>{
     if(state.tkind&&(t.kind_zh||'')!==state.tkind)return;
@@ -864,7 +867,7 @@ function skillPreviewHtml(d){
 /* ── 渲染：天赋（官方 talents_official[]）──
    ⚠️ 原来这里是左侧一整张「武器天赋（专长 1）」卡片：一个全局 `state.talent` + 300 行列表常驻。
    现在天赋**长在武器卡上**（每个武器槽各自一个），列表改成点天赋名时弹出的选择器（`dlg.kind==='t'`），
-   分类 chip 与搜索框跟着进弹窗。`state.tq` / `state.tkind` 仍是搜索与分类的唯二状态。 */
+   分类 chip 与搜索框跟着进弹窗。搜索取 `state.dlg.q`（与其余弹窗同一真值），分类取 `state.tkind`。 */
 function talentName(i){const t=TALENTS[i];if(!t)return '';return (t.zh||t.en||t.name||'').trim();}
 /* PvP 开关下面的说明行：**现算**官方给了 PvP 数值的天赋条数（不写死），并给出「与 PvE 不同」的那部分。
    用户第 268 轮：「PVP数值也没有加进去，我需要配装器加上 PVP 开关」。 */

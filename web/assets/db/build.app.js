@@ -512,7 +512,7 @@ function applyLangText(){
   const or=$('#optrun');if(or)or.textContent=(state.opt&&state.opt.res&&state.opt.res.ok&&!state.opt.applied)
     ?L('预览待应用','Preview ready'):L('开始配装','Run optimizer');
   /* ⚠️ 搜索框 `#tq` / 品牌搜索 `#bq` 已随那两张卡一起删除：天赋搜索现在长在**天赋选择器弹窗**里
-     （`#dlgq`，共用同一套 `state.tq`），品牌卡整张去掉（几件套加成按已装件数自动计入，不需要手动勾）。 */
+     （共用弹窗搜索框 `#dlgq` 的 `state.dlg.q`，与武器/装备同一真值；旧 `state.tq` 已弃用），品牌卡整张去掉（几件套加成按已装件数自动计入，不需要手动勾）。 */
   const sp=$('#p_sp');sp.options[0].text=L('标准（无）','Standard (none)');
   /* 弹匣专精选项：value 必须保持中文（引擎契约），仅换显示文本 */
   const SP_EN={'计算':'Controlled','完美计算':'Perfect Controlled','疯狂':'Frenzied','完美疯狂':'Perfect Frenzied'};

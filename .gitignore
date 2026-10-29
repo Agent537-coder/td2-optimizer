@@ -10,3 +10,4 @@ __pycache__/
 work/
 playwright-report/
 test-results/
+harness/
