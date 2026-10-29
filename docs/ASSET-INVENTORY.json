@@ -1,0 +1,112 @@
+{
+  "ok": true,
+  "manifestFiles": 7713,
+  "parsedDataJSON": 14,
+  "pageScriptsAndStyles": 39,
+  "webFiles": 7707,
+  "webBytes": 118513739,
+  "groups": {
+    "web": {
+      "files": 4,
+      "bytes": 66474
+    },
+    "web/assets": {
+      "files": 10,
+      "bytes": 221185
+    },
+    "web/assets/cursors": {
+      "files": 6,
+      "bytes": 6191
+    },
+    "web/assets/db": {
+      "files": 35,
+      "bytes": 30879717
+    },
+    "web/assets/db/img": {
+      "files": 1000,
+      "bytes": 7400302
+    },
+    "web/assets/db/img/brand": {
+      "files": 3,
+      "bytes": 10615
+    },
+    "web/assets/db/img/craft": {
+      "files": 76,
+      "bytes": 238499
+    },
+    "web/assets/db/img/craft/ink": {
+      "files": 4,
+      "bytes": 12953
+    },
+    "web/assets/db/img/fit/gear": {
+      "files": 1356,
+      "bytes": 13087348
+    },
+    "web/assets/db/img/gear": {
+      "files": 1360,
+      "bytes": 14709945
+    },
+    "web/assets/db/img/gearitem": {
+      "files": 1650,
+      "bytes": 17855861
+    },
+    "web/assets/db/img/gearmod": {
+      "files": 26,
+      "bytes": 164865
+    },
+    "web/assets/db/img/grenade": {
+      "files": 18,
+      "bytes": 108686
+    },
+    "web/assets/db/img/gs": {
+      "files": 56,
+      "bytes": 156423
+    },
+    "web/assets/db/img/modfilter": {
+      "files": 6,
+      "bytes": 35116
+    },
+    "web/assets/db/img/skill": {
+      "files": 80,
+      "bytes": 1012734
+    },
+    "web/assets/db/img/tal": {
+      "files": 832,
+      "bytes": 2205462
+    },
+    "web/assets/db/img/ui": {
+      "files": 87,
+      "bytes": 785856
+    },
+    "web/assets/db/img/weapon": {
+      "files": 872,
+      "bytes": 9149538
+    },
+    "web/assets/db/img/weaponmod": {
+      "files": 80,
+      "bytes": 459776
+    },
+    "web/assets/db/spec": {
+      "files": 7,
+      "bytes": 3281348
+    },
+    "web/assets/fonts": {
+      "files": 119,
+      "bytes": 15755107
+    },
+    "web/assets/img": {
+      "files": 11,
+      "bytes": 874492
+    },
+    "web/assets/img/navigation": {
+      "files": 4,
+      "bytes": 7187
+    },
+    "web/assets/vendor": {
+      "files": 5,
+      "bytes": 28059
+    }
+  },
+  "errors": [],
+  "scope": "Snapshot integrity and directory inventory; not unused-asset detection or browser QA"
+}

@@ -5,6 +5,7 @@
   "description": "Standalone Agent Hub Division 2 build planner and optimizer review snapshot",
   "engines": { "node": ">=22" },
   "scripts": {
+    "check": "python scripts/check_snapshot.py",
     "start": "python serve.py",
     "test": "node --test tests/optimizer*.test.mjs",
     "simulate": "node scripts/devcheck/build_sim.mjs --json",
