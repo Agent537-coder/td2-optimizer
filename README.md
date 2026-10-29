@@ -1,16 +1,15 @@
 # 特工枢纽 · 全境封锁 2 配装器
 
-完整配装器的独立评审快照，包含页面、双端样式、装备与技能图标、游戏数据、计算引擎、自动配装、条件与天赋处理，以及现有回归测试。源自 2026-10-29 工作区当前版本，不是主站旧 GitHub 分支。
+包含完整配装页面、游戏数据与图标、计算引擎、自动配装和回归测试。
 
-仍在开发中；公式与搜索有已知未覆盖机制，不能把理论弹匣快照当成实战持续 DPS。
+当前回归测试37项通过、12项失败，详见 [已知问题](VALIDATION.md)。
 
 ## 从哪里开始看
 
 - **看页面或改交互**：先运行下面的页面，再读 [代码导航](docs/CODEMAP.md)，从 `web/dashboard_build.html` 的加载顺序入手。
 - **看自动配装**：读代码导航的“搜索与评分”，用 `npm run optimize` 取得可复现输入／输出，再跑回归测试。
-- **看数据是否混乱**：读 [数据与资源说明](docs/DATA.md)。装备库、专长分片、图标各有用途，不需要逐个翻图片。
+- **看数据**：读 [数据与资源说明](docs/DATA.md)，区分页面加载数据与参考快照。
 - **接手前核对完整性**：运行 `npm run check`；[资源清单](docs/ASSET-INVENTORY.json) 按目录汇总数量和体积。
-- **已知问题**：先看 [验证记录](VALIDATION.md)，当前有12项既存失败，未通过整理掩盖。
 
 ## 运行完整页面
 
@@ -36,7 +35,7 @@ npm run optimize
 npm run optimize -- options.json
 ```
 
-`scripts/optimize.mjs` 是本地 JSON 输入／输出入口，使用同一份页面计算代码。它不会提供远程 HTTP 服务，不需要主站后台账号或 Token。
+`scripts/optimize.mjs` 接收本地 JSON，调用页面计算代码，输出优化结果 JSON。
 
 - 可选配装云存档服务端：`integrations/flarum/`，包含处理器与独立路由。
 - 页面：`web/dashboard_build.html`；样式 `web/assets/db/build*.css`。
@@ -48,9 +47,9 @@ npm run optimize -- options.json
 - 页面试算台：`scripts/devcheck/build_sim.harness.mjs` 按 HTML 的 script 顺序加载；增删脚本时同步检查依赖。
 - 源文件校验：`SOURCE-MANIFEST.json` 记录原文件 SHA-256；公式和搜索代码原样提取。HTML 仅追加独立运行适配器。
 
-测试结果、发现的失败和页面实测范围见 `VALIDATION.md`，不要用“能运行”推断全部业务正确。
+测试失败项和页面实测范围见 `VALIDATION.md`。
 
 ## 评审与反馈
 
-请通过 Issue 或 PR 提交；附上运行环境、输入 JSON／配装导出、预期与实际结果、复现步骤。页面问题附 PC／手机视口、主题和截图。算法问题优先补可复现测试，勿仅靠排名变化证明公式正确。
+Issue／PR 请附复现步骤、输入 JSON 或配装导出、预期与实际结果；页面问题附视口、主题和截图。
 
