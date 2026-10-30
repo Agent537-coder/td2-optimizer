@@ -79,7 +79,7 @@ body[data-hub-page=build] .wcard.filled .wc-effects{display:flex;gap:4px;border-
 body[data-hub-page=build] .wcard.filled .wc-effects:has(.prototype-augment){display:flex}
 body[data-hub-page=build] .wcard.filled .wc-talrow{flex:1;min-height:28px;border:0;padding:0;background:transparent;font-size:12px;min-width:0}
 body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment{flex:1;min-height:28px;padding:0;border:0;grid-template-columns:14px minmax(0,1fr) 30px;min-width:0}
-body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select{width:30px;min-width:30px;min-height:28px;font-size:11px;padding:0;border:0;background:none}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select{width:30px;min-width:30px;min-height:28px;font-size:12px;padding:0;border:0;background:none}
 body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment select[data-act=waugment]{min-height:28px;height:28px;min-width:0}
 body[data-hub-page=build] .wcard.filled .wc-mod{padding:0;border:0;gap:2px 6px;margin:0;align-self:stretch;align-content:start}
 body[data-hub-page=build] .wcard.filled .wmod-row{background:var(--bg);border:0;border-radius:4px;min-height:44px;padding:4px 6px}
@@ -152,10 +152,12 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-proto
 body[data-hub-page=build] .wcard.filled .wax-row b{font-weight:600}
 /* 长词条名不换行：标签省略，数值固定在最右，行高不被撑开。 */
 body[data-hub-page=build] .wcard.filled .wax-row>span{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 天赋行优先保名称：开启原型后天赋行只剩半行宽，收缩优先级必须反过来 ——
+   名称 flex-shrink:0 永不截断，长状态文字（「数值部分已计入」等）先省略，完整口径在 title 里。 */
 body[data-hub-page=build] .wcard.filled .wc-talrow{flex-wrap:nowrap}
-body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-name{min-width:0;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body[data-hub-page=build] .wcard.filled .wc-talrow .wmod-tag{flex:none;white-space:nowrap}
-body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-state{margin-left:auto;flex:none;color:var(--mut);font-size:11.5px;line-height:1.3;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wc-talrow .wc-tal-state{margin-left:auto;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--mut);font-size:11px;line-height:1.3;white-space:nowrap}
 /* 固定天赋只读弹窗 */
 .talinfo{display:flex;gap:10px;padding:14px 12px;align-items:flex-start}
 .talinfo .tic{width:28px;height:28px;flex:none}
@@ -173,7 +175,7 @@ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a b{font-weight:600}
 body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a{font-weight:600}
 body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a .wmod-an{font-weight:500}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype small{font-weight:600}
-body[data-hub-page=build] .wcard.filled .wmod-row.locked .wmod-v{display:inline;color:var(--mut);font-size:11.5px;margin-left:auto;white-space:nowrap}
+body[data-hub-page=build] .wcard.filled .wmod-row.locked .wmod-v{display:inline;color:var(--mut);font-size:11px;margin-left:auto;white-space:nowrap}
 body[data-hub-page=build] .wcard.filled .wmod-row.fixed .wmod-a,body[data-hub-page=build] .wcard.filled .wmod-row.on .wmod-a{display:inline;margin-left:auto}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1/-1;grid-row:2;min-width:0;width:100%;border:0;background:none;padding:0;height:auto;min-height:32px;display:flex;gap:4px;align-items:center;overflow:hidden}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:not(:has(.build-gear-prototype)) .taltx{grid-column:1;grid-row:1}
@@ -192,7 +194,7 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-state
 body[data-hub-page=build] #ggrid .build-gear-card .taltx::before{display:none}
 .build-gear-prototype{display:flex;align-items:center;gap:4px;min-width:0;min-height:44px;border:0;padding:0;background:transparent;font:12px/1.4 var(--ff-body)}
 .build-gear-prototype>span{min-width:0;overflow-wrap:anywhere}.build-gear-prototype small{font-size:10px;color:var(--mut);white-space:nowrap}
-.build-gear-empty{display:block;text-align:center;font-size:13px;color:var(--mut)}
+.build-gear-empty{display:block;text-align:center;font-size:12px;color:var(--mut)}
 body[data-hub-page=build] #ggrid .build-gear-card.editing{box-shadow:inset 0 0 0 1px var(--accent)}
 body[data-hub-page=build] #ggrid .build-gear-card .build-gear-mod-source[hidden]{display:none}
 /* `#dlgmask` 改成 `<dialog>`（为了进 top layer，见 dashboard_build.html 注释）后，
@@ -340,7 +342,7 @@ body[data-hub-page=build] #build-conditions-dialog #fold_cond>summary{display:no
  body[data-hub-page=build] .wcard.filled .wc-affix{min-height:84px}
  body[data-hub-page=build] .wcard.filled .wc-effects{border:0;box-shadow:inset 0 1px var(--line)}
  body[data-hub-page=build] .wcard.filled .wc-mod{row-gap:0}
- body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select,body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment select[data-act=waugment]{min-height:44px;height:44px}
+ body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select,body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment select[data-act=waugment]{min-height:44px;height:44px;font-size:11px}
  body[data-hub-page=build] #ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  body[data-hub-page=build] #ggrid .build-gear-card{padding:8px 7px 0;min-height:192px}
  body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl{font-size:12px}
@@ -368,3 +370,42 @@ body[data-hub-page=build] #build-conditions-dialog #fold_cond>summary{display:no
 /* 词条行左侧字形槽：没有家族色也保留同宽空槽（`.axic-empty`），让整列文字起点对齐。 */
 body[data-hub-page=build] .axic.axic-empty{display:block;width:13px;height:13px;flex:0 0 13px;background:none!important;-webkit-mask:none!important;mask:none!important}
 @media(max-width:600px){body[data-hub-page=build] .axic.axic-empty{width:12px;height:12px;flex-basis:12px}}
+
+/* ── 两张卡统一字号（2026-10-30）：正文 12 · 小注 11 · 武器名 14 · 装备名 15；手机档 11.5 / 13 / 14 ──
+   历史四层文件对同类文字各留一档（10.5~13 混排），此处按区域给全选择器一次压平；只改 font-size，行高/触控尺寸不动。 */
+body[data-hub-page=build] #wstrip .wcard.filled .wc-name{font-size:14px}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{font-size:15px}
+/* 武器卡：抬头 / 词条行（含隐形 select）/ 天赋行 / 原型增幅 / 配件行 */
+body[data-hub-page=build] .wcard.filled :is(.wax-row,.wax-row select,.wax-row .wax-choice,.wc-talrow,.wc-talrow .wc-tal-name,.wc-effects .prototype-augment,.prototype-augment .axchoice,.wmod-row,.wmod-row :is(.wmod-k,.wmod-v,.wmod-a,.wmod-tag)){font-size:12px}
+body[data-hub-page=build] .wcard.filled .wmod-row:not(.on) .wmod-a{font-size:12px}
+/* 装备卡：摘要行 / 脚区三块 / 抽屉重排用的词条行（.axrow 在抽屉里另有 14px 口径，只压 #ggrid 内） */
+body[data-hub-page=build] #ggrid .build-gear-card :is(.build-gear-attr,.build-gear-attr>b,.build-gear-prototype,.modblk,.modblk :is(.mod-label,.mod-value),.taltx,.taltx .tal-name,.axrow,.axrow :is(.axk,.axchoice,.axvalue)){font-size:12px}
+/* 次要小字：原型等级（状态注记/「不计入」chip 已在上方直改为 11px） */
+body[data-hub-page=build] #ggrid .build-gear-card .build-gear-prototype small{font-size:11px}
+/* 空卡占位文案与正文同档 */
+body[data-hub-page=build] .wcard.empty :is(.wc-slotlbl,.wc-stats),body[data-hub-page=build] #ggrid .gcard:not(.filled) .build-gear-empty{font-size:12px}
+@media(max-width:760px){
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-name{font-size:13px}
+ body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{font-size:14px}
+ body[data-hub-page=build] .wcard.filled :is(.wax-row,.wax-row select,.wax-row .wax-choice,.wc-talrow,.wc-talrow .wc-tal-name,.wc-effects .prototype-augment,.prototype-augment .axchoice,.wmod-row,.wmod-row :is(.wmod-k,.wmod-v,.wmod-a,.wmod-tag)){font-size:11.5px}
+ body[data-hub-page=build] .wcard.filled .wmod-row:not(.on) .wmod-a{font-size:11.5px}
+ body[data-hub-page=build] #ggrid .build-gear-card :is(.build-gear-attr,.build-gear-attr>b,.build-gear-prototype,.modblk,.modblk :is(.mod-label,.mod-value),.taltx,.taltx .tal-name,.axrow,.axrow :is(.axk,.axchoice,.axvalue)){font-size:11.5px}
+ body[data-hub-page=build] #ggrid .build-gear-card .build-gear-prototype small{font-size:11.5px}
+ body[data-hub-page=build] .wcard.filled :is(.wc-talrow .wc-tal-state,.wmod-row.locked .wmod-v){font-size:11px}
+}
+
+/* ── 非名称文字统一加粗（2026-10-30）：卡面行一律 700；名称保留原字重（武器 600 / 装备 500），靠字号分层 ──
+   上一块里已把行高/字号/触控几何固定下来，此处只接字重。需盖掉 pen.css 内部旧 600/500 行（很多已带 `#ggrid … .gc-ft …` 的 1,5,2–1,6,1 特异度），按区域展开同样拿 #ggrid/.gc-ft 同层同序，靠文件末尾后写优势胜出。 */
+body[data-hub-page=build] #wstrip .wcard.filled .wc-affix :is(.wax-row,.wax-row>b,.wax-row select,.wax-row .wax-choice,.wax-choice>b,.wax-choice>span),
+body[data-hub-page=build] #wstrip .wcard.filled .wc-effects :is(.wc-talrow,.wc-talrow .wc-tal-lbl,.wc-talrow .wc-tal-name,.wc-talrow .wc-tal-state,.wc-talrow .wmod-tag,.prototype-augment,.prototype-augment .axchoice,.prototype-augment select,.prototype-level-select),
+body[data-hub-page=build] #wstrip .wcard.filled .wc-mod :is(.wmod-row,.wmod-row .wmod-k,.wmod-row .wmod-v,.wmod-row .wmod-a,.wmod-row .wmod-an,.wmod-row .wmod-tag,.wmod-row .wmod-a b){font-weight:700}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-info :is(.build-gear-summary,.build-gear-attr,.build-gear-attr>span,.build-gear-attr>b,.build-gear-empty),
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft :is(.modblk,.modblk .mod-label,.modblk .mod-value,.taltx,.taltx .tal-name,.taltx .tal-state,.build-gear-prototype,.build-gear-prototype>span,.build-gear-prototype small),
+body[data-hub-page=build] #ggrid .gcard.build-gear-card :is(.axrow,.axrow .axk,.axrow .axchoice,.axrow .axvalue,.ax-uncount){font-weight:700}
+/* 空卡占位文案（部位名 + 「选择武器/装备」）不属于名称档，一并 700 */
+body[data-hub-page=build] #wstrip .wcard.empty :is(.wc-slotlbl,.wc-stats){font-weight:700}
+
+/* ── 卡头部位图标与装备名上下居中（2026-10-30）：pen.css:129 默认 align-items:flex-start ⇒ 图标靠顶，与 15px 名行不居中 ──
+   同时把 `.gc-hd` 网格行也从 start 改为 center（min-height 28px，名行 ~22px，保证内容行在头部里也居中）。 */
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{align-items:center}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{align-items:center}

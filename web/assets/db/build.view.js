@@ -79,7 +79,10 @@ function talentPickerPool(slot){
   return plainRow.length?plainRow:all;
 }
 function talentRowsFor(slot){
-  const q=(state.tq||'').trim().toLowerCase();
+  /* 搜索真值统一取弹窗自己的 `state.dlg.q`（`#dlgq` 输入即写它、`renderDlgList` 即读它），
+     与武器/装备/配件分支同一口径。旧的全局 `state.tq` 随 `#tq` 卡片删除后已无人写入，
+     以前这里误读 `state.tq` ⇒ 天赋弹窗搜索框输入被静默忽略（2026-10-29 修复）。 */
+  const q=((state.dlg&&state.dlg.q)||'').trim().toLowerCase();
   const rows=[];
   talentPickerPool(slot).forEach(([t,i])=>{
     if(state.tkind&&(t.kind_zh||'')!==state.tkind)return;
@@ -435,7 +438,8 @@ function gearAffixBlock(i,it){
 }
 function listKindForCode(code,q){
   for(const f of AFFIX_FAM_ORDER)if(affixPoolCodes(f,q).indexOf(code)>=0)return f;
-  return '';
+  /* 随机池查不到再查固定/具名槽的判族表（只给图标上色，不影响候选池）；两表都没有才留空槽 */
+  return FIXED_AFFIX_FAM[code]||'';
 }
 /* 该件所在「品牌 / 装备组 × 部位」组里共有几件（点品牌块是填代表件，想指定另一件就走这里给的入口） */
 function gearGroupKey(it){
@@ -864,7 +868,7 @@ function skillPreviewHtml(d){
 /* ── 渲染：天赋（官方 talents_official[]）──
    ⚠️ 原来这里是左侧一整张「武器天赋（专长 1）」卡片：一个全局 `state.talent` + 300 行列表常驻。
    现在天赋**长在武器卡上**（每个武器槽各自一个），列表改成点天赋名时弹出的选择器（`dlg.kind==='t'`），
-   分类 chip 与搜索框跟着进弹窗。`state.tq` / `state.tkind` 仍是搜索与分类的唯二状态。 */
+   分类 chip 与搜索框跟着进弹窗。搜索取 `state.dlg.q`（与其余弹窗同一真值），分类取 `state.tkind`。 */
 function talentName(i){const t=TALENTS[i];if(!t)return '';return (t.zh||t.en||t.name||'').trim();}
 /* PvP 开关下面的说明行：**现算**官方给了 PvP 数值的天赋条数（不写死），并给出「与 PvE 不同」的那部分。
    用户第 268 轮：「PVP数值也没有加进去，我需要配装器加上 PVP 开关」。 */
@@ -995,8 +999,11 @@ function openDlg(kind,slot,wslot){
   /* 武器选择器的默认筛选 = **这一槽那把枪自己的**枪型与类别（空槽退到三槽里任意一把的），
      没有「全部」这一档（用户：想选什么都很明确）—— 400+ 行摊开等于没筛。 */
   const dw=(kind==='w')?arr(DB.weapons)[state.wslots[slot]]:null;
+  /* slot 2 = 手枪槽，游戏固定只能装手枪 ⇒ 即使空槽也锁定枪型筛选为手枪 */
+  const wtypeLock=(kind==='w'&&slot===2);
+  const wtypeVal=wtypeLock?WTYPES.indexOf('手枪')+1:((dw&&dw.type)?(WTYPES.indexOf(dw.type)+1||0):0);
   state.dlg={kind:kind,slot:slot,q:'',mode:(kind==='g'?'wall':'list'),
-    wtype:(dw&&dw.type)?(WTYPES.indexOf(dw.type)+1||0):0,wkind:dw?wKindOf(dw):'',gkind:'',wallkind:'tb',sub:'',wslot:(wslot==null?null:wslot),
+    wtype:wtypeVal,wtypeLocked:wtypeLock,wkind:dw?wKindOf(dw):'',gkind:'',wallkind:'tb',sub:'',wslot:(wslot==null?null:wslot),
     skillPreview:(kind==='s'&&state.skill[slot]>=0)?state.skill[slot]:0,
     skillVariant:(kind==='s'&&state.skillVariant[slot])?state.skillVariant[slot]:null,
     scrollY:window.scrollY,scrollX:window.scrollX,
@@ -1100,7 +1107,8 @@ function renderDlg(){
       <button class="mini" data-act="dlgx" title="${esc(L('关闭','Close'))}">${esc(L('关闭','Close'))}</button></div>${bar}${gwall?`<div class="dlg-gear-nav" role="group" aria-label="${esc(L('装备类别','Gear category'))}">${[['tb','品牌','Brands'],['ts','装备组','Gear sets'],['tn','具名','Named'],['te','奇特','Exotic']].map(([key,zh,en])=>`<button type="button" data-act="dgwall" data-k="${key}" aria-pressed="${d.wallkind===key}">${esc(L(zh,en))}</button>`).join('')}<button type="button" data-act="glist">${esc(L('逐件挑','Per piece'))}</button></div>`:''}${facet}${wfacet}<div class="dlg-list" id="dlglist"></div>`;
   buildPickerMount();
   if(d.kind==='w'){
-    $('#dlgtypes').innerHTML=WTYPES.map((t,i)=>`<button type="button" class="chip${d.wtype===i+1?' on':''}" data-act="dwtype" data-i="${i+1}" aria-pressed="${d.wtype===i+1?'true':'false'}">${esc(wtTxt(t))}</button>`).join('');
+    /* 手枪槽游戏固定 ⇒ 枪型锁「手枪」不可改；其余置灰仅作对照，事件层再按 `wtypeLocked` 兜一道。 */
+    $('#dlgtypes').innerHTML=WTYPES.map((t,i)=>`<button type="button" class="chip${d.wtype===i+1?' on':''}${d.wtypeLocked&&d.wtype!==i+1?' chip-locked':''}" data-act="dwtype" data-i="${i+1}" aria-pressed="${d.wtype===i+1?'true':'false'}"${d.wtypeLocked?' disabled':''}>${esc(wtTxt(t))}</button>`).join('');
     const wk=$('#dlgwkind');
     if(wk){
       const n={all:0,highend:0,named:0,exotic:0};
@@ -1134,7 +1142,7 @@ function renderDlg(){
   }
   if(d.kind==='w'){
     const filters=document.createElement('div');filters.className='dlg-mobile-filters';
-    filters.innerHTML=`<label>${esc(L('枪型','Weapon type'))}<select id="dlg-weapon-type" data-act="dlg-wtype"><option value="0">${esc(L('选择枪型','Choose weapon type'))}</option>${WTYPES.map((t,i)=>`<option value="${i+1}"${d.wtype===i+1?' selected':''}>${esc(wtTxt(t))}</option>`).join('')}</select></label><label>${esc(L('品质','Quality'))}<select id="dlg-weapon-kind" data-act="dlg-wkind"><option value="">${esc(L('全部品质','All qualities'))}</option>${W_KINDS.map(k=>`<option value="${k}"${d.wkind===k?' selected':''}>${esc(L(...W_KIND_ZH[k]))}</option>`).join('')}</select></label>`;
+    filters.innerHTML=`<label>${esc(L('枪型','Weapon type'))}<select id="dlg-weapon-type" data-act="dlg-wtype"${d.wtypeLocked?' disabled':''}><option value="0">${esc(L('选择枪型','Choose weapon type'))}</option>${WTYPES.map((t,i)=>`<option value="${i+1}"${d.wtype===i+1?' selected':''}>${esc(wtTxt(t))}</option>`).join('')}</select></label><label>${esc(L('品质','Quality'))}<select id="dlg-weapon-kind" data-act="dlg-wkind"><option value="">${esc(L('全部品质','All qualities'))}</option>${W_KINDS.map(k=>`<option value="${k}"${d.wkind===k?' selected':''}>${esc(L(...W_KIND_ZH[k]))}</option>`).join('')}</select></label>`;
     box.querySelector('.dlg-bar').after(filters);
   }
   renderDlgList();

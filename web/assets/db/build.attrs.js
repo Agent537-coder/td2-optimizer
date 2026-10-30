@@ -82,6 +82,18 @@ const AFFIX_POOL_CODES={
        'allskills_healing_mod_Bonus'],
 };
 const AFFIX_FAM_ORDER=['off','def','uti'];
+/* 固定/具名槽专属 code → 图标家族（用户 2026-10-30 逐条点名口径）。
+   ⚠️ 只服务卡片词条行的判族上色，**不进** `AFFIX_POOL_CODES`：混进随机池白名单会让它们
+   变成可刷副词条候选与一键配装的 ⑥ 池候选，那不是官方口径。 */
+const FIXED_AFFIX_FAM={
+  WeaponRPMModBonus:'uti',                        /* 射速（齐射） */
+  WeaponAccuracyModBonus:'uti',                   /* 准确度 */
+  AllAmmoModBonus:'uti',                          /* 弹药容量 */
+  pulse_echo_cooldown_mod_Bonus:'uti',            /* 扫描脉冲加速 */
+  WeaponRangeOptimalModBonus:'uti',               /* 有效射程 */
+  WeaponMeleeDamageDefaultModBonus:'off',         /* 近战伤害 */
+  ArmorOnKillModBonus:'def',                      /* 击杀时回复装甲 */
+};
 /* 「特定武器伤害」族（以及武器伤害/装甲/技能分阶这类核心专属）—— 一律不许出现在装备随机池里 */
 function isWeaponClassAffix(code,name){
   const n=String(name||'').trim();

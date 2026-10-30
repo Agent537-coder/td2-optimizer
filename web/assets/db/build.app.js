@@ -512,7 +512,7 @@ function applyLangText(){
   const or=$('#optrun');if(or)or.textContent=(state.opt&&state.opt.res&&state.opt.res.ok&&!state.opt.applied)
     ?L('预览待应用','Preview ready'):L('开始配装','Run optimizer');
   /* ⚠️ 搜索框 `#tq` / 品牌搜索 `#bq` 已随那两张卡一起删除：天赋搜索现在长在**天赋选择器弹窗**里
-     （`#dlgq`，共用同一套 `state.tq`），品牌卡整张去掉（几件套加成按已装件数自动计入，不需要手动勾）。 */
+     （共用弹窗搜索框 `#dlgq` 的 `state.dlg.q`，与武器/装备同一真值；旧 `state.tq` 已弃用），品牌卡整张去掉（几件套加成按已装件数自动计入，不需要手动勾）。 */
   const sp=$('#p_sp');sp.options[0].text=L('标准（无）','Standard (none)');
   /* 弹匣专精选项：value 必须保持中文（引擎契约），仅换显示文本 */
   const SP_EN={'计算':'Controlled','完美计算':'Perfect Controlled','疯狂':'Frenzied','完美疯狂':'Perfect Frenzied'};
@@ -720,7 +720,7 @@ document.addEventListener('click',e=>{
     /* 弹窗 */
     case 'noop': return;
     case 'dlgx': closeDlg();renderAll();return;
-    case 'dwtype': state.dlg.wtype=i;renderDlg();return;
+    case 'dwtype': if(state.dlg?.wtypeLocked)return; state.dlg.wtype=i;renderDlg();return;
     /* 武器类别维度（金装 / 具名 / 奇特）：与 `dwtype`（枪型）**两个独立维度**，互不替代。
        口径见 `W_KINDS` / `wKindOf()`（官方 `exotic` / `named` 布尔 ⇒ 参考工具的 `Rarity` 0/2/3）。 */
     case 'dwkind': state.dlg.wkind=el.dataset.k||'';renderDlg();return;
@@ -732,6 +732,8 @@ document.addEventListener('click',e=>{
     case 'picker-apply': buildPickerCommit();return;
     case 'picker-back': buildPickerBack();return;
     case 'picker-undo': buildPickerRevert();return;
+    /* 底部悬浮提示：点空白处或 × 即收起。 */
+    case 'picker-hide': buildPickerFeedbackHide();return;
     case 'dlgclr':{const d=state.dlg;if(!d)return;
       if(d.kind==='g'||d.kind==='w'){buildPickerCommit(true);return;}
       if(d.kind==='w'){state.wslots[d.slot]=null;state.talents[d.slot]=-1;state.wmods[d.slot]=null;state.waffix[d.slot]=null;if(state.wactive===d.slot)state.wactive=state.wslots.findIndex(x=>x!=null);}
@@ -824,7 +826,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const el=e.target;
-  if(state.dlg&&el.dataset?.act==='dlg-wtype'){state.dlg.wtype=+el.value;renderDlg();return;}
+  if(state.dlg&&el.dataset?.act==='dlg-wtype'){if(state.dlg.wtypeLocked)return;state.dlg.wtype=+el.value;renderDlg();return;}
   if(state.dlg&&el.dataset?.act==='dlg-wkind'){state.dlg.wkind=el.value;renderDlg();return;}
   if(state.dlg&&el.dataset?.act==='dlg-skill'){state.dlg.skillPreview=+el.value;state.dlg.skillVariant=null;renderDlgList();document.getElementById('dlg-skill-category')?.focus({preventScroll:true});return;}
   if(el&&el.dataset&&['gaugment','gaugmentlevel','waugment','waugmentlevel'].includes(el.dataset.act)){
