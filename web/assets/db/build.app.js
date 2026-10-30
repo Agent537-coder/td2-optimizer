@@ -732,6 +732,8 @@ document.addEventListener('click',e=>{
     case 'picker-apply': buildPickerCommit();return;
     case 'picker-back': buildPickerBack();return;
     case 'picker-undo': buildPickerRevert();return;
+    /* 底部悬浮提示：点空白处或 × 即收起。 */
+    case 'picker-hide': buildPickerFeedbackHide();return;
     case 'dlgclr':{const d=state.dlg;if(!d)return;
       if(d.kind==='g'||d.kind==='w'){buildPickerCommit(true);return;}
       if(d.kind==='w'){state.wslots[d.slot]=null;state.talents[d.slot]=-1;state.wmods[d.slot]=null;state.waffix[d.slot]=null;if(state.wactive===d.slot)state.wactive=state.wslots.findIndex(x=>x!=null);}

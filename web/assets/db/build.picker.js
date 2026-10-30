@@ -1,5 +1,7 @@
 /* Pen sS1P9 · transactional item selection. No engine/database changes. */
-let buildPickerUndo=null,buildPickerBusy=false;
+let buildPickerUndo=null,buildPickerBusy=false,buildPickerFeedbackTimer=0;
+/* 悬浮提示自动收起时长；失败类提示由调用方传 auto:false 常驻。 */
+const BUILD_PICKER_FEEDBACK_MS=3000;
 function buildPickerCurrent(d){return d.kind==='g'?state.slots[d.slot]:state.wslots[d.slot];}
 function buildPickerItem(kind,id,slot){
  if(!Number.isInteger(id))return null;
@@ -111,25 +113,46 @@ function buildPickerCommit(remove=false){
   }
   const after=buildPickerSlot(d.kind,d.slot);buildPickerUndo={kind:d.kind,slot:d.slot,before,after:JSON.stringify(after),label:remove?L('已卸下装备','Item removed'):L('已装备：','Equipped: ')+nmTxt(item)};
   closeDlg();if(d.kind==='g')document.getElementById('build-item-dialog')?.close();renderAll();buildPickerNotice();
- }catch(error){buildPickerRestore(d.kind,d.slot,before);buildPickerUndo=null;if(state.dlg){d.pickerError=L('应用失败，原配装已保留','Could not apply. Original loadout retained.');buildPickerPaint();}else{const bar=document.getElementById('build-picker-feedback');bar.hidden=false;bar.querySelector('[role=status]').textContent=L('应用失败，原配装已保留','Could not apply. Original loadout retained.');bar.querySelector('button').hidden=true;}}
+ }catch(error){buildPickerRestore(d.kind,d.slot,before);buildPickerUndo=null;if(state.dlg){d.pickerError=L('应用失败，原配装已保留','Could not apply. Original loadout retained.');buildPickerPaint();}else{buildPickerFeedbackShow(L('应用失败，原配装已保留','Could not apply. Original loadout retained.'),{key:'fail',auto:false});}}
  finally{buildPickerBusy=false;}
+}
+/* ⚠️ 收起即作废 buildPickerUndo：提示条是「撤销替换」唯一入口，留着旧快照会在下次 renderAll() 复活按钮。 */
+function buildPickerFeedbackShow(message,options){
+ const bar=document.getElementById('build-picker-feedback');if(!bar)return;
+ const o=options||{},key=(o.key||'')+':'+message;
+ /* ⚠️ 重复递交必须提前返回，否则每次 renderAll 都刷新倒计时，提示变常驻。 */
+ if(o.keep&&bar.dataset.feedbackKey===key&&!bar.hidden)return;
+ clearTimeout(buildPickerFeedbackTimer);buildPickerFeedbackTimer=0;
+ bar.dataset.feedbackKey=key;bar.hidden=false;
+ bar.querySelector('[role=status]').textContent=message;
+ const undo=bar.querySelector('[data-act="picker-undo"]');if(undo){undo.hidden=o.undo!==true;if(o.undo)undo.textContent=L('撤销替换','Undo replacement');}
+ if(o.auto!==false)buildPickerFeedbackTimer=setTimeout(buildPickerFeedbackHide,BUILD_PICKER_FEEDBACK_MS);
+}
+function buildPickerFeedbackHide(){
+ clearTimeout(buildPickerFeedbackTimer);buildPickerFeedbackTimer=0;
+ buildPickerUndo=null;
+ const bar=document.getElementById('build-picker-feedback');if(bar)bar.hidden=true;
 }
 function buildPickerNotice(){
  const bar=document.getElementById('build-picker-feedback');if(!bar)return;
  if(buildPickerUndo&&JSON.stringify(buildPickerSlot(buildPickerUndo.kind,buildPickerUndo.slot))!==buildPickerUndo.after)buildPickerUndo=null;
- bar.hidden=!buildPickerUndo;if(!buildPickerUndo)return;bar.querySelector('button').hidden=false;
- bar.querySelector('[role=status]').textContent=buildPickerUndo.label;bar.querySelector('button').textContent=L('撤销替换','Undo replacement');
+ /* 快照已作废（该格又被改/已撤销/已收起）⇒ 连同旧文案一起收起。 */
+ if(!buildPickerUndo){buildPickerFeedbackHide();return;}
+ buildPickerFeedbackShow(buildPickerUndo.label,{undo:true,keep:true,key:'undo'});
 }
 function buildPickerRevert(){
  const u=buildPickerUndo;if(!u)return;
  if(JSON.stringify(buildPickerSlot(u.kind,u.slot))!==u.after){buildPickerUndo=null;buildPickerNotice();return;}
  buildPickerRestore(u.kind,u.slot,u.before);buildPickerUndo=null;renderAll();
- const bar=document.getElementById('build-picker-feedback');bar.hidden=false;bar.querySelector('[role=status]').textContent=L('已撤销替换，原装备已恢复','Replacement undone. Original item restored.');bar.querySelector('button').hidden=true;
+ buildPickerFeedbackShow(L('已撤销替换，原装备已恢复','Replacement undone. Original item restored.'),{key:'undone'});
  document.querySelector((u.kind==='g'?'#ggrid .gcard':'#wstrip [data-act="wsl"]')+'[data-i="'+u.slot+'"]')?.focus({preventScroll:true});
 }
 function initBuildPicker(){
  if(document.getElementById('build-picker-feedback'))return;
- const bar=document.createElement('section');bar.id='build-picker-feedback';bar.hidden=true;bar.setAttribute('aria-label',L('配装替换结果','Item replacement result'));bar.innerHTML='<p role="status" aria-live="polite"></p><button type="button" class="mini" data-act="picker-undo"></button>';document.getElementById('build-toolbar').after(bar);
+ const bar=document.createElement('section');bar.id='build-picker-feedback';bar.hidden=true;bar.setAttribute('aria-label',L('配装替换结果','Item replacement result'));
+ /* ⚠️ 撤销按钮自带 data-act，closest() 先命中它 ⇒ 整条的 picker-hide 不会吞掉它。 */
+ bar.setAttribute('data-act','picker-hide');bar.title=L('点击关闭（3 秒后也会自动消失）','Click to dismiss (it also auto-hides after 3 seconds)');
+ bar.innerHTML='<p role="status" aria-live="polite"></p><button type="button" class="mini" data-act="picker-undo"></button><button type="button" class="mini ghost picker-fb-close" data-act="picker-hide" aria-label="'+esc(L('关闭提示','Dismiss notice'))+'">&times;</button>';document.getElementById('build-toolbar').after(bar);
 }
 function buildPickerBack(){
  const d=state.dlg;if(!d)return;d.pickerView='list';buildPickerPaint();const list=document.getElementById('dlglist');if(list)list.scrollTop=d.pickerScroll||0;
