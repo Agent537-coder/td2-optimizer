@@ -463,7 +463,7 @@ function renderGear(){
       const mi=state.gmods[i], m=mi==null?null:(GMODS||[])[mi];
       /* 装了哪一类插件就画哪一类的官方字形（`img/modfilter/` 三张，颜色与 `.modblk.red/blue/yellow` 同源） */
       modblk=m?`<button type="button" class="modblk hasic ${modColor(m)}" data-act="modblk" data-i="${i}" aria-label="${esc(modTitle(m))}" title="${esc(modTitle(m))}">${modGlyph(m,'mglyph')}<span class="mod-label">${esc(buildModLabel(m))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span><b class="mod-value">${fmtN(modVal(m))}${esc(m.unit||'')}</b></button>`
-              :`<button type="button" class="modblk empty" data-act="modblk" data-i="${i}" aria-label="${esc(L('选择插件','Pick gear mod'))}" title="${esc(L('插件（装备改造模块）','Gear mod'))}"><span class="mod-label">＋ ${esc(L('选择插件','Pick gear mod'))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span></button>`;
+              :`<button type="button" class="modblk empty" data-act="modblk" data-i="${i}" aria-label="${esc(L('选择插件','Pick gear mod'))}" title="${esc(L('插件（装备改造模块）','Gear mod'))}"><span class="proto-add">+</span><span class="mod-label">${esc(L('选择插件','Pick gear mod'))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span></button>`;
     }
     /* 件天赋（背包 / 胸甲）：卡片脚行上的**可点入口**（与武器卡的 `data-act="wsl-tal"` 同款）。
        ⚠️ 判据 = `gtalPool(i).keys.length`（**有池才画这一行**）：面具/手套/枪套/护膝 池空 ⇒ 不画；
@@ -1303,7 +1303,7 @@ function prototypeAugmentHtml(i,kind){
  const note=modeled?L('已计入枪械输出期望值','Included in expected firearm output'):L('效果保留；不计入枪械输出','Effect retained; not included in firearm output');
  const levelChoices=Array.from({length:10},(_,n)=>`<option value="${n+1}"${n+1===level?' selected':''}>${n+1}</option>`).join('');
   const effect=a?esc(effects.join(' · ')):'';
-  return `<label class="axrow axselect prototype-augment" title="${esc(effects.concat(note).join(' · '))}">${(t?talIcon(t,'tic tic-s'):'')||axGlyph('uti')}<span class="axk">${esc(L('原型增幅','Augment'))}</span><span class="axchoice">${esc(a?L(a.zh,a.en):L('未选择','None'))}</span><select data-act="${kind==='w'?'waugment':'gaugment'}" data-i="${i}" aria-label="${esc(L('原型增幅','Prototype augment'))}"><option value="">${esc(L('未选择','None'))}</option>${rows.map(x=>`<option value="${esc(x.code)}"${x.code===key?' selected':''}>${esc(L(x.zh,x.en))}</option>`).join('')}</select><select class="prototype-level-select" data-act="${kind==='w'?'waugmentlevel':'gaugmentlevel'}" data-i="${i}" aria-label="${esc(L('增幅等级','Augment level'))}"${a?'':' disabled'}>${levelChoices}</select>${effect?`<span class="prototype-effect">${effect}</span>`:''}</label>`;
+  return `<label class="axrow axselect prototype-augment" title="${esc(effects.concat(note).join(' · '))}">${(t?talIcon(t,'tic tic-s'):'')||axGlyph('uti')}<span class="axk">${esc(L('原型增幅','Augment'))}</span><span class="axchoice">${esc(a?L(a.zh,a.en):L('选择原型天赋','Pick prototype talent'))}</span><select data-act="${kind==='w'?'waugment':'gaugment'}" data-i="${i}" aria-label="${esc(L('原型增幅','Prototype augment'))}"><option value="">${esc(L('选择原型天赋','Pick prototype talent'))}</option>${rows.map(x=>`<option value="${esc(x.code)}"${x.code===key?' selected':''}>${esc(L(x.zh,x.en))}</option>`).join('')}</select><select class="prototype-level-select" data-act="${kind==='w'?'waugmentlevel':'gaugmentlevel'}" data-i="${i}" aria-label="${esc(L('增幅等级','Augment level'))}"${a?'':' disabled'}>${levelChoices}</select>${effect?`<span class="prototype-effect">${effect}</span>`:''}</label>`;
 }
 
 function weaponAffixOptionLabel(code,q,proto){

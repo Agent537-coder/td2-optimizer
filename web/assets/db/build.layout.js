@@ -26,8 +26,11 @@ function buildGearSummaryBlock(i,it){
 }
 function buildGearPrototypeSummary(i){
  const temp=document.createElement('template');temp.innerHTML=prototypeAugmentHtml(i);const root=temp.content.querySelector('.prototype-augment');if(!root)return '';
- const name=root.querySelector('select[data-act=gaugment]')?.selectedOptions[0]?.textContent||root.querySelector('.axchoice')?.textContent||'',level=root.querySelector('.prototype-level-select')?.value;
- return '<button type="button" class="build-gear-prototype" data-act="gear-edit" data-i="'+i+'">'+(root.querySelector('.tic,.axic')?.outerHTML||'')+'<span>'+esc(name)+'</span>'+(level?'<small>Lv.'+esc(level)+'</small>':'')+'</button>';
+ const sel=root.querySelector('select[data-act=gaugment]'),hasAugment=sel&&sel.value!=='';
+ const name=sel?.selectedOptions[0]?.textContent||root.querySelector('.axchoice')?.textContent||'';
+ const level=hasAugment?(root.querySelector('.prototype-level-select')?.value||''):'';
+ const icon=hasAugment?(root.querySelector('.tic,.axic')?.outerHTML||''):'<span class="proto-add">+</span>';
+ return '<button type="button" class="build-gear-prototype'+(hasAugment?'':' empty')+'" data-act="gear-edit" data-i="'+i+'">'+icon+'<span>'+esc(name)+'</span>'+(level?'<small>Lv.'+esc(level)+'</small>':'')+'</button>';
 }
 function buildGearEditorSeed(i){return {slot:i,item:state.slots[i],core:state.core[i],affix:arr(state.affix[i]).slice(),gtal:state.gtal[i],augment:structuredClone(state.bp.augments?.[i]||{})};}
 /* 草稿 vs state 的**未应用改动数**（脏检测判据，2026-10-15）：按 `buildGearEditorSeed` 的草稿域逐字段比 ——

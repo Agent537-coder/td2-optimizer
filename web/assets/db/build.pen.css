@@ -194,6 +194,9 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-state
 body[data-hub-page=build] #ggrid .build-gear-card .taltx::before{display:none}
 .build-gear-prototype{display:flex;align-items:center;gap:4px;min-width:0;min-height:44px;border:0;padding:0;background:transparent;font:12px/1.4 var(--ff-body)}
 .build-gear-prototype>span{min-width:0;overflow-wrap:anywhere}.build-gear-prototype small{font-size:10px;color:var(--mut);white-space:nowrap}
+.build-gear-prototype.empty{color:var(--mut)}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk.empty{color:var(--mut)!important}
+.proto-add{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 16px;font-size:14px;font-weight:700;line-height:1;border:1.5px solid currentColor;border-radius:3px;box-sizing:border-box}
 .build-gear-empty{display:block;text-align:center;font-size:12px;color:var(--mut)}
 body[data-hub-page=build] #ggrid .build-gear-card.editing{box-shadow:inset 0 0 0 1px var(--accent)}
 body[data-hub-page=build] #ggrid .build-gear-card .build-gear-mod-source[hidden]{display:none}
@@ -409,3 +412,15 @@ body[data-hub-page=build] #wstrip .wcard.empty :is(.wc-slotlbl,.wc-stats){font-w
    同时把 `.gc-hd` 网格行也从 start 改为 center（min-height 28px，名行 ~22px，保证内容行在头部里也居中）。 */
 body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{align-items:center}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{align-items:center}
+
+/* ── PC 宽屏脚区（2026-10-30）：列模板 `1fr 1fr`，左格（原型天赋，未选时天赋行顶位）与插件格等分伸缩、同 32px 高、只留下边框 ──
+   下边框须带 `!important`：原型格永远是 `.gc-ft` 的 DOM 末子，被 hub.experience.css:615 的 last-child 免尾线规则清零。 */
+@media(min-width:761px){
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft :is(.build-gear-prototype,.taltx){justify-self:stretch;width:100%;height:32px;min-height:32px;box-sizing:border-box;border:0;border-bottom:1px solid var(--line)!important;padding:0 6px;overflow:hidden;line-height:1.45}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype small{margin-left:auto;flex:none}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{border:0;border-bottom:1px solid var(--line)!important;background:none;height:32px;min-height:32px;box-sizing:border-box;padding:0 6px}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk.empty{border-style:solid}
+}
