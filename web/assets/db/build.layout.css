@@ -18,7 +18,6 @@ body[data-hub-page=build] .sec-lbl{font-size:14px;letter-spacing:0;margin:0 0 8p
 body[data-hub-page=build] #wstrip{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 body[data-hub-page=build] .wcard{position:relative;min-width:0;width:100%;height:auto;min-height:0;border:1px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden;box-shadow:none}
 body[data-hub-page=build] .wcard.filled{display:block;border-top:1px solid var(--rc)}
-body[data-hub-page=build] .wcard.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 body[data-hub-page=build] .wcard>.topbar{display:none}
 body[data-hub-page=build] .wcard .wc-hd{display:flex;align-items:center;gap:6px;padding:4px 10px;margin:0;min-height:32px;background:color-mix(in srgb,var(--rc) 7%,var(--card));border:0}
 body[data-hub-page=build] .wcard .wc-slotlbl{flex:1;font-size:12px;letter-spacing:0;font-weight:500;color:var(--mut)}
@@ -114,7 +113,8 @@ html body[data-hub-page=build] #build-quick>label>input[type=checkbox]:checked::
  body[data-hub-page=build] #ggrid .gcard .gc-hd .badge{display:none}
 }
 
-body[data-hub-page=build] .wcard::before,body[data-hub-page=build] .wcard::after{display:none}
+/* 武器卡底纹已改回启用（与装备卡同款左侧渐变），只继续关掉 `::after` */
+body[data-hub-page=build] .wcard::after{display:none}
 body[data-hub-page=build] .wcard.on{outline:0;box-shadow:none}
 
 body[data-hub-page=build] .wcard.filled .wmod-row.fixed .wmod-tag{display:none}
@@ -132,7 +132,8 @@ body[data-hub-page=build] .gc-slot-icon-name{display:none}
 body[data-hub-page=build] #ggrid .gcard .gc-main,body[data-hub-page=build] #ggrid .gcard .gc-info{display:contents}
 body[data-hub-page=build] #ggrid .gcard .gc-mid{grid-area:art;position:relative;left:auto;top:auto;width:108px;height:98px;min-height:0;padding:5px!important;border:0;display:flex;align-items:center;justify-content:center;background:transparent;overflow:hidden}
 body[data-hub-page=build] #ggrid .gcard .gc-mid img.ic{width:98px!important;height:88px!important;max-width:100%!important;max-height:88px!important;object-fit:contain;filter:none;z-index:1}
-body[data-hub-page=build] #ggrid .gcard .gc-wm{width:95%;height:85%;opacity:.10}
+body[data-hub-page=build] #ggrid .gcard .gc-wm{position:absolute;left:0;right:0;top:0;bottom:0;width:auto;height:auto;pointer-events:none;z-index:0;opacity:.22;background:#fff;-webkit-mask:var(--wm) right center/auto 80px no-repeat;mask:var(--wm) right center/auto 80px no-repeat}
+[data-theme=light] body[data-hub-page=build] #ggrid .gcard .gc-wm{background:#000;opacity:.14}
 body[data-hub-page=build] #ggrid .gcard .gc-titleline{grid-area:title;display:flex;align-items:center;min-height:0;padding:6px 0 0;min-width:0}
 body[data-hub-page=build] #ggrid .gcard .gc-name{font:500 14px/1.4 var(--ff-body);white-space:normal;overflow-wrap:anywhere;overflow:visible}
 body[data-hub-page=build] #ggrid .gcard .gc-bonus{grid-area:brand;display:block;font:12px/1.4 var(--ff-body);white-space:normal;margin:0;overflow:hidden;align-self:start}
@@ -186,10 +187,8 @@ body[data-hub-page=build] #ggrid .gcard .modblk .mod-value{color:var(--fg)}
 body[data-hub-page=build] #ggrid{row-gap:0;grid-auto-rows:auto}
 body[data-hub-page=build] #ggrid .gcard{grid-row:span 5;grid-template-rows:subgrid;row-gap:0;margin-bottom:12px;min-height:0;align-content:start}
 body[data-hub-page=build] #ggrid .gcard .gc-hd{min-height:34px}
-body[data-hub-page=build] #ggrid .gcard .gc-hd .gc-wm{position:static;transform:none;inset:auto;margin-left:auto;width:30px;height:28px;max-width:30px;object-fit:contain;opacity:.30;flex:0 0 30px;pointer-events:none}
-body[data-hub-page=build] #ggrid .gcard .gc-hd .gc-wm img{width:100%;height:100%;object-fit:contain}
+/* gc-wm 已上提为 .gcard 直接子元素，不再在 gc-hd 内 */
 body[data-hub-page=build] #ggrid .gcard .gc-hd .badge{margin-left:4px}
-[data-theme=light] body[data-hub-page=build] #ggrid .gcard .gc-hd .gc-wm{opacity:.20}
 body[data-hub-page=build] #ggrid .gcard .gc-titleline{display:flex;flex-wrap:wrap;gap:4px 8px;align-content:center;align-items:center;min-height:60px;padding:4px 0}
 body[data-hub-page=build] #ggrid .gcard .gc-name{flex:1 1 85px;display:block;overflow:visible;-webkit-line-clamp:unset}
 body[data-hub-page=build] #ggrid .gcard .gc-bonus{min-height:28px;padding:0 0 6px;overflow:visible}
@@ -203,13 +202,12 @@ body[data-hub-page=build] #ggrid .gcard:not(.filled) .gc-mid{grid-column:1/-1;ju
  body[data-hub-page=build] #ggrid .gcard{grid-row:span 6;grid-template-rows:subgrid;margin-bottom:8px}
  body[data-hub-page=build] #ggrid .gcard .gc-titleline{min-height:0;padding:4px 0;align-content:start}
  body[data-hub-page=build] #ggrid .gcard .gc-titleline .taltx{flex-basis:auto}
- body[data-hub-page=build] #ggrid .gcard .gc-hd .gc-wm{width:28px;flex-basis:28px}
+ body[data-hub-page=build] #ggrid .gcard .gc-hd .badge{margin-left:4px}
 }
 
 /* Data-audit refinement; same layout, smaller item art, independent larger brand mark. */
 body[data-hub-page=build] #ggrid .gcard .gc-mid img.ic{width:83px!important;height:75px!important;max-height:75px!important}
-body[data-hub-page=build] #ggrid .gcard .gc-hd .gc-wm{width:37.5px;max-width:37.5px;flex-basis:37.5px;height:35px;opacity:.4}
-[data-theme=light] body[data-hub-page=build] #ggrid .gcard .gc-hd .gc-wm{opacity:.28}
+/* gc-wm 已移到卡片绝对定位层，此处不再限定小尺寸 */
 body[data-hub-page=build] #ggrid .gcard .taltx[data-calc=off]::before{content:'○'}
 body[data-hub-page=build] #ggrid .gcard .taltx[data-calc=on]::before{content:'✓'}
 .combat-effect{padding:9px 0;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:5px 8px;font-size:12px}

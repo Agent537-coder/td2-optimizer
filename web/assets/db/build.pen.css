@@ -59,8 +59,9 @@ body[data-hub-page=build] .loadout-weapons>.sec-lbl{display:none}
 body[data-hub-page=build] #col-desk>.loadout-weapons{margin:0;padding:0!important}
 body[data-hub-page=build] .sec-lbl{margin:0 0 8px;font:600 16px/1.4 var(--ff-body);color:var(--fg);border:0}
 body[data-hub-page=build] .sec-lbl::after{display:none}
-body[data-hub-page=build] .wcard{border:0;border-radius:8px;background:var(--card)}
-body[data-hub-page=build] .wcard.filled{border:0}
+/* 武器卡与装备卡同款：左侧 3px 主题色色带（`.build-gear-card` 同一写法），底纹渐变由 build.css `.wcard::before` 提供 */
+body[data-hub-page=build] .wcard{position:relative;overflow:hidden;border:0;border-left:3px solid var(--rc,var(--line));border-radius:8px;background:var(--card)}
+body[data-hub-page=build] .wcard.filled{border:0;border-left:3px solid var(--rc,var(--line))}
 body[data-hub-page=build] #wstrip{gap:12px}
 body[data-hub-page=build] #wstrip .wcard.filled .wc-body{grid-template-columns:44px minmax(0,1fr) 88px;grid-template-rows:minmax(44px,auto) auto auto 1fr;gap:2px 6px;padding:8px 12px;min-height:248px;height:100%;box-sizing:border-box;align-content:start}
 body[data-hub-page=build] .wcard.filled .wc-mid{height:44px}
@@ -81,19 +82,28 @@ body[data-hub-page=build] .wcard.filled .wc-talrow{flex:1;min-height:28px;border
 body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment{flex:1;min-height:28px;padding:0;border:0;grid-template-columns:14px minmax(0,1fr) 30px;min-width:0}
 body[data-hub-page=build] .wcard.filled .wc-effects .prototype-level-select{width:30px;min-width:30px;min-height:28px;font-size:12px;padding:0;border:0;background:none}
 body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment select[data-act=waugment]{min-height:28px;height:28px;min-width:0}
+/* 未选原型天赋的武器格：与装备卡 `.build-gear-prototype.empty` 同形（方框加号 + `--mut` 弱色），不占等级列。
+   `.axchoice` 的色必须在本层覆盖：`hub.experience.css:535` 那条 `[data-theme=light]` 前缀是 (0,4,0)，高于 `build.css:694` 的 `.axrow.empty .axchoice` (0,3,0)。
+   `grid-template-areas` 要一起收到两列：`build.layout.css:55` 与 `:219` 那两份命名轨道是 icon/choice/level 三列，不收就会在末尾多出一条 0px 幽灵轨道和一道列间距。 */
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment.empty{grid-template-columns:16px minmax(0,1fr);grid-template-areas:"icon choice";color:var(--mut)}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment.empty .proto-add{grid-area:icon}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment.empty .prototype-level-select{display:none}
+body[data-hub-page=build] .wcard.filled .wc-effects .prototype-augment.empty .axchoice{color:inherit}
 body[data-hub-page=build] .wcard.filled .wc-mod{padding:0;border:0;gap:2px 6px;margin:0;align-self:stretch;align-content:start}
-body[data-hub-page=build] .wcard.filled .wmod-row{background:var(--bg);border:0;border-radius:4px;min-height:44px;padding:4px 6px}
-body[data-hub-page=build] .wcard.filled .wmod-row.unavailable{background:color-mix(in srgb,var(--bg) 70%,var(--card));border:0}
-/* 武器槽位徽章：官方原生书签图形，贴在卡片左上角；未选中=1/2/3，计算中=✓，点它切换。
-   颜色随主题切换官方 light/dark 两张（不在 CSS 里染死色）。 */
+body[data-hub-page=build] .wcard.filled .wmod-row{background:transparent;border:0;border-radius:4px;min-height:44px;padding:4px 6px}
+/* 武器槽位徽章：官方原生书签图形，贴卡片左上角；未选中=1/2/3，计算中=✓，点它切换。
+   颜色随主题切换官方 light/dark 两张（不在 CSS 里染死色）。
+   内部 14x28 图默认居中会开 3px 左气，flex-start 后图片左上与按钮左上对齐（用户
+   20261030：角标应贴点击域左上角）；wide/narrow 同口径 `top:0` 直接贴 card 上边缘（原 narrow
+   `top:8px` 下推与 card 顶不齐 ⇒ 移除 narrow 覆盖）；`min-width:0!important` 压过三层 44px
+   触控红线（`hub.layout.css` `!important`、`mobile.css`、`hub.experience.css`）把窄屏按钮宽度压回 20px（用户
+   20261030：narrow 44 触控区盖住名字 ⇒ 宽度换名字位，高度保留 44 触控），badge 占的 22px 由
+   narrow `.wc-titleline padding-left:22px` 同 wide 避开。*/
 body[data-hub-page=build] .wcard.filled .wc-titleline{display:block;min-width:0}
-body[data-hub-page=build] .wcard.filled .wc-slotlbl{position:absolute;left:0;top:0;z-index:2;display:flex;align-items:center;justify-content:center;width:20px;height:28px;padding:0;border:0;background:transparent;cursor:pointer}
+body[data-hub-page=build] .wcard.filled .wc-slotlbl{position:absolute;left:0;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:flex-start;width:20px;min-width:0!important;height:28px;padding:0;border:0;background:transparent;cursor:pointer}
 body[data-hub-page=build] .wcard.filled .wc-slotlbl:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:0 0 4px 0}
 body[data-hub-page=build] .wcard.filled .wc-tools{width:28px}
 body[data-hub-page=build] .wcard.filled .wc-tools .wc-remove{width:28px;min-width:28px;height:28px;min-height:28px}
-@media(max-width:760px){
- body[data-hub-page=build] .wcard.filled .wc-slotlbl{top:8px}
-}
 body[data-hub-page=build] .wc-slot-badge{display:block;width:14px;height:28px;object-fit:contain}
 body[data-hub-page=build] .wc-slot-badge.dark{display:none}
 html[data-theme=dark] body[data-hub-page=build] .wc-slot-badge{display:none}
@@ -124,12 +134,14 @@ html[data-theme=dark] body[data-hub-page=build] .wc-slot-badge.dark{display:bloc
  body[data-hub-page=build] .wcard.filled .wmod-row:not(.on) .wmod-a{display:none}
 }
 body[data-hub-page=build] #ggrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 12px;grid-auto-rows:auto;align-items:stretch}
-body[data-hub-page=build] #ggrid .build-gear-card{display:grid;grid-template-areas:'head' 'main' 'footer';grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(28px,auto) 1fr auto;grid-row:auto;margin:0;padding:8px 12px 0;border:0;border-left:3px solid var(--rc,var(--line));border-radius:8px;background:var(--card);min-height:0;gap:0}
-body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{min-height:28px;display:grid;grid-template-columns:minmax(0,1fr) 30px;align-items:start;padding:0;gap:4px}
+body[data-hub-page=build] #ggrid .build-gear-card{position:relative;overflow:hidden;display:grid;grid-template-areas:'head' 'main' 'footer';grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(28px,auto) 1fr auto;grid-row:auto;margin:0;padding:8px 12px 0;border:0;border-left:3px solid var(--rc,var(--line));border-radius:8px;background:var(--card);min-height:0;gap:0}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{min-height:28px;display:grid;grid-template-columns:minmax(0,1fr);align-items:start;padding:0;gap:4px}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl{min-width:0;flex:1;color:var(--rc);font:500 13px/1.45 var(--ff-body);align-items:flex-start;gap:5px;white-space:normal;overflow:visible}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl>span{min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere}
-body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-wm{width:30px;height:28px;max-width:30px;flex:0 0 30px;opacity:.65;margin-left:auto}
-body[data-hub-page=build] #ggrid .build-gear-card .gc-main{grid-area:main;display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-areas:none;grid-template-rows:auto;gap:8px;align-items:center;min-height:88px}
+/* gc-wm 在 .gc-main 内绝对定位，与装备图同容器居中，保证中心对齐 */
+body[data-hub-page=build] #ggrid .build-gear-card .gc-main>.gc-wm{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.22;background:#fff;-webkit-mask:var(--wm) right center/auto 80px no-repeat;mask:var(--wm) right center/auto 80px no-repeat}
+[data-theme=light] body[data-hub-page=build] #ggrid .build-gear-card .gc-main>.gc-wm{background:#000;opacity:.14}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-main{position:relative;grid-area:main;display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-areas:none;grid-template-rows:auto;gap:8px;align-items:center;min-height:88px}
 body[data-hub-page=build] #ggrid .build-gear-card :is(.gc-mid,.gc-info){grid-area:auto}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-info{display:block;min-width:0;padding:0}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-mid{width:52px;height:84px;min-height:0;padding:0!important;display:flex;align-items:center;justify-content:center;align-self:center}
@@ -147,7 +159,7 @@ body[data-hub-page=build] #ggrid .build-gear-card .gc-mid img.ic{width:52px!impo
    卡片列宽/列间距与 `build.layout.css` 的 gcard 栅格一致（108px + 14px），改一处要同步另一处。 */
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{display:grid;grid-template-columns:108px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:center;align-self:stretch;min-height:0;padding:0;border-top:1px solid var(--line);margin-top:8px}
 /* 有原型天赋时：第一行「原型天赋 + 选择插件」，第二行天赋占满整行；
-   没有原型天赋时天赋仍在第一行。 */
+   没有原型天赋时天赋仍在第一行。池空时天赋格渲不可见占位（.tal-reserve）保住行轨道对齐。 */
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{grid-column:1;grid-row:1;justify-self:start;min-height:28px;padding:0;gap:6px}
 body[data-hub-page=build] .wcard.filled .wax-row b{font-weight:600}
 /* 长词条名不换行：标签省略，数值固定在最右，行高不被撑开。 */
@@ -177,6 +189,18 @@ body[data-hub-page=build] .wcard.filled .wmod-row .wmod-a .wmod-an{font-weight:5
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype small{font-weight:600}
 body[data-hub-page=build] .wcard.filled .wmod-row.locked .wmod-v{display:inline;color:var(--mut);font-size:11px;margin-left:auto;white-space:nowrap}
 body[data-hub-page=build] .wcard.filled .wmod-row.fixed .wmod-a,body[data-hub-page=build] .wcard.filled .wmod-row.on .wmod-a{display:inline;margin-left:auto}
+/* 未选配件的格子：整行转 `--mut` 弱提示，预置行 `.wmod-v`（「选择瞄具」等）盖回 layout.css:70 默认的 `display:none`。
+   宽屏档 `.wmod-k`（槽名）已在上面 `@media(min-width:761px)` 块里全档 `display:none`，避免与 `.wmod-v` 里的槽名重复；
+   窄屏档不盖（用户 20261030：窄屏未选时也要看到配件名称）—— row1 「瞄具」 + row2 「选择瞄具」上下分层，与非空格 row1 槽名 + row2 属性同构。*/
+body[data-hub-page=build] .wcard.filled .wmod-row.empty{color:var(--mut)}
+body[data-hub-page=build] .wcard.filled .wmod-row.empty .wmod-v{display:inline}
+/* 未选武器天赋行（用户 20261030：与武器配件空格 `.wmod-row.empty` 同口径）：
+   图标位换成方块加号 `.proto-add`（`build.view.js:169` `talObj?tico:'<span class="proto-add">+</span>'`）、
+   文本「选择武器天赋」、整行 `--mut` 弱提示；悬停与 `layout.css:77 button.wmod-row:hover` 同色（盖掉
+   `build.css:145` 的 `--bone` 灰）；`.has` 已选分支紫色不变（`build.css:146/149`）。 */
+body[data-hub-page=build] .wcard.filled .wc-talrow.empty{color:var(--mut)}
+body[data-hub-page=build] .wcard.filled .wc-talrow.empty .wc-tal-name{color:var(--mut)}
+@media(hover:hover) and (pointer:fine){body[data-hub-page=build] .wcard.filled button.wc-talrow:hover{border-color:var(--accent);background:var(--accent-soft)}}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1/-1;grid-row:2;min-width:0;width:100%;border:0;background:none;padding:0;height:auto;min-height:32px;display:flex;gap:4px;align-items:center;overflow:hidden}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:not(:has(.build-gear-prototype)) .taltx{grid-column:1;grid-row:1}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{grid-column:2;grid-row:1;width:100%!important;min-width:0;height:32px;min-height:32px;padding:0 0 0 17px;overflow:hidden;display:flex;align-items:center;gap:6px}
@@ -186,16 +210,22 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-labe
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:600px){
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;row-gap:2px}
- body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1;grid-row:1}
+ /* 窄屏脚区行序（用户 20261030：原型天赋格与装备天赋格上下互换）：row1 原型天赋
+    `.build-gear-prototype` → row2 插件 `.modblk` → row3 装备天赋 `.taltx`。与 wide 基线同语义（wide 下
+    原型 row1 col1 + 插件 row1 col2 + 天赋 row2 满宽⇒ 原型在上、天赋在下），窄屏按行展开后保持同口径。
+    占位格 `.mod-reserve`（pen.css:475）仍 row2，不受影响。*/
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{grid-column:1;grid-row:1}
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{grid-column:1;grid-row:2}
- body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{grid-column:1;grid-row:3}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1;grid-row:3}
 }
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-state{display:none}
 body[data-hub-page=build] #ggrid .build-gear-card .taltx::before{display:none}
 .build-gear-prototype{display:flex;align-items:center;gap:4px;min-width:0;min-height:44px;border:0;padding:0;background:transparent;font:12px/1.4 var(--ff-body)}
 .build-gear-prototype>span{min-width:0;overflow-wrap:anywhere}.build-gear-prototype small{font-size:10px;color:var(--mut);white-space:nowrap}
+.build-gear-prototype.empty{color:var(--mut)}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk.empty{color:var(--mut)!important}
+.proto-add{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 16px;font-size:14px;font-weight:700;line-height:1;border:1.5px solid currentColor;border-radius:3px;box-sizing:border-box}
 .build-gear-empty{display:block;text-align:center;font-size:12px;color:var(--mut)}
-body[data-hub-page=build] #ggrid .build-gear-card.editing{box-shadow:inset 0 0 0 1px var(--accent)}
 body[data-hub-page=build] #ggrid .build-gear-card .build-gear-mod-source[hidden]{display:none}
 /* `#dlgmask` 改成 `<dialog>`（为了进 top layer，见 dashboard_build.html 注释）后，
    先抹掉 UA 自带的居中/边框/内底色，其余定位仍由 `build.css` 那套 `#dlgmask` 规则给。 */
@@ -409,3 +439,126 @@ body[data-hub-page=build] #wstrip .wcard.empty :is(.wc-slotlbl,.wc-stats){font-w
    同时把 `.gc-hd` 网格行也从 start 改为 center（min-height 28px，名行 ~22px，保证内容行在头部里也居中）。 */
 body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{align-items:center}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{align-items:center}
+
+/* ── PC 宽屏脚区（2026-10-30）：列模板 `1fr 1fr`，左格（原型天赋，未选时天赋行顶位）与插件格等分伸缩、同 32px 高、只留下边框 ──
+   下边框须带 `!important`：原型格永远是 `.gc-ft` 的 DOM 末子，被 hub.experience.css:615 的 last-child 免尾线规则清零。 */
+@media(min-width:761px){
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft :is(.build-gear-prototype,.taltx){justify-self:stretch;width:100%;height:32px;min-height:32px;box-sizing:border-box;border:0;border-bottom:1px solid var(--line)!important;padding:0 6px;overflow:hidden;line-height:1.45}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype small{margin-left:auto;flex:none}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{border:0;border-bottom:1px solid var(--line)!important;background:none;height:32px;min-height:32px;box-sizing:border-box;padding:0 6px}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk.empty{border-style:solid}
+}
+
+/* ── 天赋格 / 插件格占位（2026-10-30 用户：无装备天赋、无插件位也预留格子位置、什么也不展示）──
+   `.tal-reserve`、`.mod-reserve` 与真按钮同占栅格位（行轨道不塌），但清空全部可视装饰；
+   追加在文件末尾是为了压掉上面宽屏档给 `.taltx`/`.modblk` 的下边框（那几条带 !important，这里同用）。
+   悬停不生效（用户第二轮）：`pointer-events:none` 掐灭 build.css:256 / hub.experience.css:820 的
+   `:hover` 底色，`cursor:inherit` 让指针延续卡片本体的手型，不闪回默认箭头。
+   `.mod-reserve` 不在任何档给高度：内容是空 div ⇒ 自然高 0，行轨道靠上面 `.gc-ft` 的 `min-height:32px` 兜住。 */
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx.tal-reserve,
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve{border:0!important;border-bottom:0!important;background:none;visibility:hidden;pointer-events:none;cursor:inherit}
+/* 宽屏档：占位格与真插件格同栅格位（col2/row1），min-height 与真插件格同（32px）；
+   本行已有 prototype 撑到 32px，但显式声明与 `.tal-reserve` PC 行为对称，也防后续 prototype 缺失时行高塌。*/
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve{grid-column:2;grid-row:1;height:auto;min-height:32px;padding:0}
+
+/* ── 移动端脚区（20261030 用户：原型天赋格与插件格表现不一致，以插件格为准）──
+   单列排布时把原型格按插件格口径补齐：整行撑满、同色下分隔线、尾部等级贴右缘、名称省略号不换行；
+   下边框须带 `!important`：原型格永远是 `.gc-ft` 的 DOM 末子，被 hub.experience.css:646 的免尾线规则清零。
+   第 2 轮（用户：图标与文字未上下对齐，以原型天赋格为准）：插件格向左靠齐原型格 —— 图标起点 17px→0、
+   图标放大到 16px，配合 `gap:6px` 使文字落到 x=22，与原型格名称同列；数值仍 `margin-left:auto` 靠右不受影响。
+   第 3 轮（用户：三格上下内边距缩到 50%、更紧凑）：三格 padding 本已 0，纵向留白全来自 `min-height:44px`
+   （移动端触控热区红线，见 mobile.css:18）；故按 50% 将天赋/插件/原型三格 `min-height` 压到 22px（`!important` 压过 mobile.css:18 的按钮级 44px；`height:auto` 让内容自撑）。
+   第 4 轮（用户：三区域点击留白恢复到 44）：第 3 轮回退到 `mobile.css:18` 的 44px 触控热区红线；`min-height` 取 44px，`:is()` 选择器与 `!important` 都保留，确保天赋占位 `<div>` 与 `.mod-reserve` 一并同高。
+   第 5 轮（用户：点击留白改为 30）：在 22与 44 之间取中——`min-height` 取 30px，`:is()` 与 `!important` 打法不变（仍需压过 `mobile.css:18` 的按钮级 44px）；`.mod-reserve` 同步降到 30px 保证卡等高。 */
+@media(max-width:760px){
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{justify-self:stretch;width:100%;overflow:hidden;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype small{margin-left:auto;flex:none}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{padding-left:0;gap:6px}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mglyph{width:16px;height:16px;flex:0 0 16px}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft :is(.taltx,.modblk,.build-gear-prototype){height:auto;min-height:30px!important}
+ /* 占位格与真格同高但不占用触控热区（非 `<button>`、无 `data-act`）：移动端下给 30px 预留行位，
+    与 `.tal-reserve` PC 下占 32px 空行同构（本行高度与真格一致，保证卡等高）。*/
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.mod-reserve){grid-template-rows:auto auto auto}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve{grid-column:1;grid-row:2;height:auto;min-height:30px;padding:0}
+}
+
+/* ── 属性条目靠顶排列 + 核心/非核心分隔线（20261030 用户）──
+   pen.css:141 `.gc-main{align-items:center;min-height:88px}` 会把 `.gc-info` 在 88px 里居中，
+   多条属性时上下都有留白 ⇒ 给 `.gc-info` 单独 `align-self:flex-start` 靠顶堆（`.gc-mid` 已在 pen:144
+   声明 `align-self:center`，图标仍居中）。
+   分隔线：核心行在 `build.view.js` 里分两路（可挑核心 `label.axselect.core` 与固定核心 `div.axrow.core[data-fixed=core]`），
+   `build.layout.js:25` 把 `row.classList.contains('core')` 拷到卡面 `.build-gear-attr.core` ⇒ 紧邻核心的下一条加顶边框
+   （`color-mix(--line 70%)`，与脚区分隔线同族）。 */
+body[data-hub-page=build] #ggrid .build-gear-card .gc-info{align-self:flex-start}
+body[data-hub-page=build] #ggrid .build-gear-card .build-gear-attr.core+.build-gear-attr{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:2px}
+
+/* ── 移动端武器卡：武器图侧栏（20261030 用户：顶到角落异常 ⇒ 图应在属性左侧；二次反馈⇒ 只占 affix 行，不占下方）──
+   原本 `.wc-mid` 在 row1/col1 44x44 小格（`build.layout.css:30` grid-area:1/1 + `pen.css:66` cols 44px），
+   2:1 长条图压到 44x22，卡 276 高 ⇒ 看上去卡在左上角。改为与宽屏档同构：
+   row1 标题行（titleline 跳 col1–2，tools col3 卡右上角），row2 图（col1 90px）+ affix（col2–3）并排，
+   row3 effects 、row4 mod 满宽——图纵向不再占据整列（用户二次反馈“下面的不占”）。 */
+@media(max-width:760px){
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-body{grid-template-columns:90px minmax(0,1fr) 88px}
+ body[data-hub-page=build] .wcard.filled .wc-mid{grid-area:2/1/3/2;width:auto!important;height:auto!important;align-self:center;padding:6px!important}
+ body[data-hub-page=build] .wcard.filled .wc-mid img.ic{width:100%!important;height:auto!important;max-width:100%;max-height:none}
+ body[data-hub-page=build] .wcard.filled .wc-titleline{grid-area:1/1/2/3;padding-left:22px}
+ /* 卸下按钮（右上角 ×）与左上角 badge 同构：absolute 脱 grid ⇒ 点击域上沿对齐 card 顶（用户
+    20261030：原本 narrow tools top=8 因 wc-body padding-top:8 ⇒ 与 card 顶不齐）；`right:4px` 与右
+    边缘留 4px gap（不紧贴）；`min-width:0!important` 压过 `hub.layout.css` 44px 触控红线把按钮宽度
+    压回 28（原本 44 溢出 tools 容器 12 到卡外）；高度保留 44 触控，SVG 20 居中 ⇒ svg y=12 vs 原本 20，
+    向上靠拢但仍不紧贴。 */
+ body[data-hub-page=build] .wcard.filled .wc-tools{position:absolute;right:4px;top:0;z-index:2;width:28px}
+ body[data-hub-page=build] .wcard.filled .wc-tools .wc-remove{min-width:0!important}
+ body[data-hub-page=build] .wcard.filled .wc-affix{grid-area:2/2/3/4}
+ body[data-hub-page=build] .wcard.filled .wc-effects{grid-area:3/1/4/4}
+ body[data-hub-page=build] .wcard.filled .wc-mod{grid-area:4/1/5/4}
+ /* 窄屏已选/固定配件行：盖回 `pen.css:188 .wmod-row.fixed/.on .wmod-a{margin-left:auto}` 将效果推到右缘的行为
+    （用户 20261030：窄屏时武器配件效果居左显示）；`#wstrip` 抬特异性到 (1,5,1) > pen:188 的 (0,5,1)。 */
+ body[data-hub-page=build] #wstrip .wcard.filled .wmod-row:is(.on,.fixed) .wmod-a{margin-left:0;text-align:left;justify-self:start}
+ /* 窄屏三个区块「图标→文本」推进量对齐（用户 20261030：武器天赋/原型天赋格内文本要与下方
+    武器配件文本垂直对齐）：统一为 `padding-left:4 + 图标轨 16 + gap:4 = 24px`。
+    - `.wc-talrow`：盖 `layout.css:36`（padding:4px 6px/gap:5px）与 `pen.css:81`（padding:0），原本 21px；
+    - `.prototype-augment`：盖 `layout.css:54`（gap:6px，`axrow` 族给的 row-gap 2px 保留）与 `pen.css:82`
+      （padding:0），原本 22px；`gap` 两值写法只改 column-gap，三列（icon/choice/level）网格轨不动；
+    - `.wmod-row`：盖 `pen.css:93` 的 `padding:4px 6px` ⇒ 四值写法 `6px 6px 6px 4px`（只把左内边距收到 4，上下 6 / 右 6 照旧），基准 26→24。
+    选择器一律带 `#wstrip` ⇒ (1,4,1)（增幅那条 (1,5,1)）> 上述基础层 (0,4,1)/(0,3,1)，不需要 `!important`；锁 narrow 档，wide 不动。 */
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-talrow{padding-left:4px;gap:4px}
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-effects .prototype-augment{padding-left:4px;gap:2px 4px}
+ body[data-hub-page=build] #wstrip .wcard.filled .wmod-row{padding:6px 6px 6px 4px}
+}
+
+/* ── 武器类型图标上名字行 + 名字行上下留白 5px（20261030 用户两轮需求）──
+   `build.view.js:179` 原本把 `w.type_icon`（`ui/wt_*.png` 8 个枪型 + 专长，437 把枪 100% 带值）渲成
+   `.wc-mid` 里 13% 透出的水印，且 `pen.css:69` 已把它 `display:none`（水印实际早已不显示）。
+   本段与 `build.view.js:179` 配套：把那颗 `.wc-ti` 从水印位改挂到名字行之前（浅色主题反色由
+   `layout.css:33` + `mono` 名单接管，`pen.css:69` 的全局 `display:none` 靠本段同特异性后写位盖回，
+   所以 `display:block` 必须显式写出来，只改定位/尺寸不够）。
+   名字行原本 `flex-direction:column`（抬头 / 天赋行两拍），这里整行转成横排 `align-items:center`
+   ⇒ 图标与文字上下对齐；`gap:4px` 只加在角标按钮 / 图标 / 名字三者之间（天赋行不在这个容器里，
+   它在 `.wc-effects` 下）。图标一律定宽定高（八个 `wt_*` 都是 128×128 正方形）：flex 项里 `width:auto`
+   + 定高不会拿 intrinsic ratio，实测 rectW=0。尺寸口径：用户第 3 轮要求把图标放大到原来的 2 倍
+   （wide 14⇒28 / narrow 13⇒26），仍靠 `align-items:center` 与名字中心对齐 ⇒ 图标 28 高于名字行内容
+   高 17.5，会把 `.wc-titleline` 从内容盒顶高（行轨 `auto` 接手），名字的上下 5px 留白口径不变。
+   窄屏 `pen.css:508` 的 `padding-left:22px`（避左上角标）与本段上下 5px 留白一起在末尾的 narrow
+   块里重写，靠后写位活下来。 */
+body[data-hub-page=build] .wcard.filled .wc-titleline{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:4px;min-height:0;padding:5px 4px}
+body[data-hub-page=build] .wcard.filled .wc-titleline .wc-ti{display:block;position:static;width:28px;height:28px;flex:0 0 auto;opacity:1;filter:none;pointer-events:none;object-fit:contain}
+/* 浅色主题：源图是白线条 ⇒ 必须反色成黑。`layout.css:254` 那条 `.wc-ti` 族规则 (0,4,3) 给的是
+   `brightness(0)`（白线 → 全黑块，水印口径），名字前缀不能要 ⇒ 本段 (0,5,1) 直接接管 `filter`，
+   light 档再补 `invert(1)`，与 `build.css:65 img.mono` / `layout.css:33` 同口径。 */
+[data-theme=light] body[data-hub-page=build] .wcard.filled .wc-titleline .wc-ti{filter:invert(1)}
+body[data-hub-page=build] .wcard.filled .wc-titleline .wc-name{flex:0 1 auto;padding:0}
+@media(max-width:760px){
+ /* 名字行上下留白压到 5px（用户 20261030：武器名称的上下 padding 太大）：名字自身 `padding` 早已是
+    0，真正撑高的是 `layout.css:34` 的 `min-height:44px`（本块后写位盖掉）与 `layout.css:36` 那族的
+    触控口径 ⇒ 行轨 44px 里名字只占 17.5px，居中后上方 12.7 / 下方 5.3px。`min-height:0` + 上下
+    padding 5px 接手（wide 档原本 28px = 名字 19 + 上下 4.5，口径基本延续），行轨从固定 44px 变成
+    内容轨 27.5px。左上角标 `.wc-slotlbl` 是 absolute 脱流元素（`pen.css:99`，44px 高但
+    `background/border:0`）⇒ 行高缩下不影响它的触控热区与视觉。 */
+ body[data-hub-page=build] .wcard.filled .wc-titleline{min-height:0;padding:5px 4px 5px 22px}
+ body[data-hub-page=build] .wcard.filled .wc-titleline .wc-ti{width:26px;height:26px}
+}

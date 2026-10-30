@@ -12,6 +12,9 @@ html.ah-light .ah-loadout,[data-theme=light] .ah-loadout{--lc-bg:#fffefa;--lc-te
 .ah-loadout-item[data-quality=exotic]{--lc-q:#dd5130}
 .ah-loadout-item[data-quality=proto]{--lc-q:#796aef}
 .ah-loadout-item[data-quality=proto] .ah-loadout-name{color:#b4a6ff}.ah-loadout-item[data-quality=exotic] .ah-loadout-name{color:#ff8a65}
+/* 具名=强制橙（与配装页卡名同口径）：按 `data-rarity` 判而不是 `data-quality`（原型档会把 quality 压成 proto）；
+   选择器多叠 `.ah-loadout` / `.ah-loadout-head` 是为了类数盖过下面两条浅色主题名称色规则，不随主题变 */
+.ah-loadout .ah-loadout-item[data-rarity=named] .ah-loadout-head .ah-loadout-name{color:#f58323}
 html.ah-light .ah-loadout-item[data-quality=proto] .ah-loadout-name,[data-theme=light] .ah-loadout-item[data-quality=proto] .ah-loadout-name{color:#6350cf}
 html.ah-light .ah-loadout-item[data-quality=exotic] .ah-loadout-name,[data-theme=light] .ah-loadout-item[data-quality=exotic] .ah-loadout-name{color:#a7441e}
 .ah-loadout-slot{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--lc-text);margin-bottom:2px;padding-right:26px}

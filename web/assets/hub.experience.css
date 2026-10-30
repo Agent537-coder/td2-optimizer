@@ -321,11 +321,19 @@ body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled)) :is(.wc-mid,.gc-
 body[data-hub-page=build] :is(.wcard.empty,.gcard:not(.filled)) :is(.wc-empty,.gc-empty){display:block;font-size:26px;line-height:1;color:var(--mut)}
 body[data-hub-page=build] .wcard.empty .wc-stats{justify-content:center;text-align:center;padding:0 8px 10px;overflow:visible;white-space:nowrap}
 body[data-hub-page=build] .gcard:not(.filled) .sil{opacity:.55}
-body[data-hub-page=build] :is(.wcard.on,.gcard.open){outline:2px solid var(--accent);outline-offset:3px;box-shadow:none}
+/* 装备卡与武器卡选中/编辑态一律不画边框（用户 2026-10-30）：清零兜底，防 pen/layout 层再叠回来 */
+body[data-hub-page=build] :is(.gcard.open,.gcard.editing,.wcard.on){outline:none;box-shadow:none}
+/* 卡面焦点环只在键盘导航时画（`data-last-input` 由 build.layout.js 记录）：鼠标点卡、
+   dialog 关闭还原焦点都不再留下橙色描边；键盘 Tab 流仍可见（无障碍不降级） */
+body[data-hub-page=build][data-last-input=pointer] .gcard:focus-visible:not(:focus-within){outline:none}
 body[data-hub-page=build] .card:has(>.sec-lbl){background:transparent;border-color:transparent;padding:12px 0}
 body[data-hub-page=build] .sec-lbl{font:600 14px var(--hub-ui);color:var(--fg);margin-bottom:12px}
 body[data-hub-page=build] .hub-build-jump a:focus-visible{outline-offset:-3px}
 body[data-hub-page=build] .hub-build-jump a:hover{background:var(--hover)}
+/* 武器名称：奇特/原型=品质色 `--rc`；具名=强制橙 `--rar-named`，且改按 `data-rarity` 判
+   （原型档会把品质类压成 `r-proto`，只有这个属性保留真实身份）；放末尾，同分时后写者胜 */
+body[data-hub-page=build] .wcard.filled:is(.r-exotic,.r-proto) .wc-name{color:var(--rc)}
+body[data-hub-page=build] .wcard.filled[data-rarity=named] .wc-name{color:var(--rar-named)}
 /* Remaining pages inherit the rhythm without replacing their specialist layouts. */
 body[data-hub-page=tasks] .obj-clue{line-height:1.8}
 body[data-hub-page=loot] #current-body .loot-name{font-size:15px}
@@ -445,16 +453,36 @@ body[data-hub-page] :is(.mini,.chip,.subchip,.hint,.meta,.axk,.wc-stats,.rlbl){f
 body[data-hub-page=build] .gcard.filled{border-color:var(--line)}
 body[data-hub-page=build] .gcard.filled>.topbar{background:var(--rc);opacity:1;height:3px}
 body[data-hub-page=build] .gcard.filled:hover{border-color:color-mix(in srgb,var(--rc) 60%,var(--line))}
-/* 名字着色口径照抄 db.css：具名/奇特/原型=身份色，装备组=72% 混白，品牌/普通=正文色 */
-body[data-hub-page=build] .gcard.filled .gc-name{color:var(--fg)}
-body[data-hub-page=build] .gcard.filled:is(.r-named,.r-exotic,.r-proto) .gc-name{color:var(--rc)}
+/* 卡名颜色 = 品质身份色（与资料库 `.card.r-* .cname` 同源）：奇特=红、原型=紫、装备组=绿；品牌/普通维持正文色；
+   具名=强制橙并按 `data-rarity` 判（原型档下品质类会被压成 `r-proto`） */
+body[data-hub-page=build] .gcard.filled:is(.r-exotic,.r-proto) .gc-name{color:var(--rc)}
 body[data-hub-page=build] .gcard.filled.r-set .gc-name{color:color-mix(in srgb,var(--rc) 72%,var(--fg))}
-/* 武器卡：不要底纹（用户明确「武器不要底纹」）—— 图区与卡同背景，仅靠边框分隔 */
-body[data-hub-page=build] .wcard.filled .wc-mid{background:var(--card);border-right:1px solid var(--line)}
-body[data-hub-page=build] :is(.gcard,.wcard)::before{display:none}
-body[data-hub-page=build] .gc-mid{background:var(--panel)}
+body[data-hub-page=build] .gcard.filled[data-rarity=named] .gc-name{color:var(--rar-named)}
+/* 武器卡与装备卡统一：图区不再要实色底，跟卡面渐变保持同一底色 */
+body[data-hub-page=build] .wcard.filled .wc-mid{background:color-mix(in srgb,var(--card) 70%,transparent);border-right:1px solid var(--line)}
+/* 整卡背景 = 主题色自左 50% 渐变到全透明（build.css 的 .gcard/.wcard ::before）；
+   武器卡同步启用（用户 2026-10-30：要一样的左侧色带和渐变背景，推翻此前「武器不要底纹」） */
+body[data-hub-page=build] .gc-mid{background:radial-gradient(120% 90% at 50% 18%,color-mix(in srgb,var(--rc) 12%,transparent),transparent 70%),color-mix(in srgb,var(--panel) 70%,transparent)}
 body[data-hub-page=build] .gc-main{min-width:0}
 body[data-hub-page=build] .gc-name{font-size:12.5px;white-space:normal;overflow:visible;line-height:1.35}
+/* 装备名称实际 DOM 是 .gc-lbl > span（`.gc-name` 为废弃选择器）：奇特/原型=品质色 `--rc`，品牌/普通=正文色；
+   具名=强制橙 `--rar-named`，但只能按 `data-rarity` 判（原型档把 `rcls` 压成了 `r-proto`，卡面渲紫但名称仍随身份）；
+   与上面几条同分时靠声明顺序取胜，故排末尾（用户 2026-10-30） */
+body[data-hub-page=build] #ggrid .gcard .gc-lbl>span{color:var(--fg)}
+body[data-hub-page=build] #ggrid .gcard.filled:is(.r-exotic,.r-proto) .gc-lbl>span{color:var(--rc)}
+body[data-hub-page=build] #ggrid .gcard.filled.r-set .gc-lbl>span{color:color-mix(in srgb,var(--rc) 72%,var(--fg))}
+body[data-hub-page=build] #ggrid .gcard.filled[data-rarity=named] .gc-lbl>span{color:var(--rar-named)}
+/* 具名件的自带专属词条（`data-fixed=special`，即官方 `fixed:true` 且非核心的槽）名称与数值走橙；
+   可挑核心、随机副属性、件自带核心（`core`，每把枪/每件都带，品牌也有）均不橙，图标始终保留三色；
+   天赋名同走橙，但限 `data-own`（`gtalPool().locked` = 件自带专属天赋，非通用池挑的），`.na`/`.empty` 不抢色（用户 2026-10-30） */
+body[data-hub-page=build] #ggrid .gcard.filled[data-rarity=named] .build-gear-attr[data-fixed=special]>span{color:var(--rar-named)}
+body[data-hub-page=build] #ggrid .gcard.filled[data-rarity=named] .build-gear-attr[data-fixed=special]>b{color:var(--rar-named)}
+body[data-hub-page=build] #ggrid .gcard.filled[data-rarity=named] .gc-ft .taltx[data-own]:not(.na):not(.empty){color:var(--rar-named)}
+/* 武器卡同口径（用户 2026-10-30）：只橙具名专属槽 `data-fixed=special`（每把枪都带的 `core` 不橙）与自带天赋名
+   （`.wc-talrow.fixed` = `weaponFixedTalent()` 非空，品牌枪也有 9 把 ⇒ 必须叠 `[data-rarity=named]`）；图标、`.wc-tal-state`、「固定」标各自有 `--mut`，不受行色影响 */
+body[data-hub-page=build] #wstrip .wcard.filled[data-rarity=named] .wax-row[data-fixed=special]>span{color:var(--rar-named)}
+body[data-hub-page=build] #wstrip .wcard.filled[data-rarity=named] .wax-row[data-fixed=special]>b{color:var(--rar-named)}
+body[data-hub-page=build] #wstrip .wcard.filled[data-rarity=named] .wc-talrow.fixed:not(.na) .wc-tal-name{color:var(--rar-named)}
 body[data-hub-page=build] .gc-info{padding:6px 10px;gap:2px}
 body[data-hub-page=build] .build-db-link{align-self:flex-start;border:0;border-radius:0;padding:0;margin:0;color:var(--mut);font:11px/1.4 var(--hub-ui);background:none}
 body[data-hub-page=build] .wcard>.build-db-link{margin-left:12px}
@@ -486,6 +514,9 @@ body[data-hub-page=build] .modblk .mod-label{flex:1;white-space:normal;overflow-
 body[data-hub-page=build] .modblk .mod-value{font:500 13px var(--hub-ui);white-space:nowrap}
 body[data-hub-page=build] .modblk .mglyph{width:18px;height:18px;flex:0 0 18px}
 body[data-hub-page=build] .modblk:hover{background:var(--hover)!important}
+/* 原型天赋格子：鼠标悬停效果与插件格子（`.modblk:hover`）一致 */
+body[data-hub-page=build] .build-gear-prototype{cursor:var(--cur-hover);border-radius:4px}
+body[data-hub-page=build] .build-gear-prototype:hover,body[data-hub-page=build] .build-gear-prototype:focus-visible{background:var(--hover)!important}
 body[data-hub-page=build] .gc-ft .taltx{margin:0;max-width:100%;white-space:normal;overflow:visible;text-align:left;min-height:0;padding:2px 0;font:11.5px/1.45 var(--hub-ui);border:0;color:var(--violet)}
 body[data-hub-page=build] .wc-stats{flex-wrap:wrap;white-space:normal;gap:3px 10px;font-size:11.5px;padding-block:3px}
 body[data-hub-page=build] .wc-mod{gap:0}
