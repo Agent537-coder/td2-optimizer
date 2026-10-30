@@ -118,7 +118,8 @@ function wmodBlock(w,weaponSlot){
       const vals=m?wmAttrRows(m):[];
       const av=m?vals.map(a=>buildEffectLabel(a.name||a.key).replace(/%$/,'')+' '+fmtN(a.val)+(a.unit||'')).join(' · '):'';
       const avHtml=vals.length?vals.map(a=>`<span class="wmod-an">${esc(buildEffectLabel(a.name||a.key).replace(/%$/,''))}</span> <b>${esc(fmtN(a.val)+(a.unit||''))}</b>`).join(' · '):esc(L('无数值加成','No stat bonus'));
-      return `<div class="wmod-row fixed" title="${esc(buildModLabel(m)+' · '+L('固定','Fixed'))}"><span class="wmod-ic">${ic}</span>`
+      /* 固定件（奇特/具名枪预装）与可换件同一套 has-bonus 语义，`layout.css:75` 才能把“配件效果”按 `--rar-off` 上红色（用户 20261030：奇特武器配件效果白色不对，应红）。*/
+      return `<div class="wmod-row fixed${vals.length?' has-bonus':''}" title="${esc(buildModLabel(m)+' · '+L('固定','Fixed'))}"><span class="wmod-ic">${ic}</span>`
         +`<span class="wmod-k">${esc(wmSlotLbl(sm.code))}</span>`
         +`<span class="wmod-v">${esc(buildModLabel(m))}</span><span class="wmod-a">${avHtml}</span>`
         +`<span class="wmod-tag">${esc(L('固定','Fixed'))}</span></div>`;
@@ -129,13 +130,16 @@ function wmodBlock(w,weaponSlot){
         +`<span class="wmod-v dim">${esc(L('不可更换','Locked'))}</span></div>`;
     }
     const m=shown&&shown.mod;
+    /* 未选时的预置文字「选择瞄具 / 选择枪口 / 选择握把 / 选择弹匣」（槽名取官方 `weapon_slots`，英文取 `WATT` 的槽名） */
+    const pick=L('选择'+wmSlotZh(sm.code),'Pick '+((meta[2]||[])[1]||sm.code));
     const values=m?wmAttrRows(m):[];
     const av=m?(values.length?values.map(val=>buildEffectLabel(val.name||val.key).replace(/%$/,'')+' '+fmtN(val.val)+(val.unit||'')).join(' · '):L('无数值加成','No stat bonus')):L('选择','Choose');
     const avHtml=m?(values.length?values.map(val=>`<span class="wmod-an">${esc(buildEffectLabel(val.name||val.key).replace(/%$/,''))}</span> <b>${esc(fmtN(val.val)+(val.unit||''))}</b>`).join(' · '):esc(L('无数值加成','No stat bonus'))):'';
-    return `<button type="button" class="wmod-row${m?' on':''}${values.length?' has-bonus':''}" title="${esc(m?buildModLabel(m):wmSlotLbl(sm.code))}" data-act="wmod" data-i="${weaponSlot}" data-s="${esc(sm.code)}" aria-pressed="${m?'true':'false'}" aria-label="${esc(L('选择配件','Pick mod'))} · ${esc(wmSlotLbl(sm.code))}${m?' · '+esc(buildModLabel(m)+' · '+av):''}">`
-      +`<span class="wmod-ic">${ic}</span>`
+    /* 空格：图标换成方框加号（`.proto-add`，与装备插件空格 `.modblk.empty` 同款），不用职业槽位字形 */
+    return `<button type="button" class="wmod-row${m?' on':' empty'}${values.length?' has-bonus':''}" title="${esc(m?buildModLabel(m):wmSlotLbl(sm.code))}" data-act="wmod" data-i="${weaponSlot}" data-s="${esc(sm.code)}" aria-pressed="${m?'true':'false'}" aria-label="${esc(m?L('选择配件','Pick mod')+' · '+wmSlotLbl(sm.code)+' · '+buildModLabel(m)+' · '+av:pick)}">`
+      +`<span class="wmod-ic">${m?ic:'<span class="proto-add">+</span>'}</span>`
       +`<span class="wmod-k">${esc(wmSlotLbl(sm.code))}</span>`
-      +`<span class="wmod-v">${esc(m?buildModLabel(m):L('选择配件','Pick mod'))}</span>`
+      +`<span class="wmod-v">${esc(m?buildModLabel(m):pick)}</span>`
       +`<span class="wmod-a">${avHtml}</span></button>`;
   }).join('');
   return `<div class="wc-mod">${body}</div>`;
@@ -161,20 +165,24 @@ function renderWeapons(){  $('#wstrip').innerHTML=W_SLOTS.map((sn,i)=>{
       ?`<span class="pvpbadge on">${esc(L('PvP','PvP'))}</span>`:'';
     const wstat=talObj&&talObj.key?combatStatusText(talObj.key):'';
     const wcounted=!!(talObj&&talObj.key&&combatVisibleRows(talObj.key).length);
-    const tal=w?`<button type="button" class="wc-talrow${tn?' has':''}${fixedTal?' fixed':''}${talObj&&talObj.key&&!wcounted?' na':''}" data-act="${fixedTal?'wtal-info':'wsl-tal'}" data-i="${i}" aria-pressed="${tn?'true':'false'}" title="${esc((fixedTal?L('武器自带天赋，不可更换','Built-in talent, locked'):(tn||L('点击选择该武器天赋','Pick this weapon talent')))+(wstat?' · '+wstat:''))}">
-        ${tico}<span class="wc-tal-lbl">${esc(L('天赋','Talent'))}</span><span class="wc-tal-name">${esc(tn||L('＋ 选择','＋ pick'))}</span>${fixedTal?`<span class="wmod-tag">${esc(L('固定','Fixed'))}</span>`:tpv}${wstat?`<span class="wc-tal-state">${esc(wstat)}</span>`:''}</button>`:'';
+    const tal=w?`<button type="button" class="wc-talrow${tn?' has':''}${fixedTal?' fixed':''}${talObj&&talObj.key&&!wcounted?' na':''}${talObj?'':' empty'}" data-act="${fixedTal?'wtal-info':'wsl-tal'}" data-i="${i}" aria-pressed="${tn?'true':'false'}" title="${esc((fixedTal?L('武器自带天赋，不可更换','Built-in talent, locked'):(tn||L('点击选择该武器天赋','Pick this weapon talent')))+(wstat?' · '+wstat:''))}">
+        ${talObj?tico:'<span class="proto-add">+</span>'}<span class="wc-tal-lbl">${esc(L('天赋','Talent'))}</span><span class="wc-tal-name">${esc(tn||L('选择武器天赋','Pick weapon talent'))}</span>${fixedTal?`<span class="wmod-tag">${esc(L('固定','Fixed'))}</span>`:tpv}${wstat?`<span class="wc-tal-state">${esc(wstat)}</span>`:''}</button>`:'';
     if(!w)return `<div class="wcard empty" data-act="wsl" data-i="${i}" tabindex="0" role="button" aria-label="${esc(L('选择武器','Pick weapon'))} · ${esc(L(sn[0],sn[1]))}">
         <div class="topbar" style="--rc:var(--mut)"></div>
         <div class="wc-hd"><span class="wc-slotlbl">${esc(L(sn[0],sn[1]))}</span></div>
         <div class="wc-mid" aria-hidden="true">${iconImg(i===2?'ui/wt_pistol.png':'ui/wt_ar.png','wc-placeholder')}</div>
         <div class="wc-stats"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>${esc(L('选择武器','Choose weapon'))}</div></div>`;
     const rrv=rarOfWeapon(w);
-    const wti=w.type_icon?`<img loading="lazy" decoding="async" class="wc-ti" src="${imgUrl(w.type_icon)}" alt="" aria-hidden="true" onerror="this.remove()">`:'';
-    return `<div class="wcard filled${on?' on':''}${state.bp.prototype&&!w.exotic?' r-proto':w.exotic?' r-exotic':w.named?' r-named':' r-brand'}" data-act="wsl" data-i="${i}" tabindex="0" role="button" aria-pressed="${on?'true':'false'}" aria-label="${esc(nmTxt(w))} · ${esc(L(sn[0],sn[1]))}">
+    /* 武器类型图标（`ui/wt_*.png`，437 把枪 100% 带 `type_icon`）：原本只作 `.wc-mid` 里的
+       13% 水印（且 `pen.css:69` 早已 `display:none`），现搬到名字前当前缀（用户 20261030）；
+       同一个 `.wc-ti` 元素、两套定位口径都在 pen.css 末尾。`monoIcB` 查 `_meta.mono_icons`（八个 wt_*
+       全部在册，白线条源图），不挂 `.mono` 的话 `layout.css:254` 的泛化族规则会在浅色主题把它们刷成纯黑。 */
+    const wti=w.type_icon?`<img loading="lazy" decoding="async" class="wc-ti${monoIcB(w.type_icon)}" src="${imgUrl(w.type_icon)}" alt="" aria-hidden="true" onerror="this.remove()">`:'';
+    return `<div class="wcard filled${on?' on':''}${state.bp.prototype&&!w.exotic?' r-proto':w.exotic?' r-exotic':w.named?' r-named':' r-brand'}" data-rarity="${w.exotic?'exotic':w.named?'named':'brand'}" data-act="wsl" data-i="${i}" tabindex="0" role="button" aria-pressed="${on?'true':'false'}" aria-label="${esc(nmTxt(w))} · ${esc(L(sn[0],sn[1]))}">
       <div class="topbar"></div>
-      <div class="wc-body"><div class="wc-mid">${wti}${iconImg(w.icon).replace('class="ic"','class="ic" style="width:auto;height:auto;max-width:100%;max-height:100%;border:none;background:none"')}</div>
+      <div class="wc-body"><div class="wc-mid">${iconImg(w.icon).replace('class="ic"','class="ic" style="width:auto;height:auto;max-width:100%;max-height:100%;border:none;background:none"')}</div>
       <div class="wc-col">
-      <div class="wc-titleline"><button type="button" class="wc-slotlbl" data-act="wactivate" data-i="${i}" aria-pressed="${on}" aria-label="${esc(on?L('计算中','Active'):L('用于计算','Use for calculation'))}" title="${esc((on?L('计算中','Active'):L('用于计算','Use for calculation'))+' · '+L(sn[0],sn[1]))}">${slotBadge(i,on)}</button><div class="wc-name">${esc(nmTxt(w))}</div></div>
+      <div class="wc-titleline"><button type="button" class="wc-slotlbl" data-act="wactivate" data-i="${i}" aria-pressed="${on}" aria-label="${esc(on?L('计算中','Active'):L('用于计算','Use for calculation'))}" title="${esc((on?L('计算中','Active'):L('用于计算','Use for calculation'))+' · '+L(sn[0],sn[1]))}">${slotBadge(i,on)}</button>${wti}<div class="wc-name">${esc(nmTxt(w))}</div></div>
       <div class="wc-tools"><button type="button" class="wc-remove" data-act="wclear" data-i="${i}" aria-label="${esc(L('卸下武器','Unequip weapon'))}" title="${esc(L('卸下武器','Unequip weapon'))}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
       ${weaponAffixBlock(i,w)}
       <div class="wc-effects">${tal}${prototypeAugmentHtml(i+6,'w')}</div>
@@ -284,7 +292,9 @@ function weaponAffixBlock(i,w){
   const am=w&&w.attrs_max;if(!am)return '';
   const proto=!!state.bp.prototype&&!w.exotic;
   const q=amQuality(w),fixed=arr(am.slots).filter(s=>s&&s.fixed===true&&s.val!=null&&(s.name_zh||s.name_en));
-  const rows=fixed.map(s=>`<div class="wax-row locked" data-fam="off">${axGlyph('off')}<span>${esc(L(s.name_zh||s.name_en,s.name_en||s.name_zh))}</span><b>${fmtN(prototypeAttrValue(s.code,s.val,s.qmod,proto))}${esc(s.unit||'')}</b></div>`).join('');
+  /* `data-fixed` 存固定槽的种类：`core` = 每把枪都带的自带核心属性（品牌枪也有），`special` = 具名专属槽；
+     卡面只给具名枪的 `special` 上身份橙（用户 2026-10-30：「具名专有属性」不连自带核心一起橙）。 */
+  const rows=fixed.map(s=>`<div class="wax-row locked" data-fam="off" data-fixed="${s.kind==='random'?'special':'core'}">${axGlyph('off')}<span>${esc(L(s.name_zh||s.name_en,s.name_en||s.name_zh))}</span><b>${fmtN(prototypeAttrValue(s.code,s.val,s.qmod,proto))}${esc(s.unit||'')}</b></div>`).join('');
   const choices=weaponAffixCodes(w),cur=state.waffix[i]||'';
   const opts=choices.map(c=>`<option value="${esc(c)}"${cur===c?' selected':''}>${esc(weaponAffixOptionLabel(c,q,proto))}</option>`).join('');
   const chosen=cur?weaponMaxAttrs(w,i).find(a=>a.src==='weapon-affix'):null;
@@ -412,10 +422,10 @@ function gearAffixBlock(i,it){
     /* ⚠️ 数字格式一律用**本页的** `fmtN`（`build.data.js`）：`num()` 只存在于资料库那套脚本里
        （`db.core.js`），配装器页压根没加载它 ⇒ 这里写 `num(...)` 就是 `ReferenceError`，
        而它从 `renderGear()` 抛出 ⇒ **整列装备卡一张都不渲染**（只剩空壳）。2026-09-13 真踩。 */
-    if(c0)core=`<div class="axrow core" data-fam="${esc(gearCoreFam(i,it))}">${axGlyph(gearCoreFam(i,it))}<span class="axchoice">${esc(L(c0.name_zh||c0.name_en,c0.name_en||c0.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(c0.code,c0.val,c0.qmod,proto))}${esc(c0.unit||'')}</b></div>`;
+    if(c0)core=`<div class="axrow core" data-fam="${esc(gearCoreFam(i,it))}" data-fixed="core">${axGlyph(gearCoreFam(i,it))}<span class="axchoice">${esc(L(c0.name_zh||c0.name_en,c0.name_en||c0.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(c0.code,c0.val,c0.qmod,proto))}${esc(c0.unit||'')}</b></div>`;
   }
   const others=fixed.filter(s=>s.kind!=='core');
-  const other=others.concat(special).map(s=>{const fam=listKindForCode(s.code,q);const read=affixEngineRead(attrKey(s.name_zh||s.name_en,s.unit));return `<div class="axrow fixed${read?'':' uncounted'}" data-fam="${esc(fam)}"${read?'':' title="'+esc(UNCOUNT_TITLE())+'"'}>${axGlyph(fam)}<span class="axk">${esc(L(s.name_zh||s.name_en,s.name_en||s.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(s.code,s.val,s.qmod,proto))}${esc(s.unit||'')}</b>${read?'':`<small class="ax-uncount">${esc(L('不计入','Not counted'))}</small>`}</div>`;}).join('');
+  const other=others.concat(special).map(s=>{const fam=listKindForCode(s.code,q);const read=affixEngineRead(attrKey(s.name_zh||s.name_en,s.unit));return `<div class="axrow fixed${read?'':' uncounted'}" data-fam="${esc(fam)}" data-fixed="special"${read?'':' title="'+esc(UNCOUNT_TITLE())+'"'}>${axGlyph(fam)}<span class="axk">${esc(L(s.name_zh||s.name_en,s.name_en||s.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(s.code,s.val,s.qmod,proto))}${esc(s.unit||'')}</b>${read?'':`<small class="ax-uncount">${esc(L('不计入','Not counted'))}</small>`}</div>`;}).join('');
   const nR=nRandomSlots(it);
   const picked=arr(state.affix[i]);
   let rows='';
@@ -464,10 +474,14 @@ function renderGear(){
       /* 装了哪一类插件就画哪一类的官方字形（`img/modfilter/` 三张，颜色与 `.modblk.red/blue/yellow` 同源） */
       modblk=m?`<button type="button" class="modblk hasic ${modColor(m)}" data-act="modblk" data-i="${i}" aria-label="${esc(modTitle(m))}" title="${esc(modTitle(m))}">${modGlyph(m,'mglyph')}<span class="mod-label">${esc(buildModLabel(m))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span><b class="mod-value">${fmtN(modVal(m))}${esc(m.unit||'')}</b></button>`
               :`<button type="button" class="modblk empty" data-act="modblk" data-i="${i}" aria-label="${esc(L('选择插件','Pick gear mod'))}" title="${esc(L('插件（装备改造模块）','Gear mod'))}"><span class="proto-add">+</span><span class="mod-label">${esc(L('选择插件','Pick gear mod'))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span></button>`;
-    }
+    }else modblk='<div class="mod-reserve" aria-hidden="true"></div>';
+    /* 无插件位时渲不可见占位格（`.mod-reserve`，与 `.tal-reserve` 同款）：脚区行轨道不塌，
+       没有插件的件与有插件的件卡面等高；不带 `data-act` ⇒ 点不出抽屉，也不影响
+       `build.layout.js` 按 `.gc-ft .modblk` 判定抽屉里是否渲染「插件」段。 */
     /* 件天赋（背包 / 胸甲）：卡片脚行上的**可点入口**（与武器卡的 `data-act="wsl-tal"` 同款）。
-       ⚠️ 判据 = `gtalPool(i).keys.length`（**有池才画这一行**）：面具/手套/枪套/护膝 池空 ⇒ 不画；
-          装备组件池空 ⇒ 不画（它的天赋走 4 件套档，见 `build.tiers.js`）；具名/奇特池里 1 条 ⇒ 画但锁定。
+       ⚠️ 判据 = `gtalPool(i).keys.length`：池空（面具/手套/枪套/护膝、装备组件）⇒ 渲**不可见的占位格**
+          保住脚区行轨道（2026-10-30 用户：「没有装备天赋也要把格子位置预留出来，什么也不展示」）；
+          具名/奇特池里 1 条 ⇒ 画但锁定。
        ⚠️ 已选的那条读 `gtalKeyOf(i)`（件指针优先，其次 `state.gtal`），**不读 `gearTalent()`**：
           那个对装备组件有「取 4 件套天赋」的兜底分支，会把 4 件套那条摆到卡片上当成件天赋。
        ⚠️ 是否计入只看 `combatGearRows()`。条件关或层数是 0 就是空。`gtalStatus==='ok'` 只说明满层有公式，不能当成已经计入。 */
@@ -479,7 +493,7 @@ function renderGear(){
     const gcounted=!!(gkey&&combatVisibleRows(gkey).length);
     const gNote=gkey?L('天赋','Talent')+'：'+gn+' · '+gstat:L('选择装备天赋','Pick gear talent');
     const gtico=gObj?talIcon(gObj,'tic tic-s'):'';
-    const tal=gpool.keys.length?`<button type="button" class="taltx${gkey?'':' empty'}${gkey&&!gcounted?' na':''}" data-act="gtal" data-i="${i}" aria-pressed="${gkey?'true':'false'}" title="${esc(gNote)}">${gtico}<span class="tal-name">${esc(gn||L('＋ 天赋','＋ Talent'))}</span>${gkey?'<span class="tal-state">'+esc(gstat)+'</span>':''}</button>`:'';
+    const tal=gpool.keys.length?`<button type="button" class="taltx${gkey?'':' empty'}${gkey&&!gcounted?' na':''}" data-act="gtal" data-i="${i}"${gpool.locked?' data-own="1"':''} aria-pressed="${gkey?'true':'false'}" title="${esc(gNote)}">${gtico}<span class="tal-name">${esc(gn||L('＋ 天赋','＋ Talent'))}</span>${gkey?'<span class="tal-state">'+esc(gstat)+'</span>':''}</button>`:'<div class="taltx tal-reserve" aria-hidden="true"></div>';
     const ovr=canOvr(i)?`<button class="ovrbtn${state.ovr[i]?' on':''}" data-act="ovr" data-i="${i}" title="${esc(L('临时套装(Override)：开启后本格可插插件','Override set: enables mod slot on this piece'))}">OVR</button>`:'';
     /* 原型档开着时，非奇特件渲成紫色（官方原型色 --rar-proto）+ 一颗「原型」标，
        让「这一套现在按原型算」在卡面上看得见，不用去右栏找开关。 */
@@ -496,10 +510,12 @@ function renderGear(){
     /* 品质身份 class（与资料库 `.card.r-*` 同一套：品牌/普通=金 · 具名=橙 · 装备组=绿 · 奇特=红 · 原型=紫），
        颜色令牌全部来自 `base.css` 的 `.r-*{--rc}`，配装页不再按核心属性给整卡上色（用户：要和资料库一致）。 */
     const rcls=!it?'':(protoOn?' r-proto':({named:' r-named',gearset:' r-set',exotic:' r-exotic'}[it.kind]||' r-brand'));
-    return `<div class="gcard build-gear-card${it?' filled':''}${protoOn?' proto':''}${rcls}${state.dlg&&state.dlg.kind==='g'&&state.dlg.slot===i?' open':''}"${cfam?` data-core="${cfam}"`:''} data-act="gcard" data-i="${i}" tabindex="0" role="button" aria-label="${esc(it?L('编辑装备','Edit gear'):L('选择装备','Pick gear'))} · ${esc(L(sn[0],sn[1]))}${it?' · '+esc(nmTxt(it)):''}">
+    /* 真实品质另存 `data-rarity`：原型档把 `rcls` 压成 `r-proto`（卡面渲紫），但具名件的名称仍要按身份走橙。 */
+    const rk=!it?'':({named:'named',gearset:'set',exotic:'exotic'}[it.kind]||'brand');
+    return `<div class="gcard build-gear-card${it?' filled':''}${protoOn?' proto':''}${rcls}${state.dlg&&state.dlg.kind==='g'&&state.dlg.slot===i?' open':''}"${rk?` data-rarity="${rk}"`:''}${cfam?` data-core="${cfam}"`:''} data-act="gcard" data-i="${i}" tabindex="0" role="button" aria-label="${esc(it?L('编辑装备','Edit gear'):L('选择装备','Pick gear'))} · ${esc(L(sn[0],sn[1]))}${it?' · '+esc(nmTxt(it)):''}">
       <div class="topbar"${it?'':' style="--rc:var(--mut)"'}></div>
-      <div class="gc-hd"><span class="gc-lbl">${iconImg(SLOT_ICON[i],'gc-slot-icon gc-slot-icon-header')}<span>${esc(it?nmTxt(it):L(sn[0],sn[1]))}</span></span>${it?brandWmHtml(it,'gc-wm'):''}</div>
-      <div class="gc-main"><div class="gc-mid">${it?(it.gear_icon?iconImg(it.gear_icon.startsWith('gear/')?'fit/'+it.gear_icon:it.gear_icon).replace('class="ic"','class="ic" style="width:auto;height:auto;max-width:100%;max-height:100%;border:none;background:none"'):silIcon(i,rv[0])):silIcon(i,'--mut')}</div>
+      <div class="gc-hd"><span class="gc-lbl">${iconImg(SLOT_ICON[i],'gc-slot-icon gc-slot-icon-header')}<span>${esc(it?nmTxt(it):L(sn[0],sn[1]))}</span></span></div>
+      <div class="gc-main">${it?brandWmHtml(it,'gc-wm'):''}<div class="gc-mid">${it?(it.gear_icon?iconImg(it.gear_icon.startsWith('gear/')?'fit/'+it.gear_icon:it.gear_icon).replace('class="ic"','class="ic" style="width:auto;height:auto;max-width:100%;max-height:100%;border:none;background:none"'):silIcon(i,rv[0])):silIcon(i,'--mut')}</div>
       <div class="gc-info">${it?buildGearSummaryBlock(i,it):'<span class="build-gear-empty">'+esc(L('选择装备','Choose gear'))+'</span>'}</div></div>
       ${it?`<div class="gc-ft">${tal}${modblk}${buildGearPrototypeSummary(i)}</div>`:''}</div>`;
   }).join('');
@@ -1303,7 +1319,9 @@ function prototypeAugmentHtml(i,kind){
  const note=modeled?L('已计入枪械输出期望值','Included in expected firearm output'):L('效果保留；不计入枪械输出','Effect retained; not included in firearm output');
  const levelChoices=Array.from({length:10},(_,n)=>`<option value="${n+1}"${n+1===level?' selected':''}>${n+1}</option>`).join('');
   const effect=a?esc(effects.join(' · ')):'';
-  return `<label class="axrow axselect prototype-augment" title="${esc(effects.concat(note).join(' · '))}">${(t?talIcon(t,'tic tic-s'):'')||axGlyph('uti')}<span class="axk">${esc(L('原型增幅','Augment'))}</span><span class="axchoice">${esc(a?L(a.zh,a.en):L('选择原型天赋','Pick prototype talent'))}</span><select data-act="${kind==='w'?'waugment':'gaugment'}" data-i="${i}" aria-label="${esc(L('原型增幅','Prototype augment'))}"><option value="">${esc(L('选择原型天赋','Pick prototype talent'))}</option>${rows.map(x=>`<option value="${esc(x.code)}"${x.code===key?' selected':''}>${esc(L(x.zh,x.en))}</option>`).join('')}</select><select class="prototype-level-select" data-act="${kind==='w'?'waugmentlevel':'gaugmentlevel'}" data-i="${i}" aria-label="${esc(L('增幅等级','Augment level'))}"${a?'':' disabled'}>${levelChoices}</select>${effect?`<span class="prototype-effect">${effect}</span>`:''}</label>`;
+  /* 武器格未选时换成装备卡 `.build-gear-prototype.empty` 同形（方框加号 + 灰字，等级列隐掉）；`kind` 不是 'w' 的装备抽屉/装备卡摘要不跟着变 */
+  const wEmpty=kind==='w'&&!a;
+  return `<label class="axrow axselect prototype-augment${wEmpty?' empty':''}" title="${esc(effects.concat(note).join(' · '))}">${wEmpty?'<span class="proto-add" aria-hidden="true">+</span>':((t?talIcon(t,'tic tic-s'):'')||axGlyph('uti'))}<span class="axk">${esc(L('原型增幅','Augment'))}</span><span class="axchoice">${esc(a?L(a.zh,a.en):L('选择原型天赋','Pick prototype talent'))}</span><select data-act="${kind==='w'?'waugment':'gaugment'}" data-i="${i}" aria-label="${esc(L('原型增幅','Prototype augment'))}"><option value="">${esc(L('选择原型天赋','Pick prototype talent'))}</option>${rows.map(x=>`<option value="${esc(x.code)}"${x.code===key?' selected':''}>${esc(L(x.zh,x.en))}</option>`).join('')}</select><select class="prototype-level-select" data-act="${kind==='w'?'waugmentlevel':'gaugmentlevel'}" data-i="${i}" aria-label="${esc(L('增幅等级','Augment level'))}"${a?'':' disabled'}>${levelChoices}</select>${effect?`<span class="prototype-effect">${effect}</span>`:''}</label>`;
 }
 
 function weaponAffixOptionLabel(code,q,proto){

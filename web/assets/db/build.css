@@ -122,10 +122,11 @@
   @media(min-width:821px){.wstrip:not(:has(.filled)){grid-auto-rows:132px}}
   @media(max-width:640px){.wstrip{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}}
   .wcard{position:relative;display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--line);border-radius:7px;overflow:hidden;cursor:var(--cur-hover);transition:transform .08s,border-color .15s,box-shadow .15s;min-height:0}
-  .wcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 12%,transparent),transparent 54%);z-index:0}
+  /* 与装备卡同款：主题色自左（50% 不透明）向右渐变到全透明 */
+  .wcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 50%,transparent),transparent);z-index:0}
   .wcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--rc,var(--bone)) 60%,var(--line));box-shadow:var(--shadow)}
-  .wcard.on{box-shadow:0 0 0 2px var(--rc,var(--accent)),0 6px 16px rgba(0,0,0,.35)}
-  .wcard.empty{border-style:dashed}
+  /* `.wcard.on` 选中态不画边框（与装备卡同口径，用户 2026-10-30） */
+  .wcard.empty{border-style:dashed;--rc:var(--mut)}
   .wcard.filled{border-color:var(--rc)}
   .wcard .topbar{height:var(--build-band,4px);flex:0 0 auto;background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 72%,transparent));pointer-events:none;position:relative;z-index:2}
   .wcard.empty .topbar{--rc:var(--mut)}
@@ -171,10 +172,12 @@
   @media(min-width:821px){.ggrid:not(:has(.filled)){grid-auto-rows:132px}}
   @media(max-width:640px){.ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}}
   .gcard{position:relative;display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--line);border-radius:7px;overflow:hidden;cursor:var(--cur-hover);transition:transform .08s,border-color .15s,box-shadow .15s;min-height:0}
-  .gcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 12%,transparent),transparent 54%);z-index:0}
+  /* 整卡背景：主题色自左（50% 不透明）向右渐变到全透明 */
+  .gcard::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 50%,transparent),transparent);z-index:0}
   .gcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--rc,var(--bone)) 60%,var(--line));box-shadow:var(--shadow)}
-  .gcard.open{box-shadow:0 0 0 2px var(--accent),0 6px 16px rgba(0,0,0,.3)}
+  /* 选中态不再画环（hub.experience.css 同步清零 `.gcard.open/.editing`） */
   .gcard.filled{border-color:var(--rc)}
+  .gcard.empty{--rc:var(--mut)}
   .gcard .topbar{height:var(--build-band,4px);flex:0 0 auto;background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 72%,transparent));pointer-events:none;position:relative;z-index:2}
   .gcard.empty .topbar{--rc:var(--mut)}
   .gc-hd{display:flex;justify-content:space-between;align-items:center;gap:5px;padding:8px 12px 0;position:relative;z-index:1}
@@ -663,8 +666,13 @@
 .gc-wm,.wc-wm{position:absolute;left:0;top:50%;transform:translateY(-50%);
   width:100%;height:88%;pointer-events:none;z-index:0;opacity:.16;
   background:#fff;-webkit-mask:var(--wm) left center/contain no-repeat;mask:var(--wm) left center/contain no-repeat}
-[data-theme=light] .gc-wm,[data-theme=light] .wc-wm{background:#000;opacity:.09}
-@media (min-width:1200px){.gc-wm,.wc-wm{width:100%;height:90%}}
+[data-theme=light] .wc-wm{background:#000;opacity:.09}
+/* 装备卡品牌水印：在 .gc-main 内绝对定位，与装备图同容器居中（align-items:center） */
+.gcard .gc-main{position:relative}
+.gcard .gc-wm{position:absolute;inset:0;width:auto;height:auto;left:0;right:0;top:0;bottom:0;transform:none;opacity:.22;
+  background:#fff;-webkit-mask:var(--wm) right center/auto 80px no-repeat;mask:var(--wm) right center/auto 80px no-repeat}
+[data-theme=light] .gcard .gc-wm{background:#000;opacity:.14}
+@media (min-width:1200px){.wc-wm{width:100%;height:90%}}
 /* 空格子不画水印（没有品牌可言），也不占位 */
 .gcard.empty .gc-wm,.wcard.empty .wc-wm{display:none}
 
@@ -705,8 +713,7 @@
 .gcard .axrow,.wax-row{font-size:11px;line-height:1.35}
 .gcard .axrow .axvalue{font-size:11px}
 .wax-row.random select{width:100%}
-.gc-wm{width:67%;height:59%}
-@media (min-width:1200px){.gc-wm{width:67%;height:60%}}
+/* 装备卡水印已改为整卡背景锚右（见上方 `.gcard .gc-wm`），不再收窄到物图区 */
 @media(max-width:640px){
   .wcard.filled .wc-mid{padding:4px 6px;height:116px}
   .wcard.filled .wc-mid img{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;object-fit:contain}
