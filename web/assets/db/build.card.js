@@ -13,6 +13,8 @@
     for(const [kind,slots] of [['weapons',preview.weapons.slice(0,3)],['gear',preview.gear.slice(0,6)],['skills',preview.skills.slice(0,2)]]){
       root.append(element('h3','ah-loadout-heading',t(kind)));const grid=element('div','ah-loadout-'+kind);root.append(grid);
       slots.forEach((item,i)=>{const card=element('section','ah-loadout-item');card.dataset.quality=['proto','exotic','gearset','named','brand'].includes(item?.quality)?item.quality:'brand';
+        /* `rarity` = 物品真实身份：原型档下 `quality` 会被压成 proto（色条跟卡面），但名称色仍要跟着身份走。 */
+        if(item?.rarity)card.dataset.rarity=item.rarity;
         /* 品质色条：与配装页卡片顶部那条同源（`base.css` 的 --rar-*），导出图不能再只有名字颜色。 */
         card.append(element('i','ah-loadout-bar'));
         const slot=kind==='weapons'?(en?['Primary','Secondary','Sidearm']:['主武器','副武器','手枪'])[i]:kind==='skills'?['Q','E'][i]:(en?['Mask','Backpack','Chest','Gloves','Holster','Kneepads']:['面具','背包','胸甲','手套','枪套','护膝'])[i];
