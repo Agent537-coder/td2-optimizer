@@ -438,7 +438,8 @@ function gearAffixBlock(i,it){
 }
 function listKindForCode(code,q){
   for(const f of AFFIX_FAM_ORDER)if(affixPoolCodes(f,q).indexOf(code)>=0)return f;
-  return '';
+  /* 随机池查不到再查固定/具名槽的判族表（只给图标上色，不影响候选池）；两表都没有才留空槽 */
+  return FIXED_AFFIX_FAM[code]||'';
 }
 /* 该件所在「品牌 / 装备组 × 部位」组里共有几件（点品牌块是填代表件，想指定另一件就走这里给的入口） */
 function gearGroupKey(it){
