@@ -79,6 +79,7 @@
      而 `base.css` 给 `.chip` 与所有 `button` 都上了 `font-weight:700` ⇒ 整排**带数字的粗体**。
      本页一律压到 500（层次靠字号与大写），不改 base.css —— 那本文件另外三页在用。 */
   .chip,.chip.on{font-weight:500}
+  .chip-locked{opacity:.4;pointer-events:none}
   /* ⚠️ 上面这些类里有一批现在是真正的 `<button>`，而 `base.css` 给所有 `button` 上了
      `font-weight:700;text-transform:uppercase`。凡**带数字**的（`.axv` `.wmod-a` `.mTile b` `.rnum`）
      一律在下面按 UI 硬规则③ 压回 ≤500，且 `text-transform:none` —— 否则「点了 chip 数字变粗」= 破红线。 */

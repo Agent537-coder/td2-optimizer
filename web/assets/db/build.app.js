@@ -720,7 +720,7 @@ document.addEventListener('click',e=>{
     /* 弹窗 */
     case 'noop': return;
     case 'dlgx': closeDlg();renderAll();return;
-    case 'dwtype': state.dlg.wtype=i;renderDlg();return;
+    case 'dwtype': if(state.dlg?.wtypeLocked)return; state.dlg.wtype=i;renderDlg();return;
     /* 武器类别维度（金装 / 具名 / 奇特）：与 `dwtype`（枪型）**两个独立维度**，互不替代。
        口径见 `W_KINDS` / `wKindOf()`（官方 `exotic` / `named` 布尔 ⇒ 参考工具的 `Rarity` 0/2/3）。 */
     case 'dwkind': state.dlg.wkind=el.dataset.k||'';renderDlg();return;
@@ -826,7 +826,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const el=e.target;
-  if(state.dlg&&el.dataset?.act==='dlg-wtype'){state.dlg.wtype=+el.value;renderDlg();return;}
+  if(state.dlg&&el.dataset?.act==='dlg-wtype'){if(state.dlg.wtypeLocked)return;state.dlg.wtype=+el.value;renderDlg();return;}
   if(state.dlg&&el.dataset?.act==='dlg-wkind'){state.dlg.wkind=el.value;renderDlg();return;}
   if(state.dlg&&el.dataset?.act==='dlg-skill'){state.dlg.skillPreview=+el.value;state.dlg.skillVariant=null;renderDlgList();document.getElementById('dlg-skill-category')?.focus({preventScroll:true});return;}
   if(el&&el.dataset&&['gaugment','gaugmentlevel','waugment','waugmentlevel'].includes(el.dataset.act)){
