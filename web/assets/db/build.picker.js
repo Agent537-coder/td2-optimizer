@@ -145,7 +145,7 @@ function buildPickerRevert(){
  if(JSON.stringify(buildPickerSlot(u.kind,u.slot))!==u.after){buildPickerUndo=null;buildPickerNotice();return;}
  buildPickerRestore(u.kind,u.slot,u.before);buildPickerUndo=null;renderAll();
  buildPickerFeedbackShow(L('已撤销替换，原装备已恢复','Replacement undone. Original item restored.'),{key:'undone'});
- document.querySelector((u.kind==='g'?'#ggrid .gcard':'#wstrip [data-act="wsl"]')+'[data-i="'+u.slot+'"]')?.focus({preventScroll:true});
+ buildReturnFocus(document.querySelector((u.kind==='g'?'#ggrid .gcard':'#wstrip [data-act="wsl"]')+'[data-i="'+u.slot+'"]'));
 }
 function initBuildPicker(){
  if(document.getElementById('build-picker-feedback'))return;

@@ -22,7 +22,7 @@ function buildGearSummaryBlock(i,it){
  const temp=document.createElement('template');temp.innerHTML=gearAffixBlock(i,it);
  /* 卡片摘要是把 `gearAffixBlock` 的成品行拆字段重排的 ⇒ 判据不在这里重算，只把抽屉那条「不计入」的
     状态原样带过来（class + title）。不带上就会出现同一词条两处口径不一致：抽屉明说没算，卡片还像算了。 */
- return '<div class="build-gear-summary">'+[...temp.content.querySelectorAll('.axrow:not(.prototype-augment)')].map(row=>{const un=row.classList.contains('uncounted'),tt=row.getAttribute('title')||'';return '<div class="build-gear-attr'+(un?' uncounted':'')+'"'+(un?' title="'+esc(tt)+'"':'')+' data-fam="'+esc(row.dataset.fam||'')+'">'+(row.querySelector('.axic')?.outerHTML||'')+'<span>'+esc((row.querySelector('.axchoice')||row.querySelector('.axk'))?.textContent||'')+'</span><b>'+esc(row.querySelector('.axvalue')?.textContent||'')+'</b></div>';}).join('')+'</div>';
+ return '<div class="build-gear-summary">'+[...temp.content.querySelectorAll('.axrow:not(.prototype-augment)')].map(row=>{const un=row.classList.contains('uncounted'),co=row.classList.contains('core'),tt=row.getAttribute('title')||'';return '<div class="build-gear-attr'+(un?' uncounted':'')+(co?' core':'')+'"'+(un?' title="'+esc(tt)+'"':'')+' data-fam="'+esc(row.dataset.fam||'')+'"'+(row.dataset.fixed?' data-fixed="'+esc(row.dataset.fixed)+'"':'')+'>'+(row.querySelector('.axic')?.outerHTML||'')+'<span>'+esc((row.querySelector('.axchoice')||row.querySelector('.axk'))?.textContent||'')+'</span><b>'+esc(row.querySelector('.axvalue')?.textContent||'')+'</b></div>';}).join('')+'</div>';
 }
 function buildGearPrototypeSummary(i){
  const temp=document.createElement('template');temp.innerHTML=prototypeAugmentHtml(i);const root=temp.content.querySelector('.prototype-augment');if(!root)return '';
@@ -119,9 +119,14 @@ function buildOpenGearEditor(i){
 }
 function buildCloseGearEditor(apply){
  const d=buildEditorDraft;if(apply&&d&&d.item===state.slots[d.slot]){state.core[d.slot]=d.core;state.affix[d.slot]=d.affix.slice();state.gtal[d.slot]=d.gtal;state.bp.augments=arr(state.bp.augments).slice();state.bp.augments[d.slot]=structuredClone(d.augment);}
- if(d)buildEditorDraft=gearOf(d.slot)?buildGearEditorSeed(d.slot):null;if(apply)renderAll();else buildGearEditorPaint();document.getElementById('build-item-dialog')?.close();document.querySelector('#ggrid .gcard[data-i="'+d?.slot+'"]')?.focus({preventScroll:true});
+ if(d)buildEditorDraft=gearOf(d.slot)?buildGearEditorSeed(d.slot):null;if(apply)renderAll();else buildGearEditorPaint();document.getElementById('build-item-dialog')?.close();buildReturnFocus(document.querySelector('#ggrid .gcard[data-i="'+d?.slot+'"]'));
 }
 function initBuildMobileFlow(){buildLayoutPaint();}
+/* 焦点环只在键盘操作后归还时画（用户 2026-10-30：去掉选中描边）：鼠标关抽屉后程序化 focus 也会被
+   Chrome 判成 `:focus-visible` ⇒ 卡片挂上全局 2px 橙色焦点环，看着像没拆干净的选中边框。
+   策略：500ms 内有指针按下就跳过归还，纯键盘路径（Enter/Esc）仍正常回焦。 */
+let buildLastPointerAt=0;
+function buildReturnFocus(el){if(el&&Date.now()-buildLastPointerAt>500)el.focus({preventScroll:true});}
 function initBuildLayout(){
  if(document.getElementById('build-toolbar'))return;
  const main=document.querySelector('main'),desk=document.getElementById('col-desk'),res=document.getElementById('col-res');
@@ -137,7 +142,12 @@ function initBuildLayout(){
     每次重建的节点读屏不会播报）。role=status ⇒  polite 播报，不抢焦点。 */
  const dirtyNote=document.createElement('p');dirtyNote.id='build-editor-dirty';dirtyNote.className='build-editor-dirty';dirtyNote.setAttribute('role','status');dirtyNote.hidden=true;
  itemDialog.append(dirtyNote,editor);document.body.append(itemDialog);
- itemDialog.addEventListener('close',()=>{buildEditorDraft=buildEditorDraft&&gearOf(buildEditorDraft.slot)?buildGearEditorSeed(buildEditorDraft.slot):null;document.querySelector('#ggrid .gcard[data-i="'+buildEditorDraft?.slot+'"]')?.focus({preventScroll:true});});
+ itemDialog.addEventListener('close',()=>{buildEditorDraft=buildEditorDraft&&gearOf(buildEditorDraft.slot)?buildGearEditorSeed(buildEditorDraft.slot):null;buildReturnFocus(document.querySelector('#ggrid .gcard[data-i="'+buildEditorDraft?.slot+'"]'));});
+ /* 任何鼠标按下都记为指针输入（含抽屉内点「取消/应用」——那也会触发关后的回焦）；
+    `#build-item-dialog` 的过滤只用于跳过时间戳（抽屉内的点击不是“打开卡片”的动作） */
+ document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;document.body.dataset.lastInput='pointer';if(e.target.closest('#build-item-dialog'))return;buildLastPointerAt=Date.now();},true);
+ /* 键盘导航（Tab/方向键/Enter/Space）后的焦点环必须保留，其余按键（如 Esc）不算键盘导航 */
+ document.addEventListener('keydown',e=>{if(['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(e.key))document.body.dataset.lastInput='keyboard';},true);
  /* 草稿制抽屉的离开路径（2026-10-15）：脏时 Esc 与点遮罩一律按「暂时离开」处理 —— 保持抽屉开着并提示，
     绝不静默丢草稿；只有「取消」按钮（`buildCloseGearEditor(false)`）才是明确丢弃。干净时维持原行为：直接关。
     ⚠️ Esc 的拦截走**两条通路**：2026-10-15 Chrome 155 真机实测，按 Escape 时 dialog 的 `cancel` 事件是
