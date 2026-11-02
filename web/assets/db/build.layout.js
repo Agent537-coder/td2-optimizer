@@ -7,6 +7,19 @@ function buildToolIcon(kind){
 function buildToolLabel(el,kind,label){
  if(!el)return;el.innerHTML=buildToolIcon(kind)+'<span class="build-tool-text">'+esc(label)+'</span>';el.setAttribute('aria-label',label);el.title=label;
 }
+/* 卡片渐变开关：显示偏好，只写 body[data-hub-cardgrad] + localStorage（同 td2theme 口径，不进 state/存档）；
+   未存过值时默认关闭（仅显式存 '1' 才开启）；off 态样式在 build.pen.css 末尾按该属性覆盖。 */
+const TD2_CARD_GRAD_KEY='td2cardgrad';
+function cardGradOn(){return lsGet(TD2_CARD_GRAD_KEY)==='1';}
+function paintCardGrad(){
+ const on=cardGradOn();
+ document.body.dataset.hubCardgrad=on?'on':'off';
+ const sel=document.getElementById('build-card-grad');if(!sel)return;
+ sel.value=on?'1':'0';
+ sel.options[0].textContent=L('开启','On');sel.options[1].textContent=L('关闭','Off');
+ document.getElementById('build-card-grad-label').textContent=L('卡片渐变','Card tint');
+ sel.closest('label').classList.toggle('on',on);
+}
 function buildLayoutPaint(){
  if(!document.getElementById('build-toolbar'))return;
  const mobile=matchMedia('(max-width:760px)').matches,spec=BP_SPEC_LIST.find(s=>s.id===state.bp.spec)||BP_SPEC_LIST[0];
@@ -16,7 +29,7 @@ function buildLayoutPaint(){
  proto.options[0].textContent=L('关闭','Off');proto.options[1].textContent=L('开启','On');
  for(const [id,zh,en] of [['build-mode-label','模式','Mode'],['build-prototype-label','原型','Prototype'],['build-specialization-label','专长','Specialization'],['build-condition-label','战斗条件','Combat conditions'],['build-condition-value','查看条件','View conditions']])document.getElementById(id).textContent=L(zh,en);
  document.getElementById('build-specialization-value').textContent=L(spec.zh,spec.en);document.querySelector('#build-conditions-dialog h2').textContent=L('战斗条件','Combat conditions');document.querySelector('#build-conditions-dialog [data-build-close]').setAttribute('aria-label',L('关闭','Close'));
- buildGearEditorPaint();
+ buildGearEditorPaint();paintCardGrad();
 }
 function buildGearSummaryBlock(i,it){
  const temp=document.createElement('template');temp.innerHTML=gearAffixBlock(i,it);
@@ -30,7 +43,9 @@ function buildGearPrototypeSummary(i){
  const name=sel?.selectedOptions[0]?.textContent||root.querySelector('.axchoice')?.textContent||'';
  const level=hasAugment?(root.querySelector('.prototype-level-select')?.value||''):'';
  const icon=hasAugment?(root.querySelector('.tic,.axic')?.outerHTML||''):'<span class="proto-add">+</span>';
- return '<button type="button" class="build-gear-prototype'+(hasAugment?'':' empty')+'" data-act="gear-edit" data-i="'+i+'">'+icon+'<span>'+esc(name)+'</span>'+(level?'<small>Lv.'+esc(level)+'</small>':'')+'</button>';
+ /* 用户 20261102（第 6 轮）：点卡脚原型天赋格直接开弹窗选择器（`pa-pick`，state 域即时生效，同卡片点武器天赋行的直达口径），
+    不再绕编辑抽屉；未选态也走弹窗。格子里没有可点入口时（理论上不会发生）保底回 `gear-edit`。 */
+ return '<button type="button" class="build-gear-prototype'+(hasAugment?'':' empty')+'" data-act="'+(sel?'pa-pick':'gear-edit')+'" data-i="'+i+'">'+icon+'<span>'+esc(name)+'</span>'+(level?'<small>Lv.'+esc(level)+'</small>':'')+'</button>';
 }
 function buildGearEditorSeed(i){return {slot:i,item:state.slots[i],core:state.core[i],affix:arr(state.affix[i]).slice(),gtal:state.gtal[i],augment:structuredClone(state.bp.augments?.[i]||{})};}
 /* 草稿 vs state 的**未应用改动数**（脏检测判据，2026-10-15）：按 `buildGearEditorSeed` 的草稿域逐字段比 ——
@@ -96,7 +111,7 @@ function buildGearEditorPaint(){
  const i=buildEditorDraft.slot,it=gearOf(i);if(buildEditorDraft.item!==state.slots[i])buildEditorDraft=buildGearEditorSeed(i);
  const active=document.activeElement,focus=host.contains(active)&&active.dataset.act?{act:active.dataset.act,k:active.dataset.k}:null;
  const temp=document.createElement('template');temp.innerHTML=buildGearDraftView(()=>gearAffixBlock(i,it));let index=0;
- const fields=[...temp.content.querySelectorAll('.axrow')].map(row=>{const core=row.classList.contains('core'),proto=row.classList.contains('prototype-augment');const label=proto?L('原型','Prototype'):core?L('核心属性','Core attribute'):L('属性 '+(++index),'Attribute '+index);row.classList.add('build-editor-input');return '<div class="build-editor-field"><span>'+esc(label)+'</span>'+row.outerHTML+'</div>';}).join('');
+ const fields=[...temp.content.querySelectorAll('.axrow')].map(row=>{const core=row.classList.contains('core'),proto=row.classList.contains('prototype-augment');if(proto){const s=row.querySelector('select[data-act=gaugment]');if(s){const btn=document.createElement('button');btn.type='button';btn.className='pa-pick-btn';btn.dataset.act='pa-pick';btn.dataset.i=String(i);btn.dataset.scope='draft';btn.textContent=s.selectedOptions[0]?.textContent||L('选择原型天赋','Pick prototype talent');s.replaceWith(btn);}else row.classList.remove('prototype-augment');}const label=proto?L('原型','Prototype'):core?L('核心属性','Core attribute'):L('属性 '+(++index),'Attribute '+index);row.classList.add('build-editor-input');return '<div class="build-editor-field"><span>'+esc(label)+'</span>'+row.outerHTML+'</div>';}).join('');
  const card=document.querySelector('#ggrid .gcard[data-i="'+i+'"]'),mod=card?.querySelector('.gc-ft .modblk');
  /* 天赋段必须在草稿作用域里渲染（与上面 `gearAffixBlock` 同一通路）：`gtalKeyOf` 读的是 `state.gtal`，
     不入草稿域则选完回弹旧值。提交时机不变 —— 仍只有「应用」（`buildCloseGearEditor(true)`）写 state。 */
@@ -134,8 +149,8 @@ function initBuildLayout(){
  const toolbar=document.querySelector('body>header');toolbar.id='build-toolbar';main.prepend(toolbar);const actions=toolbar.querySelector('.actions'),more=document.createElement('details');more.id='build-more-menu';more.className='build-share-menu';more.innerHTML='<summary class="mini"></summary><div></div>';
  const fileControls=['exp','imp','impf','reset'].map(id=>document.getElementById(id));fileControls.forEach(el=>more.lastElementChild.append(el));actions.prepend(document.getElementById('build-records'),document.getElementById('build-share-menu'),document.getElementById('build-save'));actions.append(more);
  const narrow=matchMedia('(max-width:760px)'),arrangeFiles=()=>{const target=narrow.matches?document.querySelector('#build-share-menu>div'):more.lastElementChild;fileControls.forEach(el=>target.append(el));};arrangeFiles();narrow.addEventListener('change',arrangeFiles);
- const quick=document.createElement('section');quick.id='build-quick';quick.innerHTML='<label class="build-quick-control"><span id="build-mode-label"></span><select id="build-mode" aria-labelledby="build-mode-label"><option value="pve">PvE</option><option value="pvp">PvP</option></select></label><label class="build-quick-control"><span id="build-prototype-label"></span><select id="build-prototype" aria-labelledby="build-prototype-label"><option value="0"></option><option value="1"></option></select></label><details id="build-spec-menu" class="build-quick-control"><summary><span id="build-specialization-label"></span><b id="build-specialization-value"></b></summary><div class="build-spec-popover"></div></details><button type="button" id="build-condition-open" class="build-quick-control"><span id="build-condition-label"></span><b id="build-condition-value"></b></button>';
- toolbar.after(quick);buildSpecInit();quick.querySelector('.build-spec-popover').append(document.getElementById('build-spec-direct'));
+ const quick=document.createElement('section');quick.id='build-quick';quick.innerHTML='<label class="build-quick-control"><span id="build-mode-label"></span><select id="build-mode" aria-labelledby="build-mode-label"><option value="pve">PvE</option><option value="pvp">PvP</option></select></label><label class="build-quick-control"><span id="build-prototype-label"></span><select id="build-prototype" aria-labelledby="build-prototype-label"><option value="0"></option><option value="1"></option></select></label><details id="build-spec-menu" class="build-quick-control"><summary><span id="build-specialization-label"></span><b id="build-specialization-value"></b></summary><div class="build-spec-popover"></div></details><button type="button" id="build-condition-open" class="build-quick-control"><span id="build-condition-label"></span><b id="build-condition-value"></b></button><label class="build-quick-control"><span id="build-card-grad-label"></span><select id="build-card-grad" aria-labelledby="build-card-grad-label"><option value="1"></option><option value="0"></option></select></label>';
+ toolbar.after(quick);buildSpecInit();quick.querySelector('.build-spec-popover').append(document.getElementById('build-spec-direct'));paintCardGrad();
  const editor=document.createElement('aside');editor.id='build-item-editor';editor.setAttribute('aria-label',L('当前装备编辑','Current gear editor'));
  const itemDialog=document.createElement('dialog');itemDialog.id='build-item-dialog';itemDialog.setAttribute('aria-label',L('装备属性','Gear attributes'));
  /* 脏提示 live region：常驻在 dialog 里、editor 之外（`buildGearEditorPaint` 整段重写 editor.innerHTML，
@@ -180,7 +195,7 @@ function initBuildLayout(){
     这块是纯查看、无草稿，外点=关闭不会丢任何数据。 */
  dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();});
  placeSecondary();narrowDesk.addEventListener('change',placeSecondary);
- quick.addEventListener('change',e=>{const target=e.target.id==='build-mode'?document.getElementById('bp_pvp'):e.target.id==='build-prototype'?document.getElementById('bp_proto'):null;if(target){target.checked=e.target.value===(e.target.id==='build-mode'?'pvp':'1');target.dispatchEvent(new Event('change',{bubbles:true}));buildLayoutPaint();}});
+ quick.addEventListener('change',e=>{if(e.target.id==='build-card-grad'){lsSet(TD2_CARD_GRAD_KEY,e.target.value);paintCardGrad();return;}const target=e.target.id==='build-mode'?document.getElementById('bp_pvp'):e.target.id==='build-prototype'?document.getElementById('bp_proto'):null;if(target){target.checked=e.target.value===(e.target.id==='build-mode'?'pvp':'1');target.dispatchEvent(new Event('change',{bubbles:true}));buildLayoutPaint();}});
  document.addEventListener('change',e=>{if(!editor.contains(e.target)||!buildEditorDraft)return;const el=e.target,d=buildEditorDraft,it=gearOf(d.slot),act=el.dataset.act;if(!['gcore','gaffix','gaugment','gaugmentlevel','gtalpick'].includes(act))return;e.stopImmediatePropagation();
   if(act==='gcore'&&arr(coreChoices(it)).includes(el.value))d.core=el.value;if(act==='gtalpick'){const p=gtalPool(d.slot);if(!el.value&&!p.locked)d.gtal=null;else if(arr(p.keys).includes(el.value)||el.value===gtalPtr(it))d.gtal=el.value;}if(act==='gaffix'){const k=+el.dataset.k,c=el.value;if(!c||d.affix[k]===c||!d.affix.includes(c))d.affix[k]=c||null;}if(act==='gaugment')d.augment={key:el.value,level:+d.augment.level||10};if(act==='gaugmentlevel')d.augment={key:d.augment.key,level:+el.value};buildGearEditorPaint();},true);
  document.addEventListener('click',e=>{const apply=e.target.closest('[data-build-edit-apply]'),cancel=e.target.closest('[data-build-edit-cancel]');if(apply||cancel){e.preventDefault();buildCloseGearEditor(!!apply);}if(e.target.closest('#build-spec-menu [data-act=bpspec]')||!e.target.closest('#build-spec-menu'))document.getElementById('build-spec-menu').open=false;if(e.target.closest('#build-more-menu button'))document.getElementById('build-more-menu').open=false;});

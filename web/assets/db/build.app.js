@@ -676,6 +676,9 @@ document.addEventListener('click',e=>{
        ⚠️ **不复用 `'t'`**（武器天赋）：`'t'` 整段按武器槽语义写死（`W_SLOTS` 标题、`state.talents[d.slot]`、
        `slotWeaponCls(d.slot)`、`pickt` 写 `state.talents`）⇒ 复用会把装备天赋静默串到武器槽上。 */
     case 'gtal': openDlg('gt',i);break;
+    /* 原型天赋（增幅）行里的「选原型天赋」按钮：开与武器天赋同款的弹窗选择器（`kind:'pa'`）。
+       域取自按钮自带的 `data-scope`（抽屉草稿 / 全局 state），弹窗内两套写路各走各的。 */
+    case 'pa-pick':{e.preventDefault();const sc=el.dataset.scope==='draft';if(sc&&typeof buildEditorDraft!=='undefined'&&!buildEditorDraft)return;openDlg('pa',i,null,sc?{scope:'draft'}:null);return;}
     /* 武器卡上的插槽行：点开该槽的官方候选配件（`build.view.js` 的 `wmodBlock`）。
        与 `modblk`（装备插件）同一形状，只是要带上「哪把枪的哪个槽」（`state.wactive` 决定拿哪把）。 */
     case 'wmod': openDlg('wm',i,el.dataset.s||'');break;
@@ -742,6 +745,8 @@ document.addEventListener('click',e=>{
       else if(d.kind==='t'){state.talents[d.slot]=-1;}
       /* 件天赋：取消 = 回到「不装」（`null`），与 `pickt` 的 `-1` 同义 */
       else if(d.kind==='gt'){state.gtal[d.slot]=null;}
+      /* 原型天赋：清空也按域分流（抽屉只改草稿，否则写 state），与 `pickpa` 同一口径 */
+      else if(d.kind==='pa'){const draft=d.scope==='draft'&&typeof buildEditorDraft!=='undefined'&&buildEditorDraft;const val={key:'',level:(draft?(buildEditorDraft.augment||{}):(state.bp.augments&&state.bp.augments[d.slot]||{})).level||10};if(draft){buildEditorDraft.augment=val;if(typeof buildGearEditorPaint==='function')buildGearEditorPaint();}else{state.bp.augments=state.bp.augments||[];state.bp.augments[d.slot]=val;renderAll();}closeDlg();return;}
       /* 武器配件：清掉**该槽这一件**的插槽选择（不是整把枪的）—— 固定件本来就不占选择，无需动 */
       else if(d.kind==='wm'){if(state.wmods&&state.wmods[d.slot])delete state.wmods[d.slot][d.wslot];}
       else{state.skill[d.slot]=-1;state.skillVariant[d.slot]=null;}
@@ -753,6 +758,18 @@ document.addEventListener('click',e=>{
     case 'skvar':{const d=state.dlg;if(!d||d.kind!=='s')return;d.skillVariant=el.dataset.v||null;renderDlgList();return;}
     case 'picks':{const d=state.dlg,row=DLG_ROWS[+el.dataset.row];if(!d||!row){closeDlg();break;}const i=row[1];state.skill[d.slot]=i;state.skillVariant[d.slot]=el.dataset.v||d.skillVariant||null;closeDlg();break;}
     case 'pickt':{const d=state.dlg,row=DLG_ROWS[+el.dataset.row];if(!d||!row){closeDlg();break;}const i=row[1];state.talents[d.slot]=state.talents[d.slot]===i?-1:i;closeDlg();break;}
+    /* 原型天赋弹窗行：再点已选那条 = 取消（与 `pickt` 同款）。写入按域分流：
+       抽屉草稿只改 `buildEditorDraft.augment` 并重绘抽屉（点「应用」才落地，与行内原生 select 既有口径一致）；
+       state 域直接写 `state.bp.augments[格位]`（与 `gaugment`/`waugment` change 处理器同一形状，level 保持原值默认 10）。 */
+    case 'pickpa':{const d=state.dlg,x=DLG_ROWS[+el.dataset.row];if(!d||!x){closeDlg();break;}
+      const draft=d.scope==='draft'&&typeof buildEditorDraft!=='undefined'&&buildEditorDraft;
+      const cur=draft?(buildEditorDraft.augment||{}):(state.bp.augments&&state.bp.augments[d.slot]||{});
+      const val=cur.key===x.code?{key:'',level:+cur.level||10}:{key:x.code,level:+cur.level||10};
+      if(draft)buildEditorDraft.augment=val;else{state.bp.augments=state.bp.augments||[];state.bp.augments[d.slot]=val;}
+      closeDlg();
+      if(draft){if(typeof buildGearEditorPaint==='function')buildGearEditorPaint();}
+      else renderAll();
+      return;}
     /* 件天赋（背包 / 胸甲）：写 `state.gtal[格位]` = 官方 `talents_official[].key` 串（与 `core` 存 code 串同构）。
        ⚠️ 行是 `[key, 天赋对象]` ⇒ **第 0 位才是 key**（`pickt` 那边第 1 位是下标，两者形状不同，别照抄）。
        ⚠️ 落地前校验这条 key **就在该格的池里**（换过件 / 数据层重排 ⇒ 旧 key 会指向别件才有的天赋），
