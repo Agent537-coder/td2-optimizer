@@ -514,7 +514,7 @@ function renderGear(){
     const rk=!it?'':({named:'named',gearset:'set',exotic:'exotic'}[it.kind]||'brand');
     return `<div class="gcard build-gear-card${it?' filled':''}${protoOn?' proto':''}${rcls}${state.dlg&&state.dlg.kind==='g'&&state.dlg.slot===i?' open':''}"${rk?` data-rarity="${rk}"`:''}${cfam?` data-core="${cfam}"`:''} data-act="gcard" data-i="${i}" tabindex="0" role="button" aria-label="${esc(it?L('编辑装备','Edit gear'):L('选择装备','Pick gear'))} · ${esc(L(sn[0],sn[1]))}${it?' · '+esc(nmTxt(it)):''}">
       <div class="topbar"${it?'':' style="--rc:var(--mut)"'}></div>
-      <div class="gc-hd"><span class="gc-lbl">${iconImg(SLOT_ICON[i],'gc-slot-icon gc-slot-icon-header')}<span>${esc(it?nmTxt(it):L(sn[0],sn[1]))}</span></span></div>
+      <div class="gc-hd"><span class="gc-lbl">${iconImg(SLOT_ICON[i],'gc-slot-icon gc-slot-icon-header')}<span>${esc(it?nmTxt(it):L(sn[0],sn[1]))}</span></span>${it?brandWmHtml(it,'gc-wm gc-wm-badge'):''}</div>
       <div class="gc-main">${it?brandWmHtml(it,'gc-wm'):''}<div class="gc-mid">${it?(it.gear_icon?iconImg(it.gear_icon.startsWith('gear/')?'fit/'+it.gear_icon:it.gear_icon).replace('class="ic"','class="ic" style="width:auto;height:auto;max-width:100%;max-height:100%;border:none;background:none"'):silIcon(i,rv[0])):silIcon(i,'--mut')}</div>
       <div class="gc-info">${it?buildGearSummaryBlock(i,it):'<span class="build-gear-empty">'+esc(L('选择装备','Choose gear'))+'</span>'}</div></div>
       ${it?`<div class="gc-ft">${tal}${modblk}${buildGearPrototypeSummary(i)}</div>`:''}</div>`;
@@ -1006,7 +1006,7 @@ function showTalentInfo(i){
     +'<p>'+(talentDescHtml(t,false)||'')+'</p></div></div></div>';
   requestAnimationFrame(()=>{d.innerHTML=html;m.classList.add('on');if(!m.open)m.showModal();});
 }
-function openDlg(kind,slot,wslot){
+function openDlg(kind,slot,wslot,opts){
   /* `wkind` = 武器选择器的**类别维度**（金装 / 具名 / 奇特），与装备选择器的 `gkind` 同款。
      参考工具的类别是 `Rarity`（0 金装 / 1 装备组 / 2 具名 / 3 奇特，见 `HighendGear.cs` 等），
      我们库里武器**没有** rarity 字段，但有官方 `exotic` / `named` 两个布尔 ⇒ 用它等价判定。 */
@@ -1024,6 +1024,7 @@ function openDlg(kind,slot,wslot){
     skillVariant:(kind==='s'&&state.skillVariant[slot])?state.skillVariant[slot]:null,
     scrollY:window.scrollY,scrollX:window.scrollX,
     openerDialog:document.activeElement?.closest('dialog')?.id||'',openerAction:document.activeElement?.dataset?.act||'',
+    scope:(kind==='pa'&&((opts||{}).scope==='draft'))?'draft':'state',
     opener:document.activeElement&&document.activeElement!==document.body?document.activeElement:null};
   renderDlg();
 }
@@ -1051,13 +1052,10 @@ function refocusBack(){
   const b=state.dlgBack;if(!b)return;state.dlgBack=null;
   const parentDialog=b.dialog?document.getElementById(b.dialog):null;
   if(parentDialog?.open){const source=parentDialog.querySelector(b.action?'[data-act="'+CSS.escape(b.action)+'"]':'button');source?.focus({preventScroll:true});return;}
-  const sel=b.kind==='g'?'[data-act="gcard"][data-i="'+b.slot+'"]'
-        :(b.kind==='w'?'[data-act="wsl"][data-i="'+b.slot+'"]'
-        :(b.kind==='s'?'[data-act="skl"][data-k="'+b.slot+'"]'
-        :(b.kind==='m'?'[data-act="modblk"][data-i="'+b.slot+'"]'
-        :(b.kind==='gt'?'[data-act="gtal"][data-i="'+b.slot+'"]'
-        :(b.kind==='t'?'[data-act="wsl-tal"][data-i="'+b.slot+'"]'
-        :(b.kind==='wm'?'[data-act="wmod"][data-i="'+b.slot+'"][data-s="'+b.wslot+'"]':''))))));
+  /* 弹窗关掉后把焦点送回对应格。旧写法是 8 层嵌套三元（v414 加 'pa' 档时多一层括号直接配不平，
+     正是这种链的维护雷区）⇒ 改表驱动，新增 kind 只加一行。 */
+  const SEL={g:'[data-act="gcard"][data-i="',w:'[data-act="wsl"][data-i="',s:'[data-act="skl"][data-k="',m:'[data-act="modblk"][data-i="',gt:'[data-act="gtal"][data-i="',t:'[data-act="wsl-tal"][data-i="',pa:'[data-act="pa-pick"][data-i="'}[b.kind];
+  const sel=SEL?SEL+b.slot+'"]':(b.kind==='wm'?'[data-act="wmod"][data-i="'+b.slot+'"][data-s="'+b.wslot+'"]':'');
   const el=sel?document.querySelector(sel):null;
   if(el&&typeof el.focus==='function')el.focus({preventScroll:true});
 }
@@ -1083,6 +1081,7 @@ function dlgTitle(){
   if(d.kind==='g')return L(d.mode==='list'?'按件挑装备':'选择装备','Pick gear')+' · '+L(G_SLOTS[d.slot][0],G_SLOTS[d.slot][1]);
   if(d.kind==='m')return L('选择插件','Pick mod')+' · '+L(G_SLOTS[d.slot][0],G_SLOTS[d.slot][1]);
   if(d.kind==='t')return L('选择武器天赋','Pick weapon talent')+' · '+L(W_SLOTS[d.slot][0],W_SLOTS[d.slot][1]);
+  if(d.kind==='pa')return L('选择原型天赋','Pick prototype talent')+(d.scope==='draft'?L('（装备草稿）',' (gear draft)'):' · '+L(G_SLOTS[d.slot][0],G_SLOTS[d.slot][1]));
   if(d.kind==='wm')return L('选择武器配件','Pick weapon mod')+' · '+L(W_SLOTS[d.slot][0],W_SLOTS[d.slot][1])+' · '+wmSlotLbl(d.wslot);
   return L('选择技能','Pick skill')+' · '+(d.slot===0?'Q':'E');
 }
@@ -1100,8 +1099,9 @@ function renderDlg(){
   box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-label',dlgTitle());
   const canClear=(d.kind==='w'&&state.wslots[d.slot]!=null)||(d.kind==='g'&&state.slots[d.slot]!=null)||(d.kind==='m'&&state.gmods[d.slot]!=null)||(d.kind==='s'&&state.skill[d.slot]>=0)||(d.kind==='t'&&state.talents[d.slot]>=0)
     ||(d.kind==='gt'&&state.gtal[d.slot]!=null)
+    ||(d.kind==='pa'&&((d.scope==='draft'?buildEditorDraft&&buildEditorDraft.augment:state.bp.augments&&state.bp.augments[d.slot])||{}).key)
     ||(d.kind==='wm'&&(()=>{const w=arr(DB.weapons)[state.wslots[d.slot]];const b=state.wmods&&state.wmods[d.slot];return !!(b&&b[d.wslot]!=null&&w&&wmCands(w,d.wslot).indexOf(b[d.wslot])>=0);})());
-  const needSearch=(d.kind==='w'||d.kind==='g'||d.kind==='t'||d.kind==='gt'||d.kind==='wm');
+  const needSearch=(d.kind==='w'||d.kind==='g'||d.kind==='t'||d.kind==='gt'||d.kind==='wm'||d.kind==='pa');
   /* 装备抽屉的搜索框：wall 模式下筛的是品牌 / 装备组 / 具名 / 奇特块的名字，list 模式下筛件名 */
   const gph=(d.kind==='g')?' placeholder="'+esc(L('搜索品牌 / 装备组 / 具名 / 奇特','Search brand / set / named / exotic'))+'"':'';
   let bar='';
@@ -1234,6 +1234,26 @@ function renderDlgList(){
         <span class="badge ${cur===i?'gold':'dim'}">${esc(cur===i?L('已选','Picked'):L('选择','Pick'))}</span></div>`;
     }).join('');
     if(rows.length>lim.length)h+=`<div class="pk-empty">${esc(L('还有 '+(rows.length-lim.length)+' 条，输入关键词继续筛选','+'+(rows.length-lim.length)+' more — type to filter'))}</div>`;
+    box.innerHTML=h||`<div class="pk-empty">${esc(L('无匹配','No match'))}</div>`;
+  }else if(d.kind==='pa'){
+    /* 原型天赋（增幅）选择器：与武器天赋弹窗同款行（图标 + 名字 + 官方描述 + 效果行 + 已选徽标）。
+       候选 = `DB.prototype_augments` 全池（与行内原生 select 同源）；图标/描述取同 code 的
+       `talents_official` 条目（`prototypeAugmentHtml` 同一判据）。域 = `d.scope`：抽屉草稿 vs 全局 state。 */
+    const aug=(d.scope==='draft'?(buildEditorDraft&&buildEditorDraft.augment):(state.bp.augments&&state.bp.augments[d.slot]))||{};
+    const cur=aug.key||'';
+    const rows=arr(DB.prototype_augments).filter(x=>!q||((x.zh||'')+' '+(x.en||'')).toLowerCase().includes(q));
+    DLG_ROWS=rows;
+    let h=rows.map((x,row)=>{
+      const t=arr(DB.talents_official).find(y=>y.key===x.code);
+      const curve=DB.combat_audit?.prototype_curves?.[x.code]?.[state.bp.pvp?'pvp':'pve'];
+      const numeric=Object.values(curve||{})[0];
+      const eff=numeric?L('效果提升','Effect bonus')+' '+fmtN(100*(numeric.base+numeric.step*9))+'%（Lv.10）':'';
+      const descHtml=t?talentDescHtml(t,!!state.bp.pvp):'';
+      return `<div class="prow${cur===x.code?' on':''}" data-act="pickpa" data-row="${row}" tabindex="0" role="button" aria-pressed="${cur===x.code?'true':'false'}">
+        ${t?talIcon(t,'tic mono-tal'):axGlyph('uti')}<div class="wbody"><div class="wname">${esc(L(x.zh,x.en))}</div>
+        ${descHtml?`<div class="tal-desc">${descHtml}</div>`:''}${eff?`<div class="tal-params"><span>${esc(eff)}</span></div>`:''}</div>
+        <span class="badge ${cur===x.code?'gold':'dim'}">${esc(cur===x.code?L('已选','Picked'):L('选择','Pick'))}</span></div>`;
+    }).join('');
     box.innerHTML=h||`<div class="pk-empty">${esc(L('无匹配','No match'))}</div>`;
   }else if(d.kind==='wm'){
     /* 该枪该槽的候选配件（口径全在 `build.mods.js`：官方 `weapons[].slots` + 武器级 `slot_tags`

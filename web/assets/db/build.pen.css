@@ -17,7 +17,7 @@ body[data-hub-page=build] #build-toolbar{grid-column:1;grid-row:2;padding:0;back
 #build-toolbar :is(#lang,#theme){display:none}
 #build-toolbar .build-share-menu>div{top:calc(100% + 6px);z-index:60;box-shadow:var(--shadow-menu)}
 #build-toolbar .build-share-menu>div button{justify-content:flex-start;width:100%;white-space:normal;text-align:left}
-body[data-hub-page=build] #build-quick{grid-column:1;grid-row:3;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;z-index:40;padding:0 0 12px;border-bottom:1px solid var(--line)}
+body[data-hub-page=build] #build-quick{grid-column:1;grid-row:3;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;z-index:40;padding:0 0 12px;border-bottom:1px solid var(--line)}
 body[data-hub-page=build] #build-quick>.build-quick-control{margin:0;border:0;background:var(--card);min-height:44px;padding:0;border-radius:6px;font:13px/1.4 var(--ff-body);color:var(--fg);min-width:0;position:relative}
 body[data-hub-page=build] #build-quick>label.build-quick-control{padding:0 12px}
 #build-quick>label.build-quick-control,#build-quick>button.build-quick-control{display:flex;align-items:center;gap:8px;padding:0 12px}
@@ -120,6 +120,10 @@ html[data-theme=dark] body[data-hub-page=build] .wc-slot-badge.dark{display:bloc
  body[data-hub-page=build] .wcard.filled .wc-mid img.ic{height:52px!important;max-height:52px!important;width:auto!important}
  body[data-hub-page=build] .wcard.filled .wc-affix{grid-area:2/2/3/4;align-self:start;padding-top:0}
  body[data-hub-page=build] .wcard.filled .wc-effects{grid-area:3/1/4/-1}
+ /* 宽屏三区块「图标→文本」推进量对齐配件格基准 `padding-left:6 + 图标轨 16 + gap:6 = 28px`（窄屏 24px 口径见末尾 narrow 块） */
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-talrow{padding-left:6px;gap:6px}
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-effects .prototype-augment{padding-left:6px;grid-template-columns:16px minmax(0,1fr) 30px}
+ body[data-hub-page=build] #wstrip .wcard.filled .wc-effects .prototype-augment.empty{grid-template-columns:16px minmax(0,1fr);grid-template-areas:"icon choice"}
  body[data-hub-page=build] .wcard.filled .wc-mod{grid-area:4/1/5/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding-top:6px}
  body[data-hub-page=build] .wcard.filled .wmod-row{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;min-height:32px;padding:4px 6px}
  body[data-hub-page=build] .wcard.filled .wmod-row .wmod-v{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -138,9 +142,11 @@ body[data-hub-page=build] #ggrid .build-gear-card{position:relative;overflow:hid
 body[data-hub-page=build] #ggrid .build-gear-card .gc-hd{min-height:28px;display:grid;grid-template-columns:minmax(0,1fr);align-items:start;padding:0;gap:4px}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl{min-width:0;flex:1;color:var(--rc);font:500 13px/1.45 var(--ff-body);align-items:flex-start;gap:5px;white-space:normal;overflow:visible}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-lbl>span{min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere}
-/* gc-wm 在 .gc-main 内绝对定位，与装备图同容器居中，保证中心对齐 */
+/* gc-wm 在 .gc-main 内绝对定位，与装备图同容器居中，保证中心对齐（开启态大水印，位置口径未动）；
+   卡头另有一颗 `.gc-wm-badge` 小徽标（关闭态专用，见文件末尾开关段），默认隐藏 */
 body[data-hub-page=build] #ggrid .build-gear-card .gc-main>.gc-wm{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.22;background:#fff;-webkit-mask:var(--wm) right center/auto 80px no-repeat;mask:var(--wm) right center/auto 80px no-repeat}
 [data-theme=light] body[data-hub-page=build] #ggrid .build-gear-card .gc-main>.gc-wm{background:#000;opacity:.14}
+body[data-hub-page=build] #ggrid .build-gear-card .gc-hd>.gc-wm-badge{display:none}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-main{position:relative;grid-area:main;display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-areas:none;grid-template-rows:auto;gap:8px;align-items:center;min-height:88px}
 body[data-hub-page=build] #ggrid .build-gear-card :is(.gc-mid,.gc-info){grid-area:auto}
 body[data-hub-page=build] #ggrid .build-gear-card .gc-info{display:block;min-width:0;padding:0}
@@ -273,6 +279,9 @@ body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augme
 body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select.prototype-level-select{flex:0 0 auto;width:64px}
 body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment select:disabled{color:var(--mut);cursor:not-allowed}
 body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment .axchoice{display:none}
+/* 抽屉里的「选原型天赋」弹窗按钮（替掉行内原生 gaugment select，等级 select 保留）：
+   尺寸/箭头与上一条 select 同口径，标签选择器 `button.` 与 `select.` 那条不同 ⇒ 不会被它染到。 */
+body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment button.pa-pick-btn{flex:1 1 0;min-width:0;height:44px;min-height:44px;border:0;text-align:left;font:inherit;cursor:pointer;color:inherit;background-color:transparent;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%239b9790' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:16px;padding:0 28px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body[data-hub-page=build] #build-item-editor .build-editor-input.prototype-augment .prototype-effect{flex:1 0 100%;color:var(--mut);font-size:13px;line-height:1.4}
 #build-item-editor .build-editor-input:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 .build-editor-talent h3{display:flex;align-items:center;gap:12px;margin:28px 0 20px;font:600 16px/1.45 var(--ff-body)}
@@ -335,7 +344,7 @@ body[data-hub-page=build] #build-conditions-dialog #fold_cond>summary{display:no
  /* ≤1100 单栏：右侧栏不再占独立列，让它的两块直接回到主列流里（结果块由 JS 搬回 `#col-desk`）。 */
  body[data-hub-page=build] #build-rail{display:contents}
  #build-toolbar #build-more-menu{position:static}
- body[data-hub-page=build] #build-quick{grid-template-columns:repeat(4,minmax(0,1fr))}
+ body[data-hub-page=build] #build-quick{grid-template-columns:repeat(5,minmax(0,1fr))}
  body[data-hub-page=build] #wstrip{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:760px){
@@ -562,3 +571,19 @@ body[data-hub-page=build] .wcard.filled .wc-titleline .wc-name{flex:0 1 auto;pad
  body[data-hub-page=build] .wcard.filled .wc-titleline{min-height:0;padding:5px 4px 5px 22px}
  body[data-hub-page=build] .wcard.filled .wc-titleline .wc-ti{width:26px;height:26px}
 }
+
+/* ── 卡片渐变开关（build.layout.js `paintCardGrad` 写 body[data-hub-cardgrad]，20261102 用户）──
+   off 时：①取消两卡整卡渐变底（::before 不画，左侧 3px 色带与顶条 .topbar 稀有度色带不动）；
+   ②品牌图标换右上角小徽标（30×28 原色图，47a5ae0 口径）。两态各自独立制作：开启态 = `.gc-main`
+   大水印（pen.css 中段原档不动），关闭态 = 卡头 `.gc-wm-badge`，开关属性互斥显隐、不互相改位置。
+   小徽标档需 dark/light 各写一条：`.gc-main>.gc-wm` 默认档的 light 变体多一个 `[data-theme]` 属性权重，
+   单条无主题前缀的 off 规则在浅色主题下压不过它（真机实测）。 */
+body[data-hub-cardgrad=off] .wcard::before,
+body[data-hub-cardgrad=off] .gcard::before{display:none}
+body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-main>.gc-wm{display:none}
+body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd>.gc-wm-badge,[data-theme=light] body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd>.gc-wm-badge{display:block;position:absolute;left:auto;right:0;top:0;bottom:auto;width:30px;height:28px;opacity:.65;background:var(--wm) center/contain no-repeat;-webkit-mask:none;mask:none;z-index:2}
+
+/* 武器名+类型图标右移避开左上角标（用户 20261102：靠太近）：v408 把行 padding 重写为 `5px 4px` 时把
+   原 `padding-left:22px` 避让口径（`pen.css:117`/`:510`）一并压掉了，图标实际左探进角标 6px。
+   角标视觉宽 20px ⇒ 24px 留 4px 缝；本条同特异性后写位，三档视口（wide/narrow≤760/中间）统一生效。 */
+body[data-hub-page=build] .wcard.filled .wc-titleline{padding-left:24px}
