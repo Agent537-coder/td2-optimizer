@@ -7,8 +7,9 @@ function buildToolIcon(kind){
 function buildToolLabel(el,kind,label){
  if(!el)return;el.innerHTML=buildToolIcon(kind)+'<span class="build-tool-text">'+esc(label)+'</span>';el.setAttribute('aria-label',label);el.title=label;
 }
-/* 卡片渐变开关：显示偏好，只写 body[data-hub-cardgrad] + localStorage（同 td2theme 口径，不进 state/存档）；
-   未存过值时默认关闭（仅显式存 '1' 才开启）；off 态样式在 build.pen.css 末尾按该属性覆盖。 */
+/* 卡片风格开关（渐变底 on/off 的显示偏好）：只写 body[data-hub-cardgrad] + localStorage（同 td2theme 口径，不进 state/存档）；
+   文案 20261102 用户第 7-8 轮定稿：卡片渐变→卡片风格；`'0'`（取消渐变）标「简约」且排在下拉首位、`'1'`（渐变开）标「经典」排第 2 位；
+   默认未存值⇒off⇒简约；选项值与 off 态样式（build.pen.css 末尾）不动。 */
 const TD2_CARD_GRAD_KEY='td2cardgrad';
 function cardGradOn(){return lsGet(TD2_CARD_GRAD_KEY)==='1';}
 function paintCardGrad(){
@@ -16,8 +17,8 @@ function paintCardGrad(){
  document.body.dataset.hubCardgrad=on?'on':'off';
  const sel=document.getElementById('build-card-grad');if(!sel)return;
  sel.value=on?'1':'0';
- sel.options[0].textContent=L('开启','On');sel.options[1].textContent=L('关闭','Off');
- document.getElementById('build-card-grad-label').textContent=L('卡片渐变','Card tint');
+ sel.options[0].textContent=L('简约','Simple');sel.options[1].textContent=L('经典','Classic');
+ document.getElementById('build-card-grad-label').textContent=L('卡片风格','Card style');
  sel.closest('label').classList.toggle('on',on);
 }
 function buildLayoutPaint(){
@@ -149,7 +150,7 @@ function initBuildLayout(){
  const toolbar=document.querySelector('body>header');toolbar.id='build-toolbar';main.prepend(toolbar);const actions=toolbar.querySelector('.actions'),more=document.createElement('details');more.id='build-more-menu';more.className='build-share-menu';more.innerHTML='<summary class="mini"></summary><div></div>';
  const fileControls=['exp','imp','impf','reset'].map(id=>document.getElementById(id));fileControls.forEach(el=>more.lastElementChild.append(el));actions.prepend(document.getElementById('build-records'),document.getElementById('build-share-menu'),document.getElementById('build-save'));actions.append(more);
  const narrow=matchMedia('(max-width:760px)'),arrangeFiles=()=>{const target=narrow.matches?document.querySelector('#build-share-menu>div'):more.lastElementChild;fileControls.forEach(el=>target.append(el));};arrangeFiles();narrow.addEventListener('change',arrangeFiles);
- const quick=document.createElement('section');quick.id='build-quick';quick.innerHTML='<label class="build-quick-control"><span id="build-mode-label"></span><select id="build-mode" aria-labelledby="build-mode-label"><option value="pve">PvE</option><option value="pvp">PvP</option></select></label><label class="build-quick-control"><span id="build-prototype-label"></span><select id="build-prototype" aria-labelledby="build-prototype-label"><option value="0"></option><option value="1"></option></select></label><details id="build-spec-menu" class="build-quick-control"><summary><span id="build-specialization-label"></span><b id="build-specialization-value"></b></summary><div class="build-spec-popover"></div></details><button type="button" id="build-condition-open" class="build-quick-control"><span id="build-condition-label"></span><b id="build-condition-value"></b></button><label class="build-quick-control"><span id="build-card-grad-label"></span><select id="build-card-grad" aria-labelledby="build-card-grad-label"><option value="1"></option><option value="0"></option></select></label>';
+ const quick=document.createElement('section');quick.id='build-quick';quick.innerHTML='<label class="build-quick-control"><span id="build-mode-label"></span><select id="build-mode" aria-labelledby="build-mode-label"><option value="pve">PvE</option><option value="pvp">PvP</option></select></label><label class="build-quick-control"><span id="build-prototype-label"></span><select id="build-prototype" aria-labelledby="build-prototype-label"><option value="0"></option><option value="1"></option></select></label><details id="build-spec-menu" class="build-quick-control"><summary><span id="build-specialization-label"></span><b id="build-specialization-value"></b></summary><div class="build-spec-popover"></div></details><button type="button" id="build-condition-open" class="build-quick-control"><span id="build-condition-label"></span><b id="build-condition-value"></b></button><label class="build-quick-control"><span id="build-card-grad-label"></span><select id="build-card-grad" aria-labelledby="build-card-grad-label"><option value="0"></option><option value="1"></option></select></label>';
  toolbar.after(quick);buildSpecInit();quick.querySelector('.build-spec-popover').append(document.getElementById('build-spec-direct'));paintCardGrad();
  const editor=document.createElement('aside');editor.id='build-item-editor';editor.setAttribute('aria-label',L('当前装备编辑','Current gear editor'));
  const itemDialog=document.createElement('dialog');itemDialog.id='build-item-dialog';itemDialog.setAttribute('aria-label',L('装备属性','Gear attributes'));
