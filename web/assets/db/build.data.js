@@ -243,7 +243,7 @@ function nmTxt(o){const cn=(o&&o.zh)||o.name||'',en=(o&&o.en)||o.name||'';return
 function nmAlt(o){const cn=(o&&o.zh)||o.name||'',en=(o&&o.en)||o.name||'';const m=LANG==='zh'?cn:en,a=LANG==='zh'?en:cn;return `<span>${esc(m)}</span>${a&&a!==m?`<span class="walt">${esc(a)}</span>`:''}`}
 /* 图标 URL 的版本戳（与资料库页同一个口径）：重建脚本**原地覆盖** `web/assets/db/img/` 下的文件，
    文件名不变内容变 ⇒ 浏览器会端旧图。服务器已一律 `no-store`，这里再挂戳让**已缓存的旧份**当场失效。 */
-const IMGV='?v=349';
+const IMGV='?v=364';
 /* 图标路径可能带目录（`skill/skills_menu_hive.png` / `gearmod/g_mod_*.png` / `modfilter/offense.png`）——
    逐段编码，别把 `/` 编成 `%2F`（那样服务器找不到文件）。戳一律由调用处拼 `IMGV`。 */
 function imgPath(ic){return String(ic).split('/').map(encodeURIComponent).join('/');}
@@ -578,6 +578,42 @@ function talentDescText(t,on){
   if(on&&talentPvpN(t))return talentDescFill(t,true);
   return (t.desc_filled_zh||t.desc_zh||t.desc_en||'').trim();
 }
+/* 官方参数位的**显示名**（只是标签，不含任何数值）。
+   参数位本身没有 `attr_zh`，直接把 `cooldown` / `trigger_chance` 这种内部代号丢给用户看不懂
+   （2026-11-03 站长问「评估不了吗」，看到的正是这些代号）。
+   键 = 代号去掉 `_P<n>_` / `Final` / `ModBonus` 之后的尾巴；查不到就退回原代号，不猜。 */
+const TALENT_PARAM_LABELS={
+ cooldown:['冷却时间','Cooldown'],
+ pvp_cooldown:['PvP 冷却时间','PvP cooldown'],
+ 'pvp cooldown':['PvP 冷却时间','PvP cooldown'],
+ duration:['持续时间','Duration'],
+ duration_for_kill:['击杀后持续时间','Duration after kill'],
+ 'pvp duration':['PvP 持续时间','PvP duration'],
+ trigger_chance:['触发机率','Trigger chance'],
+ reduction_in_seconds:['冷却减少（秒）','Cooldown reduced (s)'],
+ internal_cooldown:['内置冷却（秒）','Internal cooldown (s)'],
+ duration_to_proc:['标记持续（秒）','Mark window (s)'],
+ damage_increase:['伤害增加','Damage increase'],
+ damage_increase_for_kill:['击杀后伤害增加','Damage after kill'],
+ weapon_damage:['武器伤害','Weapon damage'],
+ weapon_damage_change:['武器伤害变化','Weapon damage change'],
+ RPM_change:['射速变化','Rate of fire change'],
+ RPM_increase:['射速增加','Rate of fire increase'],
+ headshot_damage_bonus:['爆头伤害','Headshot damage'],
+ crit_damage_bonus:['暴击伤害','Crit damage'],
+ crit_chance_bonus:['暴击几率','Crit chance'],
+ rate:['换算率','Exchange rate'],
+ interval:['间隔（秒）','Interval (s)'],
+ cooldown_reduction:['冷却缩减（秒）','Cooldown reduction (s)'],
+ percentage:['百分比','Percentage'],
+ max_stacks:['层数上限','Max stacks'],
+ armor_exchange_rate:['护甲换算','Armor exchange'],
+};
+function talentParamLabel(tail){
+  const hit=TALENT_PARAM_LABELS[tail];
+  if(hit)return L(hit[0],hit[1]);
+  return null;
+}
 /* 描述占位对不上时，把官方参数原样列出来。数值仍取当前模式，不另写一份。 */
 function talentParamLines(t,on){
   const rows=talentBonusOf(t,on).filter(b=>b&&b.value!=null&&isFinite(+b.value));
@@ -586,12 +622,21 @@ function talentParamLines(t,on){
   const slots=(text.match(/\{(\d+)\}/g)||[]).map(x=>+x.slice(1,-1));
   const filled=text&&!slots.length;
   if(filled)return [];
-  return rows.map(b=>{
+  const lines=rows.filter(b=>{
+    /* 非 PvP 模式不列 `pvp_` 参数：官方把 PvE / PvP 两套数值都塞进同一批参数位，
+       不筛就会显示「PvP 冷却时间 20 / 冷却时间 20」两条，看起来像两个效果。 */
+    if(!on&&/^pvp_/i.test(String((b&&b.code)||'').replace(/^.*(?:_P\d+_|Final|ModBonus)/,'')))return false;
+    return true;
+  }).map(b=>{
     const code=String(b.code||'');
     const tail=code.replace(/^.*(?:_P\d+_|Final|ModBonus)/,'')||code;
-    const name=(b.attr_zh&&on!=='en')?(b.attr_zh):(b.attr_en||b.name||tail||code);
+    /* 官方给了 attr_zh 就用它；没给就用本地的参数显示名；再没有才退回代号。 */
+    const name=(b.attr_zh&&on!=='en')?(b.attr_zh):((on==='en'?null:talentParamLabel(tail))||b.attr_en||b.name||talentParamLabel(tail)||tail||code);
     return name+' '+String(+b.value)+(b.unit||'');
   });
+  /* 同一句「名字 + 数值」只留一条：官方的参数位常把同一件事拆成两条（`duration` 与
+     `duration_for_kill` 在非击杀语境下读起来一样），重复列出来会让用户以为有两个效果。 */
+  return lines.filter((x,i)=>lines.indexOf(x)===i);
 }
 /* 这条天赋在 PvP 模式下会不会变（供界面标注「PvP 有差异」） */
 function talentPvpDiff(t){
