@@ -727,6 +727,8 @@ document.addEventListener('click',e=>{
     /* 装备天赋档位：`族:档`（值只进 `state.bp.tiers`，由 `evalBuild()` 换成引擎入参行） */
     case 'bptier':{const p=(el.dataset.k||'').split(':');
       if(p.length===2&&p[0]&&p[1])state.bp.tiers[p[0]]=p[1];break;}
+    /* 层数型档位的层数输入（疯狂…）：只写 `state.bp.tierStacks[族]`，公式层零改动。 */
+    case 'bptierstack':state.bp.tierStacks=state.bp.tierStacks||{};state.bp.tierStacks[el.dataset.k]=Math.max(1,+el.value||1);state.opt.res=null;break;
     case 'bpe':{const p=(el.dataset.k||'').split(':'),v=+p[1];const e=state.bp.enemy;
       if(p[0]==='progression')e.progression=v;else if(p[0]==='difficulty')e.difficulty=v;
       else if(p[0]==='players')e.players=v;else if(p[0]==='escalation')e.escalation=v;break;}

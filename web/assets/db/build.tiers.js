@@ -88,6 +88,16 @@ const TAL_TIER_FAMILIES=[
      {id:'back',zh:'弹匣后半段（+30% 总武器伤）',en:'Back half (+30% total)',dist:['',''],use:['back_half_weapon_damage_change','back_half_RPM_change']},
      {id:'first',zh:'弹匣前半段（-25% 武器伤）',en:'First half (-25% weapon dmg)',dist:['',''],use:['first_half_weapon_damage_change','first_half_RPM_change']},
    ]},
+  {id:'frenzy',family:'talent_lmg_reloading_from_empty_increases_damage_and_fire_rate',
+   /* 疯狂（轻机枪武器天赋）：空弹匣装弹后，弹匣里每 `magazine_interval`（官方 10）发 1 层，
+      每层 +3% 武器伤害 / +3% 射速，持续 9 秒。层数上限 = 弹匣 / 间隔（现算），
+      当前层数在面板里可改（`perStack`），不写死。 */
+   paramKey:'talent_lmg_reloading_from_empty_increases_damage_and_fire_rate_magazine_interval',
+   stackInterval:'magazine_interval',
+   bands:[
+     {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
+     {id:'on',zh:'空仓换弹后（按层数）',en:'After empty reload (per stack)',dist:['',''],use:['damage_increase','RPM_increase'],perStack:true},
+   ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
 function talTierKeys(fam){
@@ -154,6 +164,21 @@ function talTierParam(p,suf){
   for(const k in p)if(k===suf||k.slice(-suf.length)===suf)return p[k];
   return null;
 }
+/* 层数型档位（疯狂这类「每 N 发 1 层」）：层数上限由**弹匣 / 官方间隔**现算，
+   当前层数取用户在该族上选的值（`state.bp.tierStacks[族]`），没选过就取满层。
+   取不到弹匣或间隔就返回 null ⇒ 该档整档作废，不拿 0 或猜值顶替。 */
+function talTierStacks(fam){
+  const t=talTierTalent(fam);if(!t)return null;
+  const p=talTierParams(t,!!state.bp.pvp,fam.keyed?'keyed':'',fam);
+  /* paramKey 取到的值统一落在 p.value 上（见 talTierParams）；没给 paramKey 时按 stackInterval 的后缀取。 */
+  const interval=talTierParam(p,fam.paramKey?'value':(fam.stackInterval||'magazine_interval'));
+  const w=arr(DB.weapons)[state.wslots[state.wactive]],mag=w?+w.mag:0;
+  if(!(interval>0)||!(mag>0))return null;
+  const max=Math.max(1,Math.floor(mag/interval));
+  const saved=state.bp&&state.bp.tierStacks&&state.bp.tierStacks[fam.id];
+  const cur=Number.isFinite(+saved)?Math.max(1,Math.min(max,Math.floor(+saved))):max;
+  return {cur,max};
+}
 /* 档位 → 引擎入参行。**取不到任一参数就整档作废**（返回 null），绝不拿 0 或猜值顶替。 */
 function talTierAttrs(fam,bandId,on){
   const band=arr(fam.bands).find(b=>b.id===bandId);
@@ -165,10 +190,13 @@ function talTierAttrs(fam,bandId,on){
      （A8「平均 1/5 枪」= ×0.2、「铁支 4 发」= ×0.8、「本枪」= ×1）。
      系数只写在家族表的 `mul` 上，本层不写任何游戏数字。 */
   const mul=(band.mul==null)?1:+band.mul;
+  /* `perStack`：这份数值是**每层**的，乘上当前层数（层数由 talTierStacks 现算）。 */
+  const stacks=band.perStack?talTierStacks(fam):null;
+  if(band.perStack&&!stacks)return null;
   for(const suf of band.use){
     const raw=talTierParam(p,suf);
     if(raw==null||!isFinite(raw))return null;
-    const v=raw*mul;
+    const v=raw*mul*(band.perStack?stacks.cur:1);
     /* 代号后缀 → 引擎字段名：后缀里的 `crit_damage`/`crit_chance`/`cap` 是**语义词**，不是展示名；
        官方展示名（`attr_zh`）对这批参数位是空的，所以只能按后缀判 —— 每个分支都要给依据。 */
     const nm=talTierAttrName(fam,suf);
@@ -197,6 +225,12 @@ function talTierAttrName(fam,suf){
   /* 亡者手牌（A8 4pc）：翻牌后的下一枪增伤，进「总武器伤害」乘区。
      触发口径由档位自己的 `mul` 决定（平均 / 铁支 / 本枪），本函数只认字段。 */
   if(fam.id==='acesandeights'&&suf==='value')return 'TotalWeaponDamage';
+  /* 疯狂（轻机枪）：空仓换弹后每 N 发 1 层，每层 +3% 武器伤害 / +3% 射速（官方 P0/P1）。
+     层数由 `perStack` 乘上去，字段用「武器伤害」平铺区，不是总武器伤害乘区。 */
+  if(fam.id==='frenzy'){
+    if(suf.indexOf('RPM_increase')>=0)return 'RateOfFire';
+    if(suf.indexOf('damage_increase')>=0)return 'AllWeaponDamage';
+  }
   /* 精密计算（武器天赋）：弹匣前半段是「+射速 / −武器伤害（平铺）」，后半段是「−射速 / +总武器伤害（乘区）」。
      两段互斥，用档位选其一；字段按官方文案的「武器伤害」vs「总武器伤害」分开，不合并。 */
   if(fam.id==='calculated'){
