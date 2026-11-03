@@ -402,10 +402,23 @@ function renderCombatAudit(){
  const open=box.open;const list=combatInPlay();
  const rows=list.map(x=>{const t=TALENT_BY_KEY[x.key],e=gtalEntry(x.key),lim=combatLimit(x.key),supported=!!e&&(arr(e.rows).length||e.cycle)&&!combatBlocked(x.key)&&combatSupport(x.key).status!=='missing_parameter';
  const control=supported&&!combatPassive(x.key)?`<label><input type="checkbox" data-combat-key="${esc(x.key)}" ${combatEnabled(x.key)?'checked':''}>${esc(L('条件满足','Condition met'))}</label>`:'';
+ /* 折算档（off / half / full）：条件型天赋在引擎里默认按「半程覆盖率」折算，
+    面板原来只显示「层数 10/10」，用户看到满层却没拿到满值（2026-11-03 站长：BUFF 叠满该有几千万）。
+    这里把档位和实际系数一起摆出来；改的是 `state.bp.condTier`，公式层零改动。
+    修改器类（有父天赋）跟随父项，不单独给控件，避免一次改动被折两次。 */
+ /* 走档位族的天赋（震荡 / A8 / 精密计算…）取值来自档位，**不经过覆盖率折算**，
+    所以不给它们这个控件 —— 放了也点不动数，等于假控件（2026-11-03 实测：把完美震荡切到「满值」，
+    系数从 ×0.6 变 ×1，单发一格没动，因为它的值来自 band 而不是 factor）。 */
+ const covInTier=typeof TAL_TIER_FAMILIES!=='undefined'&&TAL_TIER_FAMILIES.some(f=>String(x.key).indexOf(f.family)===0);
+ const covCtl=(!covInTier&&supported&&typeof optCondTalent==='function'&&optCondTalent(x.key)&&!(typeof combatParent==='function'&&combatParent(x.key)))
+  ?`<label>${esc(L('折算','Coverage'))}<select data-combat-cov="${esc(x.key)}">`+
+    [['off',L('不计入','Off')],['half',L('半程','Half')],['full',L('满值','Full')]].map(([v,zh])=>`<option value="${v}"${optCondTier(x.key)===v?' selected':''}>${esc(zh)}</option>`).join('')
+    +`</select><span>×${Math.round(optCondFactor(x.key)*100)/100}</span></label>`
+  :'';
  const currentStacks=state.bp.effects?.[x.key]?.stacks,stackDefault=combatEnabled(x.key)?lim:0,stack=supported&&lim!=null?`<label>${esc(e.counterLabel?L(...e.counterLabel):L('层数','Stacks'))}<input type="number" min="0" max="${lim}" step="1" data-combat-stack="${esc(x.key)}" value="${Math.min(lim,Math.max(0,Number.isFinite(+currentStacks)?+currentStacks:stackDefault))}"><span>/ ${lim}</span></label>`:'';
  const ranges=combatRangeText(t).map(line=>'<span>'+esc(line)+'</span>').join('');
   const amount=supported&&e.input?`<label>${esc(L(...e.input.label))}<input type="number" min="0" max="${e.input.max}" step="${e.input.step}" data-combat-amount="${esc(x.key)}" value="${Math.max(0,Math.min(e.input.max,+state.bp.effects?.[x.key]?.amount||0))}"></label>`:'';
- return `<div class="combat-effect"><b>${t?talIcon(t,'tic tic-s'):''}${esc(t?nmTxt(t):x.key)}</b><span>${esc(x.label)} · ${esc(combatStatusText(x.key))}</span>${control}${stack}${amount}${ranges?`<div class="tal-params">${ranges}</div>`:''}${((talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')?('<div class="tal-params">'+(talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')+'</div>'):'')}${e?.note?`<p class="hint">${esc(L(...e.note))}</p>`:''}<details><summary>${esc(L('触发说明','Trigger details'))}</summary><p>${esc(t?talentDescPlain(t,!!state.bp.pvp):'')}</p><a class="build-db-link" href="/db?cat=talents&id=${encodeURIComponent(t?.uid||x.key)}" target="_blank" rel="noopener">${esc(L('查看天赋','View talent'))}</a></details></div>`;
+ return `<div class="combat-effect"><b>${t?talIcon(t,'tic tic-s'):''}${esc(t?nmTxt(t):x.key)}</b><span>${esc(x.label)} · ${esc(combatStatusText(x.key))}</span>${control}${covCtl}${stack}${amount}${ranges?`<div class="tal-params">${ranges}</div>`:''}${((talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')?('<div class="tal-params">'+(talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')+'</div>'):'')}${e?.note?`<p class="hint">${esc(L(...e.note))}</p>`:''}<details><summary>${esc(L('触发说明','Trigger details'))}</summary><p>${esc(t?talentDescPlain(t,!!state.bp.pvp):'')}</p><a class="build-db-link" href="/db?cat=talents&id=${encodeURIComponent(t?.uid||x.key)}" target="_blank" rel="noopener">${esc(L('查看天赋','View talent'))}</a></details></div>`;
  }).join('');
  box.innerHTML=`<summary>${esc(L('效果与触发条件','Effects & conditions'))} · ${list.length}</summary><div class="combat-presets"><button type="button" data-combat-preset="base">${esc(L('基础对照','Baseline'))}</button><button type="button" data-combat-preset="peak">${esc(L('已支持效果满层','Supported effects at max'))}</button></div><p class="hint">${esc(L('只计算已支持的数值部分。满层是条件快照，不代表持续覆盖；技能伤害及未支持机制不含在输出中。','Only supported numeric components are counted. Maximum stacks are a conditional snapshot, not sustained uptime. Skill damage and unsupported mechanics are excluded.'))}</p>${rows||esc(L('选择装备后显示相关效果','Equip items to see effects'))}${COMBAT_LAST?.ignoredAttrs?.length?`<p class="hint">${esc(L('尚未计算的属性：','Unmodeled attributes: ')+COMBAT_LAST.ignoredAttrs.join(' · '))}</p>`:''}`;
  box.open=open;
@@ -413,6 +426,8 @@ function renderCombatAudit(){
  const warn=document.getElementById('r_warn');if(warn&&state.wactive>=0){const n=list.filter(x=>!combatParent(x.key)&&!['conditional_component'].includes(combatSupport(x.key).status)).length;warn.innerHTML=`<div class="wnote">${esc(L('当前为所选条件下的武器输出估计；','Weapon output estimate under selected conditions; '))}${n?esc(L(n+' 项效果未计入。',n+' effects not counted.')):''}<button type="button" data-combat-open>${esc(L('检查效果','Review effects'))}</button></div>`;}
 }
 document.addEventListener('change',e=>{
+ /* 折算档：只改 `state.bp.condTier`（off / half / full），与搜索、交付重算读同一份。 */
+ if(e.target.dataset.combatCov){state.bp.condTier=state.bp.condTier||{};state.bp.condTier[e.target.dataset.combatCov]=e.target.value;state.opt.res=null;renderAll();return;}
  const t=e.target,key=t.dataset.combatKey||t.dataset.combatStack||t.dataset.combatAmount;if(!key)return;
  state.bp.effects=state.bp.effects||{};const v=state.bp.effects[key]||{on:false,stacks:0};
  if(t.dataset.combatKey)v.on=t.checked;else if(t.dataset.combatAmount)v.amount=Math.max(0,Math.min(gtalEntry(key)?.input?.max||0,+t.value||0));else v.stacks=Math.min(combatLimit(key)||0,Math.max(0,Math.floor(+t.value||0)));
