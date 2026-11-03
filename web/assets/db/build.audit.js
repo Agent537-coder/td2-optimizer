@@ -442,6 +442,18 @@ function combatDependentRows(key,result){
 function combatVisibleRows(key){
  const rows=combatGearRows(key);
  if(COMBAT_LAST)rows.push(...combatDependentRows(key,COMBAT_LAST));
+ /* 档位层（震荡 / 猎头者 / 头痛欲裂 / A8 亡者手牌…）的入参**不走 `gear_rules`**：它们在
+    `evalBuild()` 里由 `talTierAttrs()` 按所选档位塞进 `picks.attrs`。这里把同一份行补进来，
+    否则面板会把「已经喂进引擎」的天赋误报成「未进 DPS」（2026-11-03 用户据此以为完美震荡没计入）。 */
+ if(!rows.length&&typeof TAL_TIER_FAMILIES!=='undefined'&&typeof talTierKeys==='function'){
+  const fam=TAL_TIER_FAMILIES.find(f=>talTierKeys(f).indexOf(key)>=0);
+  if(fam&&!combatBlocked(fam.family)){
+   const list=talTierRows(fam,!!state.bp.pvp);
+   const cur=state.bp.tiers[fam.id]||(list.find(x=>x.id!=='off'&&x.rows&&x.rows.length)||{}).id||'off';
+   const band=list.find(b=>b.id===cur);
+   if(band&&Array.isArray(band.rows))rows.push(...band.rows);
+  }
+ }
  return rows;
 }
 function combatApplyMagRefill(result,weapon,params,tal){

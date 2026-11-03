@@ -1,4 +1,4 @@
-/* Share the existing build snapshot. Calculation and local save formats stay native. */
+﻿/* Share the existing build snapshot. Calculation and local save formats stay native. */
 const BUILD_DRAFT_KEY='agenthub:build-draft:v1';
 function buildShareLibrary(file,key){
   if(window[key])return Promise.resolve(window[key]);
@@ -129,7 +129,7 @@ async function buildShareRestoreFromUrl(){
 /* 图片顶部的「关键数值条」（用户 2026-11-03：「保存图片没有数值」）。
    数字一律**读页面上结果面板的成品文本**（`#v_*`），不在导出路径里重算 —— 图与页永远同源。
    顺序按「先看输出、再看防御」排；值为 0 或取不到（`—`）的不印（用户：0% 的直接筛掉）。 */
-const SHARE_STAT_KEYS=['dps','dpm','bullet','rpm','chc','chd','hsd','armor','health','elites','hazard'];
+const SHARE_STAT_KEYS=['dps','dpm','bullet','nexthit','rpm','chc','chd','hsd','armor','health','elites','hazard'];
 function buildShareStats(){
   const defs={};
   RCELLS.concat(STATCELLS).forEach(([k,zh,,role])=>{defs[k]=[zh[0],role||'dmg'];});

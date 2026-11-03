@@ -4,6 +4,20 @@
 
 当前回归测试37项通过、12项失败，详见 [已知问题](VALIDATION.md)。
 
+## 与主仓的关系（2026-11-03 定）
+
+配装器有两个仓库，多人并行改，分工固定：
+
+| 仓库 | 分支 | 角色 |
+|---|---|---|
+| **本仓** `td2-optimizer` | `codex/development` | **功能开发与评审源**：配装页 / 引擎 / 优化器的改动先在这里提交、评审、跑回归 |
+| `td2-qa-monitor` | `codex/consolidated-20261014` | **线上真源**：`web/**` 就是部署内容 |
+
+- 功能提交只落本仓；主仓只提同步提交，标题 `sync from td2-optimizer@<hash>`，正文写清带了哪些文件、版本戳变化、线上替换与验证。
+- 同一处不要两边各改一版；同步前用 `git diff --no-index --ignore-cr-at-eol` 逐文件比两边。
+- `build.*` 约定 **LF**。本仓 `.gitattributes` 是 `* -text`，编辑器或脚本改写可能把整文件翻成 CRLF —— 提交前看 `git diff --numstat`，出现整文件行数级增删就是换行翻转，别当成内容改动。
+- 当前台账：本仓 `2dfa7ce` ↔ 主仓 `bad6793`，线上配装页 `v=354`。
+
 ## 从哪里开始看
 
 - **看页面或改交互**：先运行下面的页面，再读 [代码导航](docs/CODEMAP.md)，从 `web/dashboard_build.html` 的加载顺序入手。

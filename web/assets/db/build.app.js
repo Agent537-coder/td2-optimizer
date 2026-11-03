@@ -64,6 +64,10 @@ const RCELLS=[
   ['move',['移动速度 %','Move %'],'MovementSpeed','rate'],
   ['repairfrom',['伤害转回复 %','Damage to repair %'],'DamageToRepair','def'],
   ['nextshots',['接下来几发伤害 %','Next shots %'],'NextShotsDamage','dmg'],
+  /* 上面那条是「加成百分比」，下面两条才是**触发后的实际命中**（派生值，见 recalc 末尾）。
+     只在有「接下来几发」类增伤时出现，否则显示「—」。 */
+  ['nexthit',['触发时单发','Next-shot DMG'],'NextShotDamage','dmg'],
+  ['nexthead',['触发时爆头','Next-shot headshot'],'NextShotHeadshot','dmg'],
   ['spread',['状态扩散范围','Status spread'],'StatusSpreadRange','rate'],
  ];
 function fillGridLabels(){
@@ -342,10 +346,17 @@ function recalc(){
   $('#r_build').innerHTML=`<b>${esc(nmTxt(w))}</b>${wNames?' · '+esc(wNames):''} · ${gcount}/6 ${esc(L('装备','gear'))} · ${exN} ${esc(L('奇特','exotic'))} · ${modN} ${esc(L('插件','mods'))} · ${tierN} ${esc(L('加成档','tiers'))}
     <span class="bpb">${bpRowHtml(r)}</span>`;
   $('#v_dps').textContent=fmt0(r.DPS); $('#v_dpm').textContent=fmt0(r.DPM); $('#v_sdps').textContent=fmt0(r.SDPS);
+  /* 「接下来几发」类增伤（A8「亡者手牌」等）：引擎只**记录** `NextShotsDamage`，命中公式不消费它
+     ⇒ 单发 / 弹匣 / DPS 里永远看不到这个加成（2026-11-03 用户报「A8 套装天赋没有计入」的根因）。
+     这里用同一份引擎记录派生「触发时单发」，公式层零改动；没触发就保持空，不拿 0 顶替。 */
+  r.NextShotDamage=(isFinite(+r.NextShotsDamage)&&+r.NextShotsDamage>0&&isFinite(+r.BulletDamage))
+    ? +r.BulletDamage*(1+ +r.NextShotsDamage/100) : null;
+  r.NextShotHeadshot=(isFinite(+r.NextShotsDamage)&&+r.NextShotsDamage>0&&isFinite(+r.Headshot_Hit))
+    ? +r.Headshot_Hit*(1+ +r.NextShotsDamage/100) : null;
   RCELLS.concat(STATCELLS).forEach(([k, , ekey])=>{
     const el=$('#v_'+k); if(!el)return;
     const v=r[ekey];
-    el.textContent=(k==='reload')?fmt2(v):(k==='bullet'||k==='panel'||k==='armor'||k==='health'||k==='rpm'||k==='mag')?fmt0(v):fmtN(v);
+    el.textContent=(k==='reload')?fmt2(v):(k==='bullet'||k==='panel'||k==='armor'||k==='health'||k==='rpm'||k==='mag'||k==='nexthit'||k==='nexthead')?fmt0(v):fmtN(v);
   });
   $('#r_hits').innerHTML=hitsHtml(r);
   COMBAT_LAST=r;renderAgentPanel(gathered);
