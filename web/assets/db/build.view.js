@@ -44,7 +44,11 @@ let WEAPON_EMBED_TALENTS=null;
 function weaponEmbedTalents(){
   if(WEAPON_EMBED_TALENTS)return WEAPON_EMBED_TALENTS;
   const m={};
-  arr(DB.weapons).forEach(w=>{const tt=w&&w.talent;if(tt&&tt.key)m[tt.key]=1;});
+  /* 只有**具名 / 奇特**枪上挂着的那条天赋才算「件内嵌专属」。2026-11-03 修：
+     原来把**任何**枪 `w.talent` 的 key 都记进来，而库里 CTAR-21（40 级强化版）、PDR（里程碑版）这类
+     **普通枪**也带固定天赋，于是「乐天派」「维护保存」被判成专属 ⇒ 从所有枪的候选池里消失，
+     搜名字返回空列表（用户复现）。普通枪自带的只是普通天赋，仍然可给别的枪挑。 */
+  arr(DB.weapons).forEach(w=>{const tt=w&&w.talent;if(tt&&tt.key&&(w.named||w.exotic||w.kind==='named'||w.kind==='exotic'))m[tt.key]=1;});
   arr(DB.talents_official).forEach(t=>{if(t&&t.kind==='exotic'&&t.key)m[t.key]=1;});
   WEAPON_EMBED_TALENTS=m;return m;
 }
@@ -448,8 +452,11 @@ function gearAffixBlock(i,it){
 }
 function listKindForCode(code,q){
   for(const f of AFFIX_FAM_ORDER)if(affixPoolCodes(f,q).indexOf(code)>=0)return f;
-  /* 随机池查不到再查固定/具名槽的判族表（只给图标上色，不影响候选池）；两表都没有才留空槽 */
-  return FIXED_AFFIX_FAM[code]||'';
+  /* 随机池查不到再查固定/具名槽的判族表（只给图标上色，不影响候选池）；两表都没有才留空槽。
+     2026-11-03 补：具名件自带的「特定武器伤害」也走攻击色（张牙舞爪的「手枪伤害 9%」原来落空槽），
+     判据复用 `isWeaponClassAffix`（它本来就是「这类 code 不进随机池」的那条白名单），不另写正则。 */
+  if(FIXED_AFFIX_FAM[code])return FIXED_AFFIX_FAM[code];
+  return isWeaponClassAffix(code,'')?'off':'';
 }
 /* 该件所在「品牌 / 装备组 × 部位」组里共有几件（点品牌块是填代表件，想指定另一件就走这里给的入口） */
 function gearGroupKey(it){
@@ -457,10 +464,24 @@ function gearGroupKey(it){
   if(it.kind==='gearset')return it.set_code?'set:'+it.set_code:'';
   return it.brand_code?'brand:'+it.brand_code:'';
 }
+/* 同名组里「这一行要不要出现」的唯一判据（列表 / 块网格 / 件数都读它）：
+   —— 已穿的那件**永远出现**（旧存档可能正好指向变体，列表里看不到就会以为丢了）；
+   —— 若已穿的偏偏不是代表件，则同组的代表件**让位**，避免同组又冒两条；
+   —— 其余情况只留代表件。 */
+function gearRowVisible(x,curRaw){
+  if(!x)return false;
+  if(curRaw==null)return gearIsRepresentative(x);
+  if(x.raw===curRaw)return true;
+  const cur=GEAR_MAP[curRaw];
+  /* ⚠️ 只有「已穿的这件偏偏是变体」时才让同组的代表件让位；**别的组仍按代表件判**。
+     （早先这行漏了 `gearIsRepresentative(x)` 后半句：身上只要有一件变体，整张列表就退化成不过滤。） */
+  if(cur&&!gearIsRepresentative(cur))return gearIsRepresentative(x)&&!gearSameGroup(x,cur);
+  return gearIsRepresentative(x);
+}
 function gearSwapCount(it){
   const key=gearGroupKey(it);if(!key||it.kind==='named'||it.kind==='exotic')return 0;
   let n=0;
-  for(let k=0;k<GEAR.length;k++){const x=GEAR[k];if(!x||x.slot_idx!==it.slot_idx)continue;if(gearGroupKey(x)===key)n++;}
+  for(let k=0;k<GEAR.length;k++){const x=GEAR[k];if(!x||x.slot_idx!==it.slot_idx)continue;if(!gearIsRepresentative(x))continue;if(gearGroupKey(x)===key)n++;}
   return n>1?n:0;
 }
 function renderGear(){
@@ -941,6 +962,7 @@ let DLG_ROWS=[];
   const g={brand:[],set:[],named:[],exotic:[]};
   for(let k=0;k<GEAR.length;k++){
     const x=GEAR[k];if(!x||x.slot_idx!==d.slot)continue;
+    if(!gearRowVisible(x,state.slots[d.slot]))continue;                  // 同名变体只留一份（已穿那件优先，判据见 gearRowVisible）
     if(x.kind==='named'){g.named.push({key:'raw:'+x.raw,zh:nmTxt(x),icon:x.gear_icon||'',n:1});continue;}
     if(x.kind==='exotic'){g.exotic.push({key:'raw:'+x.raw,zh:nmTxt(x),icon:x.gear_icon||'',n:1});continue;}
     const key=gearGroupKey(x);if(!key)continue;
@@ -986,6 +1008,7 @@ function gearFillFromKey(slot,key,source){
 function gearRepRaw(slot,key){
   for(let k=0;k<GEAR.length;k++){
     const x=GEAR[k];if(!x||x.slot_idx!==slot)continue;
+    if(!gearIsRepresentative(x))continue;          // 填的也是同名组里的代表件，与列表里看到的一致
     if(gearGroupKey(x)===key)return x.raw;
   }
   return null;
@@ -1067,6 +1090,7 @@ function gearFacets(d){
   const m={};
   for(let k=0;k<GEAR.length;k++){
     const x=GEAR[k];if(!x||x.slot_idx!==d.slot)continue;
+    if(!gearRowVisible(x,state.slots[d.slot]))continue;                  // 件数与列表同口径：同组只数一次
     if(d.gkind&&x.kind!==d.gkind)continue;
     const key=wantSet?(x.set_code?'set:'+x.set_code:''):(x.brand_code?'brand:'+x.brand_code:'');
     if(!key)continue;
@@ -1197,6 +1221,7 @@ function renderDlgList(){
     for(let k=0;k<GEAR.length;k++){
       const x=GEAR[k];if(!x)continue;
       if(x.slot_idx!==d.slot)continue;                                  // 只按官方 slot 字段所在部位出条目（buildGear 已按 G_SLOTID 顺序聚合）
+      if(!gearRowVisible(x,curId))continue;                                // 同名变体折叠成一件；已穿那件永远列出（判据见 gearRowVisible）
       if(d.gkind&&x.kind!==d.gkind)continue;
       if(d.sub){                                                        // 品牌 / 装备组细分（第二行维度）
         const key=(d.gkind==='gearset')?(x.set_code?'set:'+x.set_code:''):(x.brand_code?'brand:'+x.brand_code:'');

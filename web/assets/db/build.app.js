@@ -34,6 +34,20 @@ const RCELLS=[
   ['aok',['击杀回甲','Armor on kill'],'ArmorOnKill','def'],
   ['regen',['护甲回复','Armor regen'],'ArmorRegen','def'],
   ['hazard',['危害防护 %','Hazard %'],'HazardProtection','def'],
+  /* 抗性与精英防御（用户 2026-11-03：「属性与加成里少了各个抗性的数值、精英防御的数值」）。
+     引擎早就算好了这些（`engine.js`：`ProtectionFromElites` 封顶 80，七条抗性各自叠加危害防护），
+     面板却只印了「危害防护 %」⇒ 这里按引擎结果字段补齐，取不到仍旧显示「—」（不拿 0 顶替）。
+     ⚠️ 只读 `r[字段]`，不在页面重算；`ProtectionFromElites` 是封顶后的值（原始值另有 `RawProtectionFromElites`）。 */
+  ['elites',['精英防御 %','Elites %'],'ProtectionFromElites','def'],
+  ['resBleed',['出血抗性 %','Bleed resist %'],'BleedResistance','def'],
+  ['resBurn',['燃烧抗性 %','Burn resist %'],'BurnResistance','def'],
+  ['resShock',['电击抗性 %','Shock resist %'],'ShockResistance','def'],
+  ['resBlind',['致盲抗性 %','Blind resist %'],'BlindDeafResistance','def'],
+  ['resDisorient',['混乱抗性 %','Disorient resist %'],'DisorientResistance','def'],
+  ['resDisrupt',['干扰抗性 %','Disrupt resist %'],'DisruptResistance','def'],
+  ['resEnsnare',['诱捕抗性 %','Ensnare resist %'],'EnsnareResistance','def'],
+  ['resExplosive',['爆炸抗性 %','Explosive resist %'],'ExplosiveResistance','def'],
+  ['resPulse',['脉冲抗性 %','Pulse resist %'],'PulseResistance','def'],
   ['skd',['技能伤害 %','Skill damage %'],'SkillDamage','rate'],
   ['skh',['技能加速 %','Skill haste %'],'SkillHaste','rate'],
   ['skdur',['技能持续 %','Skill duration %'],'SkillDuration','rate'],
@@ -876,6 +890,7 @@ document.addEventListener('change',e=>{
 function buildGear(){
   GEAR.length=0;GEAR_ITEMS.length=0;
   for(const k in GEAR_MAP)delete GEAR_MAP[k];
+  resetGearRepSet();                                            // 归一表重建 ⇒ 同名代表件缓存必须同步失效
   const src=Array.isArray(DB.gear)?DB.gear:[];
   for(let si=0;si<G_SLOTID.length;si++){
     for(let i=0;i<src.length;i++){

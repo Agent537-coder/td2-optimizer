@@ -46,3 +46,22 @@ body[data-hub-page=build] .build-share-sheet #ggrid{grid-template-columns:repeat
 .build-account-dialog section>details{grid-column:1/-1}
 .build-account-dialog section>button{justify-self:start}
 .build-record-preview{display:grid;gap:12px;padding:8px 0}
+
+/* ── 导出前选「用哪把武器计算」（build.share.js `buildSharePickWeapon`）──────────────────
+   形态与 `.build-account-dialog` 同一套（panel / line / accent token），不自造第二套弹窗外观。 */
+.build-weapon-pick{width:min(480px,calc(100% - 32px));box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--panel);color:var(--fg);font-family:var(--ff-body,'Noto Sans SC',sans-serif)}
+.build-weapon-pick::backdrop{background:#0008}
+.build-weapon-pick h2{margin:0 0 6px;font-size:17px;line-height:1.35;letter-spacing:0}
+.build-weapon-pick .hint{margin:0 0 14px;font-size:12.5px;line-height:1.6;color:var(--mut)}
+.build-weapon-pick-list{display:grid;gap:8px;margin:0 0 16px}
+.build-weapon-pick-row{display:grid;grid-template-columns:auto 56px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:6px;cursor:var(--cur-hover);box-sizing:border-box}
+.build-weapon-pick-row:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.build-weapon-pick-row input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.build-weapon-pick-row .bwp-slot{font-size:12px;color:var(--mut);white-space:nowrap}
+.build-weapon-pick-row .bwp-name{min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.build-weapon-pick-row .bwp-type{font-size:12px;color:var(--mut);white-space:nowrap}
+.build-weapon-pick-actions{display:flex;justify-content:flex-end;gap:8px}
+.build-weapon-pick-actions button{min-height:44px;min-width:44px;font-size:14px;cursor:var(--cur-hover)}
+/* 导出图里标出「按这把算」的那张武器卡（抬头另有一行文字） */
+.build-share-sheet .wcard.filled.share-calc{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:640px){.build-weapon-pick-row{grid-template-columns:auto minmax(0,1fr) auto}.build-weapon-pick-row .bwp-slot{display:none}}

@@ -601,11 +601,18 @@ function talentPvpDiff(t){
   return a.length!==b.length||a.some((v,i)=>v!==b[i]);
 }
 
-/* 同名同枪族只留一条主条目（用户 2026-10-19：「配装器里有重复武器」——帕坎两条、火种六条…）。
+/* 显示名归一：去掉「复制品 / 复刻版 / Replica」这类**同一把枪的派生写法**，只用于去重分组，不改显示。
+   2026-11-03：分组键改成 (归一显示名, 枪型) —— 旧键带 `family`，而同一把枪的变体常被分到不同 family
+   （`军规 P416` = `pof416` / `start`），键不同就折叠不掉，列表里仍是两条（用户实测）。 */
+function normItemName(o){
+  const s=String((o&&(o.zh||o.name||o.en))||'');
+  return s.replace(/\s*(复制品|复刻版|Replica)\s*$/i,'').replace(/\s+/g,' ').trim().toLowerCase();
+}
+/* 同名同枪型只留一条主条目（用户 2026-10-19：「配装器里有重复武器」——帕坎两条、火种六条…）。
    口径与重建脚本 `scripts/rebuild/stage02_weapons.py:dedupe_by_name()` 一致：那份脚本给重复项打了
    `variant`/`dup_primary`，但**只做了标记，没删数据**；资料库靠 `SHOWVAR` 默认折叠，配装器原来
    一个都没过滤 ⇒ 同一把枪按不同变体（level30boost / worldtier / dupsuffix / dupname）重复列出。
-   这里按 (family, 显示名) 分组挑一条代表项，判据顺序：
+   这里按 (归一显示名, 枪型) 分组挑一条代表项，判据顺序：
      ① 有主条目（没有 `dup_primary`）→ ② 不是变体 → ③ 有官方满值曲线（配装器要算数）
      → ④ 基础伤害高 → ⑤ 有弹匣
    ⚠️ 只在**展示/候选**层收口，不动 `DB.weapons` 下标：存档与分享链接都按下标存，
@@ -616,7 +623,7 @@ function buildWeaponRepSet(){
   const all=arr(DB.weapons),groups=new Map();
   for(let i=0;i<all.length;i++){
     const w=all[i];if(!w||w.not_in_game)continue;
-    const k=(w.family||'')+'|'+(w.zh||w.en||w.mitem||'');
+    const k=normItemName(w)+'|'+(w.cls||w.type||'');
     let a=groups.get(k);if(!a){a=[];groups.set(k,a);}a.push(i);
   }
   const rank=i=>{const w=all[i];return [w.dup_primary?1:0,w.variant?1:0,w.attrs_max?0:1,-(w.dmg||0),w.mag?0:1];};
@@ -630,4 +637,41 @@ function buildWeaponRepresentative(w){
  const i=arr(DB.weapons).indexOf(w);
  if(i<0)return true;                    // 外来对象（分享存档里的旧件）不拦
  return buildWeaponRepSet().has(i);
+}
+/* 装备侧同名折叠（用户 2026-11-03：「有部分装备重复，我看还有两个尖兵」）。
+   数据层里同名的确是两件：`player_gear_chest_b_01_named` 与 `..._named_charlie`（后者 `variant:dupsuffix`），
+   中英名 / 品牌 / 部位 / 品质全同 —— 官方只是给同一件留了两个变体行。资料库靠 `SHOWVAR` 折叠，
+   配装器一直没有对应机制 ⇒ 胸甲候选 136 行里有 7 组同名（单薄的防弹衣 ×3、哈内斯克装甲 ×3…），
+   整库名称+部位重复 35 组。
+   分组键 = (归一显示名, 部位, 类别)；挑代表件顺序：
+     ① 没有 `variant` → ② 不是 `dup_primary` → ③ 有官方满值曲线 → ④ 核心值高 → ⑤ 原始下标小。
+   ⚠️ 只过滤**展示/候选**，不删 `DB.gear`：存档存的是原始下标，删/移会让旧配装静默指向别件。 */
+let GREP=null;
+function resetGearRepSet(){GREP=null;}
+/* 同名判据：归一显示名 + 部位 + 类别（列表、块网格、计数、代表件共用这一条） */
+function gearDedupeKey(it){return it?(normItemName(it)+'|'+it.slot_idx+'|'+it.kind):'';}
+function gearSameGroup(a,b){return !!a&&!!b&&gearDedupeKey(a)===gearDedupeKey(b);}
+function buildGearRepSet(){
+  if(GREP)return GREP;
+  const raw=i=>arr(DB.gear)[i]||{};
+  const coreVal=it=>{
+    const c=arr(it.attrs_max&&it.attrs_max.slots).filter(s=>s&&s.kind==='core'&&s.val!=null)[0];
+    return c?+(+c.val):0;
+  };
+  const groups=new Map();
+  for(const it of GEAR){
+    if(!it)continue;
+    const k=gearDedupeKey(it);
+    let a=groups.get(k);if(!a){a=[];groups.set(k,a);}a.push(it);
+  }
+  const rank=it=>{const r=raw(it.raw);return [r.variant?1:0,r.dup_primary?1:0,it.attrs_max?0:1,-coreVal(it),it.raw];};
+  const cmp=(a,b)=>{const ra=rank(a),rb=rank(b);for(let i=0;i<ra.length;i++)if(ra[i]!==rb[i])return ra[i]-rb[i];return 0;};
+  GREP=new Set();
+  for(const a of groups.values()){a.sort(cmp);GREP.add(a[0].raw);}
+  return GREP;
+}
+/* 该件是不是同名组里的代表件（选择器/块网格/计数都读这一条判据，别各写一套） */
+function gearIsRepresentative(it){
+  if(!it||it.raw==null)return true;      // 外来对象（分享存档里的旧件）不拦
+  return buildGearRepSet().has(it.raw);
 }

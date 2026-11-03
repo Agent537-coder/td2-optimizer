@@ -129,10 +129,13 @@ async function buildShareRestoreFromUrl(){
 function buildShareSheet(){
   const sheet=document.createElement('section');sheet.className='build-share-sheet';sheet.setAttribute('aria-hidden','true');
   const header=document.createElement('header'),brand=document.createElement('strong'),site=document.createElement('span');brand.textContent='AGENT HUB';site.textContent='agenthub.fans';
-  /* 名称与条件收到抬头同一行：品牌 / 配装名 · 条件 / 站点，省掉标题占的那一行高度。 */
+  /* 名称与条件收到抬头同一行：品牌 / 配装名 · 条件 / 站点，省掉标题占的那一行高度。
+     2026-11-03：条件行里补「用哪把武器计算」——导出前用户可选（`buildSharePickWeapon`），
+     不写在图上就说不清这些数字是按哪把枪算的。 */
   const preview=buildSharePreview()||{},ctx=preview.context||{},en=LANG==='en';
   const spec=ctx.specialization?(en?(ctx.specialization.en||ctx.specialization.zh):(ctx.specialization.zh||ctx.specialization.en)):'';
-  const cond=[ctx.mode==='PvP'?'PvP':'PvE',spec,ctx.prototype?L('原型','Prototype'):''].filter(Boolean).join(' · ');
+  const calc=state.wslots[state.wactive]==null?null:arr(DB.weapons)[state.wslots[state.wactive]];
+  const cond=[ctx.mode==='PvP'?'PvP':'PvE',spec,ctx.prototype?L('原型','Prototype'):'',calc?L('计算','Calc')+' · '+nmTxt(calc):''].filter(Boolean).join(' · ');
   const mid=document.createElement('div');mid.className='share-head-mid';
   const name=document.createElement('strong');name.className='share-name';name.textContent=buildAccountCurrent?.name||L('我的配装','My build');
   const condEl=document.createElement('span');condEl.className='share-cond';condEl.textContent=cond;
@@ -144,10 +147,50 @@ function buildShareSheet(){
   const moved=[];
   const take=(sel,parent)=>{const el=document.querySelector(sel);if(!el)return null;moved.push({el,parent:el.parentNode,next:el.nextSibling});parent.append(el);return el;};
   take('#wstrip',body);take('#ggrid',body);take('#skstrip',body);
+  /* 计算用的那把枪在图上也要能一眼认出来（抬头有文字，卡上再描一圈） */
+  const calcCard=body.querySelector('#wstrip .wcard.filled.on');
+  if(calcCard)calcCard.classList.add('share-calc');
   sheet._moved=moved;
   sheet.style.width='1200px';
   sheet.append(header,body);
   return sheet;
+}
+/* 导出前选「用哪把武器计算」（用户 2026-11-03）。列已装的武器槽；只有一把就免问。
+   返回 Promise<槽位号|null>：数字=选定，null=取消（不出图）。
+   ⚠️ 选定后写的是 `state.wactive`（与点卡片左上徽标同一动作），不是附件域的临时变量 ——
+      否则「图按 A 算、页面按 B 算」，而保存下来的配装也会跟着变，用户看着就是两套数。 */
+function buildSharePickWeapon(){
+  const list=state.wslots.map((id,i)=>({slot:i,w:id==null?null:arr(DB.weapons)[id]})).filter(x=>x.w);
+  if(!list.length)return Promise.resolve(null);
+  if(list.length===1)return Promise.resolve(list[0].slot);
+  return new Promise(resolve=>{
+    const cur=(state.wactive>=0&&list.some(x=>x.slot===state.wactive))?state.wactive:list[0].slot;
+    const dlg=document.createElement('dialog');
+    dlg.className='build-weapon-pick';
+    dlg.setAttribute('aria-labelledby','build-weapon-pick-title');
+    dlg.innerHTML='<h2 id="build-weapon-pick-title">'+esc(L('用哪把武器计算？','Which weapon to calculate with?'))+'</h2>'
+      +'<p class="hint">'+esc(L('图片按这把武器的数值计算，并在抬头标注。','The image uses this weapon and labels it at the top.'))+'</p>'
+      +'<div class="build-weapon-pick-list" role="radiogroup" aria-labelledby="build-weapon-pick-title">'
+      +list.map(({slot,w})=>'<label class="build-weapon-pick-row"><input type="radio" name="build-weapon-pick" value="'+slot+'"'+(slot===cur?' checked':'')+'>'
+          +'<span class="bwp-slot">'+esc(L(W_SLOTS[slot][0],W_SLOTS[slot][1]))+'</span>'
+          +'<span class="bwp-name">'+esc(nmTxt(w))+'</span>'
+          +'<span class="bwp-type">'+esc(L(w.type||'',w.type_en||w.type||''))+'</span></label>').join('')
+      +'</div>'
+      +'<div class="build-weapon-pick-actions"><button type="button" class="mini" data-bwp-cancel>'+esc(L('取消','Cancel'))+'</button>'
+      +'<button type="button" class="mini primary" data-bwp-ok>'+esc(L('导出图片','Export image'))+'</button></div>';
+    document.body.append(dlg);
+    let done=false;
+    const finish=v=>{if(done)return;done=true;try{if(dlg.open)dlg.close();}catch(e){}dlg.remove();resolve(v);};
+    dlg.querySelector('[data-bwp-cancel]').addEventListener('click',()=>finish(null));
+    dlg.querySelector('[data-bwp-ok]').addEventListener('click',()=>{
+      const r=dlg.querySelector('input[name="build-weapon-pick"]:checked');
+      finish(r?+r.value:null);
+    });
+    dlg.addEventListener('cancel',e=>{e.preventDefault();finish(null);});
+    dlg.addEventListener('click',e=>{if(e.target===dlg)finish(null);});
+    dlg.showModal();
+    dlg.querySelector('input:checked')?.focus({preventScroll:true});
+  });
 }
 async function buildSharePng(){
   const lib=await buildShareLibrary('html-to-image-1.11.13.js','htmlToImage'),sheet=buildShareSheet();
@@ -157,12 +200,24 @@ async function buildSharePng(){
 }
 async function buildShareAction(kind){
   if(!buildShareSelected()){buildShareNotice(L('先选择武器或装备，再分享配装。','Choose a weapon or gear before sharing.'));return;}
+  /* 出图前先问「用哪把计算」：这一步会改 `state.wactive`，所以必须在渲染稿子/截图**之前**完成，
+     中间只要再 `renderAll()` 一次，卡片上的徽标、面板数字与抬头标注才会是同一把枪。 */
+  let calcSlot=null;
+  if(kind==='image'){
+    calcSlot=await buildSharePickWeapon();
+    if(calcSlot==null){buildShareNotice('');return;}
+  }
   const buttons=[...document.querySelectorAll('[data-build-share]')];buttons.forEach(x=>x.disabled=true);
   buildShareNotice(L('正在准备配装…','Preparing build…'));
+  const calcName=calcSlot==null?'':nmTxt(arr(DB.weapons)[state.wslots[calcSlot]]||{});
   try{
     if(kind==='image'){
+      if(state.wactive!==calcSlot){
+        state.wactive=calcSlot;renderAll();
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      }
       const png=await buildSharePng(),a=document.createElement('a');a.href=png;a.download='agenthub-build.png';a.click();
-      buildShareNotice(L('配装图片已导出。','Build image exported.'));
+      buildShareNotice(calcName?L('配装图片已导出（按 '+calcName+' 计算）。','Build image exported (calculated with '+calcName+').'):L('配装图片已导出。','Build image exported.'));
     }else{
       const url=await buildShareUrl();
       if(kind==='link'){
