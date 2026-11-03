@@ -1,4 +1,4 @@
-/* 配装器页 · 装备天赋档位层：随**配装**出现的档位/条件型天赋（猎头者、土狼面具…），
+﻿/* 配装器页 · 装备天赋档位层：随**配装**出现的档位/条件型天赋（猎头者、土狼面具…），
    把档位换算成与词条同一条通路的引擎入参。
    ───────────────────────────────────────────────────────────────────────────────
    为什么单开一层：这批天赋的数值不落在件上、也不是固定加成，而是**按配装 + 战场状态选一档**
@@ -79,6 +79,14 @@ const TAL_TIER_FAMILIES=[
      {id:'avg',zh:'平均（5 张牌 1 发）',en:'Averaged (1 in 5 shots)',dist:['',''],use:['value'],mul:0.2},
      {id:'four',zh:'铁支（4 发受益）',en:'Four of a Kind (4 shots)',dist:['',''],use:['value'],mul:0.8},
      {id:'hit',zh:'本枪已触发',en:'Triggered this shot',dist:['',''],use:['value'],mul:1},
+   ]},
+  {id:'calculated',family:'talent_weapon_half_ammo_lowers_fire_rate_increases_weapon_damage',
+   /* 精密计算（武器天赋）：官方 P0..P3 = 前半段 +25% 射速 / -25% 武器伤害；后半段 -18% 射速 / +30% 总武器伤害。
+      两段互斥（由弹匣位置决定），所以做成可选档而不是相加；默认落在「后半段」。 */
+   bands:[
+     {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
+     {id:'back',zh:'弹匣后半段（+30% 总武器伤）',en:'Back half (+30% total)',dist:['',''],use:['back_half_weapon_damage_change','back_half_RPM_change']},
+     {id:'first',zh:'弹匣前半段（-25% 武器伤）',en:'First half (-25% weapon dmg)',dist:['',''],use:['first_half_weapon_damage_change','first_half_RPM_change']},
    ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
@@ -189,6 +197,13 @@ function talTierAttrName(fam,suf){
   /* 亡者手牌（A8 4pc）：翻牌后的下一枪增伤，进「总武器伤害」乘区。
      触发口径由档位自己的 `mul` 决定（平均 / 铁支 / 本枪），本函数只认字段。 */
   if(fam.id==='acesandeights'&&suf==='value')return 'TotalWeaponDamage';
+  /* 精密计算（武器天赋）：弹匣前半段是「+射速 / −武器伤害（平铺）」，后半段是「−射速 / +总武器伤害（乘区）」。
+     两段互斥，用档位选其一；字段按官方文案的「武器伤害」vs「总武器伤害」分开，不合并。 */
+  if(fam.id==='calculated'){
+    if(suf.indexOf('RPM_change')>=0)return 'RateOfFire';
+    if(suf.indexOf('back_half_weapon_damage_change')>=0)return 'TotalWeaponDamage';
+    if(suf.indexOf('first_half_weapon_damage_change')>=0)return 'AllWeaponDamage';
+  }
   return null;
 }
 /* 档位的距离区间（米）。门槛本身也是官方参数（`distance_threshold_*`）⇒ 现算；
@@ -265,10 +280,17 @@ function talTierSetUnlocked(fam){
 function talTierInPlay(){
   const out=[];
   const picked=gtalInPlay().map(x=>x.key);
+  /* ④ **生效武器上的天赋**（2026-11-03 补）：武器天赋（精密计算 / 疯狂…）既不在件上、也不进 `gtal`，
+     判据只能是「当前用于计算的那把枪带的是哪条」——固定天赋优先，其次是用户在这一槽选的天赋。 */
+  const wa=state.wactive>=0?state.wslots[state.wactive]:null;
+  const w=wa==null?null:arr(DB.weapons)[wa];
+  const wtal=w?((typeof weaponFixedTalent==='function'&&weaponFixedTalent(w))||TALENTS[state.talents[state.wactive]]||null):null;
+  const wtalKey=wtal&&wtal.key?String(wtal.key):'';
   for(const fam of TAL_TIER_FAMILIES){
     const ks=talTierKeys(fam);if(!ks.length)continue;
     const hit=ks.some(k=>gearHasTalent(k))||talTierSetUnlocked(fam)
-      ||picked.some(p=>p&&ks.some(k=>k===p||k.indexOf(p)===0));
+      ||picked.some(p=>p&&ks.some(k=>k===p||k.indexOf(p)===0))
+      ||(wtalKey&&ks.some(k=>k===wtalKey||wtalKey.indexOf(k)===0));
     if(hit)out.push(fam);
   }
   return out;
