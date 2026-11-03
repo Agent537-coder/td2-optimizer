@@ -245,8 +245,16 @@ body[data-hub-page=build] #build-item-editor .build-editor-mod .modblk{min-heigh
 .build-editor-head h2{display:flex;align-items:center;gap:12px;margin:0;color:var(--fg);font:600 22px/1.45 var(--ff-body)}
 .build-editor-head h2 .gc-slot-icon{width:30px;height:30px}
 .build-editor-head h2>span{overflow-wrap:anywhere;min-width:0}
-.build-editor-kind{color:var(--rar-exotic);font-size:14px;line-height:1.5;margin:14px 0}
-.build-editor-change{min-height:44px;font:13px var(--ff-body);border:0;background:transparent;color:var(--accent);padding:0;text-align:left}
+/* 装备抽屉卡头第三行：类别 · 部位（左）+「更换装备」（右）。
+   原来「更换装备」是 border:0 / background:transparent / text-align:left 的纯文字，
+   看起来跟正文一样，用户 2026-11-03「不显眼，看不出是入口」⇒ 改成次按钮 + 换装图标，与「应用」主按钮同一行体系。 */
+.build-editor-sub{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0}
+.build-editor-kind{color:var(--rar-exotic);font-size:14px;line-height:1.5;margin:0}
+.build-editor-change{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:600 13px/1.4 var(--ff-body);cursor:var(--cur-hover);flex:none}
+/* 换装字形用 mask 画（官方图标集里没有「更换」），颜色随 currentColor ⇒ 深浅主题都跟着文字走 */
+.build-editor-change::before{content:'';width:16px;height:16px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 8h13l-3-3M20 16H7l3 3' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 8h13l-3-3M20 16H7l3 3' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+@media(hover:hover){.build-editor-change:hover{border-color:var(--accent);color:var(--accent)}}
+.build-editor-change:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .build-editor-fields h3,.build-editor-mod h3{margin:20px 0 8px;font:600 16px/1.45 var(--ff-body)}
 .build-editor-field{display:grid;grid-template-columns:100px minmax(0,1fr);gap:16px;align-items:center;margin:0 0 16px}
 .build-editor-field>span{font:14px/1.5 var(--ff-body);color:var(--mut)}
