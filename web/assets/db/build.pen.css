@@ -1,4 +1,4 @@
-﻿/* Approved Pen mLXAp / qSebX: grid, density and current-item editor. */
+/* Approved Pen mLXAp / qSebX: grid, density and current-item editor. */
 /* ⚠️ 行号从 2 起（2026-10-12）：`#build-wip` 那条开发状态提示要占**第 1 行整宽**，
    而 grid 的自动排布给不了它 —— 跨栏项必须等两栏都空出来，会被挤到隐式第 4 行（实测 top=882，
    在 900 高的视口里正好掉到折叠线下面、PC 上完全看不见）。所以把原 1/2/3 统一后移一行，
@@ -370,7 +370,11 @@ body[data-hub-page=build] #build-conditions-dialog #fold_cond>summary{display:no
  #build-toolbar #build-save{background:none;color:var(--accent);padding:0}
  #build-toolbar #build-save svg{display:block}
  #build-toolbar #build-more-menu{display:none}
- body[data-hub-page=build] #build-quick{display:grid;grid-template-columns:88px auto minmax(0,1fr);gap:8px;margin:0 0 8px;padding:0;border:0}
+ /* 手机档的快捷条：4 个可见控件（战斗条件在这一档隐藏）+「卡片风格」。
+    2026-11-03 修：原来写死 `88px auto minmax(0,1fr)` 三列 —— 那是 11-02 加「卡片风格」之前的排法，
+    第 4 个控件会掉到第二行第一列、只剩 88px，标签和值挤在一起（站长截图点名「切换卡片样式的框显示异常」）。
+    现在两列等宽：模式｜原型 / 专长｜卡片风格，四个格子同宽，都放得下「标签 + 值 + 箭头」。 */
+ body[data-hub-page=build] #build-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px;padding:0;border:0}
  body[data-hub-page=build] #build-quick>#build-spec-menu{grid-column:auto;grid-row:auto}
  body[data-hub-page=build] #build-quick>.build-quick-control{font-size:12px}
  body[data-hub-page=build] #build-quick>label.build-quick-control,#build-quick #build-spec-menu>summary{padding:0 8px;gap:4px}
