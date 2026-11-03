@@ -42,7 +42,12 @@ function buildSharePreview(){
 }
 function buildShareDocument(){
   const saved=JSON.parse(JSON.stringify(snapshot()));delete saved.opt;delete saved.folds;
-  return {v:1,build:saved,preview:buildSharePreview(),items:{
+  /* ⚠️ 不再把 `preview` 塞进链接（2026-11-03）：那是一份**纯派生**的展示快照
+     （名字 / 英文名 / 图标路径 / 排版好的词条文字 / 稀有度），接收端在 `renderSharedPreview()`
+     里本来就用 `buildSharePreview()` 现算，**没有任何地方读回 `doc.preview`**。
+     实测同一套配装：带 preview 的 JSON 3857 字符 → LZ 压完 2804；去掉后 1463 → 1105，
+     链接直接短掉 61%。旧链接里多出来的 `preview` 键会被忽略，向后兼容。 */
+  return {v:1,build:saved,items:{
     weapons:state.wslots.map(i=>buildShareIdentity(DB.weapons[i])),
     gear:state.slots.map(i=>buildShareIdentity(DB.gear[i])),
     talents:state.talents.map(i=>TALENTS[i]?.key||null),
