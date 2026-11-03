@@ -63,6 +63,23 @@ const TAL_TIER_FAMILIES=[
       use:['mid_crit_damage_bonus','mid_crit_chance_bonus']},
      {id:'far',zh:'远',en:'Far',dist:[{code:'distance_threshold_far'},''],use:['far_crit_chance_bonus']},
    ]},
+  {id:'acesandeights',family:'talent_gearset_acesandeights_5piece',
+   /* 亡者手牌（A8 4 件套）：官方数值 `damageBonus = 75%`（配合胸甲 +25% = 100%），
+      触发节奏也是官方给的：`UI_baseCardsFlipped = 5` ⇒ 翻 5 张牌才触发一次，
+      `4ofakind = 4` ⇒ 铁支那一手有 4 发吃到加成（葫芦 3 发 / 对A对8 2 发，见天赋文案）。
+      ⚠️ 这是**下一枪**增伤，不进整匣常驻：`mul` 给的是折算口径，用户自己选档，
+        **不写死一个方案**（站长 2026-11-03：「把触发的条件写进配装器，不要定死一个方案」）。
+         · 平均（5 张牌 1 发）：75% × 1/5 = 15%
+         · 铁支（4 发受益）：75% × 4/5 = 60%
+         · 本枪已触发：75%（带胸甲 25% 时 100%）
+      系数只在这里，页面/引擎不写数字。 */
+   paramKey:'talent_gearset_acesandeights_warlock_damageBonus',
+   bands:[
+     {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
+     {id:'avg',zh:'平均（5 张牌 1 发）',en:'Averaged (1 in 5 shots)',dist:['',''],use:['value'],mul:0.2},
+     {id:'four',zh:'铁支（4 发受益）',en:'Four of a Kind (4 shots)',dist:['',''],use:['value'],mul:0.8},
+     {id:'hit',zh:'本枪已触发',en:'Triggered this shot',dist:['',''],use:['value'],mul:1},
+   ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
 function talTierKeys(fam){
@@ -90,7 +107,7 @@ function talTierTalent(fam){
 }
 /* 官方参数：按代号后缀片段取（**带 P<n>** 的参数位才算参数；同名不带参数位的行是别的天赋串进来的，跳过）。
    返回 {片段: 数值}；PvP 模式下官方给了 PvP 数值就用 PvP 的。 */
-function talTierParams(t,on,style){
+function talTierParams(t,on,style,fam){
   const out={};
   for(const b of talentBonusOf(t,on)){
     const c=String((b&&b.code)||'');
@@ -112,6 +129,14 @@ function talTierParams(t,on,style){
       if(isFinite(v))out[c.slice(key.length+1)]=v;
     }
   }
+  /* `paramKey` 族：参数位的**完整代号**与天赋 key 不同前缀（A8 亡者手牌：天赋 key 是
+     `talent_gearset_acesandeights_5piece`，数值行却是 `..._warlock_damageBonus`）⇒ 只能按完整代号取，
+     统一收进 `out.value`。取不到就让整档作废（返回 null），不猜。 */
+  if(fam&&fam.paramKey){
+    const hit=talentBonusOf(t,on).find(b=>b&&String(b.code||'')===fam.paramKey);
+    const v=hit?(hit.value!=null?+hit.value:NaN):NaN;
+    if(isFinite(v))out.value=v;
+  }
   return out;
 }
 /* 按片段取参数：先全等、再「以该片段结尾」（官方后缀偶有 `_ui` / `_value` 这类尾巴） */
@@ -127,10 +152,15 @@ function talTierAttrs(fam,bandId,on){
   if(!band||!band.use.length)return [];
   const t=talTierTalent(fam);if(!t)return null;
   const style=fam.keyed?'keyed':'';
-  const p=talTierParams(t,on,style),rows=[];
+  const p=talTierParams(t,on,style,fam),rows=[];
+  /* 档位自带的折算系数：同一份官方数值在不同触发口径下按比例折算
+     （A8「平均 1/5 枪」= ×0.2、「铁支 4 发」= ×0.8、「本枪」= ×1）。
+     系数只写在家族表的 `mul` 上，本层不写任何游戏数字。 */
+  const mul=(band.mul==null)?1:+band.mul;
   for(const suf of band.use){
-    const v=talTierParam(p,suf);
-    if(v==null||!isFinite(v))return null;
+    const raw=talTierParam(p,suf);
+    if(raw==null||!isFinite(raw))return null;
+    const v=raw*mul;
     /* 代号后缀 → 引擎字段名：后缀里的 `crit_damage`/`crit_chance`/`cap` 是**语义词**，不是展示名；
        官方展示名（`attr_zh`）对这批参数位是空的，所以只能按后缀判 —— 每个分支都要给依据。 */
     const nm=talTierAttrName(fam,suf);
@@ -156,13 +186,16 @@ function talTierAttrName(fam,suf){
   if(fam.id==='concussion'&&suf.indexOf('damage_increase')>=0)return 'TotalWeaponDamage';
   /* 头痛欲裂（大炮 4 件套）：下一枪爆头独立增伤，只乘爆头本体，不进爆头伤词条。 */
   if(fam.id==='headache'&&suf.indexOf('headshot_damage_bonus')>=0)return 'AmplifyDamage_Headshot';
+  /* 亡者手牌（A8 4pc）：翻牌后的下一枪增伤，进「总武器伤害」乘区。
+     触发口径由档位自己的 `mul` 决定（平均 / 铁支 / 本枪），本函数只认字段。 */
+  if(fam.id==='acesandeights'&&suf==='value')return 'TotalWeaponDamage';
   return null;
 }
 /* 档位的距离区间（米）。门槛本身也是官方参数（`distance_threshold_*`）⇒ 现算；
    取不到就给 null（面板据此不写这段，不拿 0 顶替）。`''` = 该端无界。 */
 function talTierBandDist(fam,band,on){
   const t=talTierTalent(fam);if(!t)return null;
-  const p=talTierParams(t,on,fam.keyed?'keyed':'');
+  const p=talTierParams(t,on,fam.keyed?'keyed':'',fam);
   const one=d=>{
     if(d==='')return '';
     if(d&&typeof d==='object'&&d.code){const v=talTierParam(p,d.code);return (v==null||!isFinite(v))?null:v;}
