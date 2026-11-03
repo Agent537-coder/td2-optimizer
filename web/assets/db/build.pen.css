@@ -574,14 +574,20 @@ body[data-hub-page=build] .wcard.filled .wc-titleline .wc-name{flex:0 1 auto;pad
 
 /* ── 卡片渐变开关（build.layout.js `paintCardGrad` 写 body[data-hub-cardgrad]，20261102 用户）──
    off 时：①取消两卡整卡渐变底（::before 不画，左侧 3px 色带与顶条 .topbar 稀有度色带不动）；
-   ②品牌图标换右上角小徽标（30×28 原色图，47a5ae0 口径）。两态各自独立制作：开启态 = `.gc-main`
+   ②品牌图标换右上角小徽标（30×28）。两态各自独立制作：开启态 = `.gc-main`
    大水印（pen.css 中段原档不动），关闭态 = 卡头 `.gc-wm-badge`，开关属性互斥显隐、不互相改位置。
+   ⚠️ 徽标**必须走 mask + 主题色**（`background:var(--fg)`），不能直接 `background:var(--wm)`：
+      官方品牌图是**白色线稿**，浅色主题下白底白图 = 整颗徽标消失（用户 2026-11-03「浅色没反转吧」）。
+      这与 `.gc-main>.gc-wm` 的 dark/light 两条同源做法，但用 `--fg` 一条覆盖两主题，不再各写一份。
    小徽标档需 dark/light 各写一条：`.gc-main>.gc-wm` 默认档的 light 变体多一个 `[data-theme]` 属性权重，
    单条无主题前缀的 off 规则在浅色主题下压不过它（真机实测）。 */
 body[data-hub-cardgrad=off] .wcard::before,
 body[data-hub-cardgrad=off] .gcard::before{display:none}
 body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-main>.gc-wm{display:none}
-body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd>.gc-wm-badge,[data-theme=light] body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd>.gc-wm-badge{display:block;position:absolute;left:auto;right:0;top:0;bottom:auto;width:30px;height:28px;opacity:.65;background:var(--wm) center/contain no-repeat;-webkit-mask:none;mask:none;z-index:2}
+body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd>.gc-wm-badge,[data-theme=light] body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd>.gc-wm-badge{display:block;position:absolute;left:auto;right:0;top:0;bottom:auto;width:30px;height:28px;opacity:.55;background:var(--fg);-webkit-mask:var(--wm) center/contain no-repeat;mask:var(--wm) center/contain no-repeat;z-index:2}
+/* 徽标是绝对定位 ⇒ 名称会顶到它下面（浅色真机实测：长名「TacLite 战术背心」直接压到 5.11 上）。
+   有徽标的卡在卡头右侧留出 34px（30 + 4 间距）；没有品牌图的卡不占位。 */
+body[data-hub-cardgrad=off] #ggrid .build-gear-card .gc-hd:has(>.gc-wm-badge)>.gc-lbl{padding-right:34px}
 
 /* 武器名+类型图标右移避开左上角标（用户 20261102：靠太近）：v408 把行 padding 重写为 `5px 4px` 时把
    原 `padding-left:22px` 避让口径（`pen.css:117`/`:510`）一并压掉了，图标实际左探进角标 6px。

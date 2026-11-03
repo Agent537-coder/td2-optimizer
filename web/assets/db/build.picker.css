@@ -34,10 +34,13 @@ html body[data-hub-page=build] #dlg.build-picker>.build-picker-workspace{display
 #dlg.build-picker :is(.prow,.gtile){position:relative;transform:none;transition:background-color .1s ease,border-color .1s ease,color .1s ease;box-shadow:none}
 #dlg.build-picker .prow.on{border-color:var(--line);background:var(--card)}
 #dlg.build-picker .picker-mark{font:400 11px/1.4 var(--ff-body);color:var(--mut);white-space:nowrap;align-self:center;flex:none;background:none;border:0;padding:0}
-#dlg.build-picker .gtile{min-height:92px;gap:6px;flex-wrap:wrap;border-color:var(--line)}
+#dlg.build-picker .gtile{min-height:76px;gap:6px;flex-wrap:wrap;border-color:var(--line)}
 #dlg.build-picker .dlg-bar input[type=search]{flex:1;min-width:0;width:100%;max-width:none;min-height:44px;box-sizing:border-box}
 #picker-candidate-heading:focus{outline:none}
-#dlg.build-picker .gtile .picker-mark{display:block;width:100%;text-align:center}
+/* 块网格不再整行列「查看」（点一下就是填入，没有详情这一步）：只有「已装备」留一颗右上角 ✓ 角标。 */
+#dlg.build-picker .gtile .picker-mark{display:none}
+#dlg.build-picker .gtile .picker-mark.picker-corner{display:block;position:absolute;right:5px;bottom:5px;top:auto;width:16px;height:16px;padding:0;border-radius:999px;border:0;background:var(--accent);color:var(--bg);font-size:10px;line-height:16px;text-align:center}
+#dlg.build-picker .gtile.picker-equipped{border-color:var(--accent)}
 #dlg.build-picker :is(.prow,.gtile).picker-selected{background:var(--fg);border-color:var(--fg);color:var(--bg);box-shadow:none}
 #dlg.build-picker .picker-selected :is(.wname,.walt,.wsub,.wstats,.wstats b,.pk-tal,.gn,.picker-mark){color:inherit}
 #dlg.build-picker :is(.prow,.gtile):focus-visible,#dlg.build-picker button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

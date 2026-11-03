@@ -46,7 +46,20 @@ function buildPickerRows(){
   const equipped=!!(current===info.id||(info.group&&!info.group.startsWith('raw:')&&gearGroupKey(gearOf(d.slot))===info.group));
   el.classList.toggle('picker-selected',selected);el.classList.toggle('picker-equipped',equipped);el.setAttribute('aria-pressed',String(selected));
   el.dataset.pickerId=String(info.id);
-  let mark=el.querySelector('.picker-mark,.badge');if(!mark){mark=document.createElement('span');el.append(mark);}mark.className='picker-mark';
+  /* 块网格（`gfill`）点一下就是「填入该部位」，没有「先看详情再决定」这一步 ⇒ 不再给每块印「查看」
+     （2026-11-03 用户：整墙都是查看，看着信息很少）。只保留「已装备」这颗小角标。 */
+  const wall=el.dataset.act==='gfill';
+  let mark=el.querySelector('.picker-mark,.badge');
+  if(wall&&!equipped){if(mark)mark.remove();return;}
+  if(!mark){mark=document.createElement('span');el.append(mark);}
+  if(wall){
+    /* 角标只留一颗「✓」（文字会压住 120px 宽的块），语义走 aria-label；已装备块另加描边。 */
+    mark.className='picker-mark picker-corner';
+    mark.textContent='✓';
+    mark.setAttribute('aria-label',L('已装备','Equipped'));
+    return;
+  }
+  mark.className='picker-mark';
   mark.textContent=equipped?L('已装备','Equipped'):selected?L('待应用','Pending'):L('查看','Details');
   if(selected&&equipped)mark.textContent=L('已装备 · 已选','Equipped · Selected');
  });
