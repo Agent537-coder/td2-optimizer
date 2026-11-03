@@ -1117,6 +1117,10 @@ function applySaved(raw){
      档位表必须是对象，避免被旧包里的字符串/数组污染后静默失效。 */
   if(!Object.prototype.hasOwnProperty.call(OPT_SCENE_PROFILES,state.bp.scene))state.bp.scene='pve_solo';
   if(!state.bp.condTier||typeof state.bp.condTier!=='object'||Array.isArray(state.bp.condTier))state.bp.condTier={};
+  /* 旧存档可能带着 `condTier: 'half'`——那是**旧默认值**留下的（当时界面上没有这个开关，
+     用户从没选过）。2026-11-03 起默认改成「满值」，所以载入时丢掉 half，
+     只保留用户真正表达过的 off / full；要半程就重新在「检查效果」里选。 */
+  Object.keys(state.bp.condTier).forEach(k=>{if(state.bp.condTier[k]==='half')delete state.bp.condTier[k];});
   if(!OPT_SKILL_TIERS[state.bp.player_skill_tier])state.bp.player_skill_tier='normal';
   if(state.bp.stance!=='stationary')state.bp.stance='mobile';
   state.bp.sp=Object.fromEntries(BP_WT.map(([k])=>[k,raw.bp?.spMode==='all-default-v1'?state.bp.sp?.[k]!==false:true]));
