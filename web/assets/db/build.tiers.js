@@ -117,6 +117,16 @@ const TAL_TIER_FAMILIES=[
      {id:'mid',zh:'中距（15–25m · 轻机枪/突击步枪）',en:'Mid (15–25m · LMG/AR)',dist:[{code:'mid_range_distance_1'},{code:'mid_range_distance_2'}],use:['mid_range_damage_increase'],weaponTypes:['轻机枪','突击步枪']},
      {id:'long',zh:'远距（>25m · 步枪/射手步枪）',en:'Long (>25m · rifle/MMR)',dist:[{code:'long_range_distance'},''],use:['long_range_damage_increase'],weaponTypes:['步枪','射手步枪']},
    ]},
+  {id:'unstoppable',family:'talent_chest_kills_increase_weapon_damage_based_on_armor',
+   /* 无人能挡的力量 / 完美无人能挡的力量（胸甲 / 背包件天赋）：击杀后每层 +5%（完美 7%）总武器伤害。
+      官方参数位只给了每层数值与持续时间，**没有给层数上限**（文案里的 {2} 位对的是持续时间 = 15，
+      占位符对不上）⇒ 层数交给用户填（1..5，默认 1），不替官方编一个上限。
+      完美版数值由官方 `_perfect` 行自动取用（7%），脚本不写数字。 */
+   stackLabel:['层数','Stacks'],stackMax:5,stackDefault:1,
+   bands:[
+     {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
+     {id:'on',zh:'击杀后（按层数）',en:'After kill (per stack)',dist:['',''],use:['weapon_damage'],perStack:true},
+   ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
 function talTierKeys(fam){
@@ -259,6 +269,8 @@ function talTierAttrName(fam,suf){
   if(fam.id==='bewildered'&&suf==='value')return 'TotalWeaponDamage';
   /* 多才多艺 / 完美多变：换枪后按「枪型 × 距离」给**武器伤害**（平铺区，不是总武器伤害乘区）。 */
   if(fam.id==='versatile'&&suf.indexOf('range_damage_increase')>=0)return 'AllWeaponDamage';
+  /* 无人能挡的力量 / 完美版：击杀后按层数增加**总武器伤害**（官方文案「增加 {0}% 的总武器伤害」）。 */
+  if(fam.id==='unstoppable'&&suf==='weapon_damage')return 'TotalWeaponDamage';
   if(fam.id==='frenzy'){
     if(suf.indexOf('RPM_increase')>=0)return 'RateOfFire';
     if(suf.indexOf('damage_increase')>=0)return 'AllWeaponDamage';
