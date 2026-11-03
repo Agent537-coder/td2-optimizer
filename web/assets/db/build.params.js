@@ -199,7 +199,8 @@ function renderParams(){
     /* 层数型档位（疯狂…）：当前档带 `perStack` 时给一个层数输入，上限=弹匣/官方间隔。 */
     const curBand=arr(fam.bands).find(z=>z.id===cur)||{};
     const st=curBand.perStack?talTierStacks(fam):null;
-    const stackBox=st?'<label class="bptier-stack">'+esc(L('层数','Stacks'))+'<input type="number" min="1" max="'+st.max+'" step="1" data-act="bptierstack" data-k="'+esc(fam.id)+'" value="'+st.cur+'"><span>/ '+st.max+'</span></label>':'';
+    const stackLbl=fam.stackLabel||['层数','Stacks'];
+    const stackBox=st?'<label class="bptier-stack">'+esc(L(stackLbl[0],stackLbl[1]))+'<input type="number" min="1" max="'+st.max+'" step="1" data-act="bptierstack" data-k="'+esc(fam.id)+'" value="'+st.cur+'"><span>/ '+st.max+'</span></label>':'';
     return chips+stackBox;
   }).join('');
   /* **随机词条天赋**原来在这里有一个手选入口（`#bp_gtal`）—— 已删除，理由见上：

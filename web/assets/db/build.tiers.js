@@ -98,6 +98,15 @@ const TAL_TIER_FAMILIES=[
      {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
      {id:'on',zh:'空仓换弹后（按层数）',en:'After empty reload (per stack)',dist:['',''],use:['damage_increase','RPM_increase'],perStack:true},
    ]},
+  {id:'bewildered',family:'talent_kneepads_turmoil_bewildered',
+   /* 迷惑（动荡护膝）：官方 `percent_damage_to_transfer = 50%`，把对一名敌人的武器伤害转 50% 给附近另一名。
+      转移几个目标官方没给 ⇒ 目标数输入（1..3），默认 1。 */
+   paramKey:'talent_kneepads_bewildered_percent_damage_to_transfer',
+   stackLabel:['转移目标','Targets'],stackMax:3,stackDefault:1,
+   bands:[
+     {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
+     {id:'on',zh:'转移给附近敌人（按目标数）',en:'Transfer to nearby (per target)',dist:['',''],use:['value'],perStack:true},
+   ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
 function talTierKeys(fam){
@@ -171,6 +180,15 @@ function talTierStacks(fam){
   const t=talTierTalent(fam);if(!t)return null;
   const p=talTierParams(t,!!state.bp.pvp,fam.keyed?'keyed':'',fam);
   /* paramKey 取到的值统一落在 p.value 上（见 talTierParams）；没给 paramKey 时按 stackInterval 的后缀取。 */
+  /* 手动目标数（`stackMax`）：旗帜飘扬 / 迷惑这类「波及 / 转移给几个目标」的档位，
+     目标数不能从武器推出来 ⇒ 给一个 1..stackMax 的输入，默认 stackDefault（不写死 1 之外的值）。 */
+  if(fam.stackMax){
+    const max=Math.max(1,Math.floor(+fam.stackMax||1));
+    const saved=state.bp&&state.bp.tierStacks&&state.bp.tierStacks[fam.id];
+    const dflt=Math.max(1,Math.min(max,Math.floor(+fam.stackDefault||1)));
+    const cur=Number.isFinite(+saved)?Math.max(1,Math.min(max,Math.floor(+saved))):dflt;
+    return {cur,max};
+  }
   const interval=talTierParam(p,fam.paramKey?'value':(fam.stackInterval||'magazine_interval'));
   const w=arr(DB.weapons)[state.wslots[state.wactive]],mag=w?+w.mag:0;
   if(!(interval>0)||!(mag>0))return null;
@@ -227,6 +245,8 @@ function talTierAttrName(fam,suf){
   if(fam.id==='acesandeights'&&suf==='value')return 'TotalWeaponDamage';
   /* 疯狂（轻机枪）：空仓换弹后每 N 发 1 层，每层 +3% 武器伤害 / +3% 射速（官方 P0/P1）。
      层数由 `perStack` 乘上去，字段用「武器伤害」平铺区，不是总武器伤害乘区。 */
+  /* 迷惑（动荡护膝）：把对一名敌人的武器伤害转 50% 给附近另一名 ⇒ 按「转移目标数」合计进总武器伤害乘区。 */
+  if(fam.id==='bewildered'&&suf==='value')return 'TotalWeaponDamage';
   if(fam.id==='frenzy'){
     if(suf.indexOf('RPM_increase')>=0)return 'RateOfFire';
     if(suf.indexOf('damage_increase')>=0)return 'AllWeaponDamage';
