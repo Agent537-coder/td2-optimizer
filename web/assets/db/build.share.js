@@ -126,6 +126,63 @@ async function buildShareRestoreFromUrl(){
     };box.appendChild(button);
   }catch(e){box.textContent=L('配装链接无效或已不兼容；现有配装已保留。','This build link is invalid or incompatible; your existing build is unchanged.');}
 }
+/* 图片顶部的「关键数值条」（用户 2026-11-03：「保存图片没有数值」）。
+   数字一律**读页面上结果面板的成品文本**（`#v_*`），不在导出路径里重算 —— 图与页永远同源。
+   顺序按「先看输出、再看防御」排；值为 0 或取不到（`—`）的不印（用户：0% 的直接筛掉）。 */
+const SHARE_STAT_KEYS=['dps','dpm','bullet','rpm','chc','chd','hsd','armor','health','elites','hazard'];
+function buildShareStats(){
+  const defs={};
+  RCELLS.concat(STATCELLS).forEach(([k,zh,,role])=>{defs[k]=[zh[0],role||'dmg'];});
+  const out=[];
+  for(const k of SHARE_STAT_KEYS){
+    const el=document.getElementById('v_'+k);if(!el)continue;
+    const raw=String(el.textContent||'').trim();
+    if(!raw||raw==='—')continue;
+    const num=Number(raw.replace(/[^0-9.-]/g,''));
+    if(!isFinite(num)||num===0)continue;
+    const [label,role]=defs[k]||[k,'dmg'];
+    const pct=/\s*%/.test(label);
+    out.push({label:label.replace(/\s*%/,''),value:raw+(pct?'%':''),role});
+  }
+  return out;
+}
+/* 图片里不印空行：0 / `—` / 「未选择」这类在页面上是**编辑入口**，印到图上只是噪声。
+   同时把空槽的行动号召文案换成陈述（「选择瞄具」→「无」，「选择装备」→「未装备」）。 */
+function buildShareCleanSheet(root){
+  const empty=(v)=>/^(|—|-|0(\.0+)?%?)$/.test(String(v||'').trim());
+  root.querySelectorAll('#ggrid .build-gear-attr, #wstrip .wax-row').forEach((row)=>{
+    const b=row.querySelector('b');
+    if(!b||empty(b.textContent)){row.remove();return;}
+    if(/未选择/.test(row.textContent||''))row.remove();
+  });
+  /* 空配件槽 / 该枪没有这个槽（unavailable）整行去掉：图里只剩「无」或裸图标，像没做完。
+     四槽都空时不再留一块空白，改印一行「配件 · 未装」，卡高不变、也不空。 */
+  root.querySelectorAll('#wstrip .wmod-row.empty, #wstrip .wmod-row.unavailable').forEach((row)=>row.remove());
+  root.querySelectorAll('#wstrip .wc-mod').forEach((mod)=>{
+    if(mod.querySelector('.wmod-row'))return;
+    mod.textContent='';
+    mod.classList.add('share-mod-none');
+    mod.textContent=L('配件 · 未装','Mods · none');
+  });
+  /* 技能位没选时把行动号召换成陈述 */
+  root.querySelectorAll('#skstrip *').forEach((el)=>{
+    if(!el.children.length&&/点击选择/.test(el.textContent||''))el.textContent=L('未装备','Empty');
+  });
+  /* 未设置的操作格（＋ 选择插件 / ＋ 选择原型天赋 / ＋ 天赋）在图上不占位：
+     它们是页面上的入口，印成图以后没有可点性，只会让卡面看起来"没填完"。 */
+  root.querySelectorAll('.modblk.empty, .taltx.empty, .tal-reserve, .build-gear-prototype.empty, #wstrip .prototype-augment.empty').forEach((el)=>el.remove());
+  root.querySelectorAll('.gc-ft').forEach((ft)=>{ if(!ft.textContent.trim())ft.remove(); });
+  root.querySelectorAll('#wstrip .wc-talrow').forEach((row)=>{
+    const n=row.querySelector('.wc-tal-name');
+    if(n&&/选择/.test(n.textContent||''))n.textContent=L('无天赋','No talent');
+  });
+  root.querySelectorAll('.build-gear-summary').forEach((box)=>{ if(!box.children.length)box.remove(); });
+  root.querySelectorAll('.wcard.empty, .gcard:not(.filled)').forEach((card)=>{
+    card.querySelectorAll('.wc-stats,.build-gear-empty,.wc-empty').forEach((el)=>{
+      el.textContent=L('未装备','Empty');
+    });
+  });
+}
 function buildShareSheet(){
   const sheet=document.createElement('section');sheet.className='build-share-sheet';sheet.setAttribute('aria-hidden','true');
   const header=document.createElement('header'),brand=document.createElement('strong'),site=document.createElement('span');brand.textContent='AGENT HUB';site.textContent='agenthub.fans';
@@ -141,18 +198,34 @@ function buildShareSheet(){
   const condEl=document.createElement('span');condEl.className='share-cond';condEl.textContent=cond;
   mid.append(name,condEl);
   header.append(brand,mid,site);
+  /* 关键数值条 */
+  const stats=buildShareStats();
+  let statsBox=null;
+  if(stats.length){
+    statsBox=document.createElement('div');statsBox.className='share-stats';
+    stats.forEach((s)=>{
+      const cell=document.createElement('div');cell.className='share-stat';
+      const k=document.createElement('span');k.textContent=s.label;
+      const v=document.createElement('b');v.className='r-'+(s.role||'dmg');v.textContent=s.value;
+      cell.append(k,v);statsBox.append(cell);
+    });
+  }
   /* 分享图与配装页同一套卡片、同一排列：武器一行三张 → 装备三列 → 技能一行两张。
-     只去掉「武器／装备／技能」分节标题和它们的间距；宽度固定 1200，避免长条。 */
+     只去掉「武器／装备／技能」分节标题和它们的间距；宽度固定 1200，避免长条。
+     ⚠️ 2026-11-03 起用**克隆**而不是把真节点搬进稿子：导出前要删空行、换文案，
+        搬真节点会把页面上的行一起删掉（导出后页面空了一片）。 */
   const body=document.createElement('div');body.className='build-share-body';
-  const moved=[];
-  const take=(sel,parent)=>{const el=document.querySelector(sel);if(!el)return null;moved.push({el,parent:el.parentNode,next:el.nextSibling});parent.append(el);return el;};
-  take('#wstrip',body);take('#ggrid',body);take('#skstrip',body);
+  ['#wstrip','#ggrid','#skstrip'].forEach((sel)=>{
+    const src=document.querySelector(sel);if(src)body.append(src.cloneNode(true));
+  });
   /* 计算用的那把枪在图上也要能一眼认出来（抬头有文字，卡上再描一圈） */
   const calcCard=body.querySelector('#wstrip .wcard.filled.on');
   if(calcCard)calcCard.classList.add('share-calc');
-  sheet._moved=moved;
+  buildShareCleanSheet(body);
   sheet.style.width='1200px';
-  sheet.append(header,body);
+  sheet.append(header);
+  if(statsBox)sheet.append(statsBox);
+  sheet.append(body);
   return sheet;
 }
 /* 导出前选「用哪把武器计算」（用户 2026-11-03）。列已装的武器槽；只有一把就免问。

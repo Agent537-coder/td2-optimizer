@@ -93,12 +93,26 @@ const FIXED_AFFIX_FAM={
   WeaponRangeOptimalModBonus:'uti',               /* 有效射程 */
   WeaponMeleeDamageDefaultModBonus:'off',         /* 近战伤害 */
   ArmorOnKillModBonus:'def',                      /* 击杀时回复装甲 */
+  /* 2026-11-03 补：把「同族但 code 写法不同」的固定词条补齐（用户报「御前护卫的装甲回复没有蓝色标志」）。
+     判据仍是语义，不是猜：武器操控类（稳定度 / 装弹速度 / 威胁度）跟上面四条的黄同档；
+     技能生命、护盾生命、受到修复属效能；其余攻击向的见 `listKindForCode` 的变体归一与族规则。 */
+  WeaponRecoilKickModBonus:'uti',                 /* 稳定度 */
+  WeaponReloadTimeMSModBonus:'uti',               /* 装弹速度 */
+  WeaponThreatPerBulletNegativeModBonus:'uti',    /* 降低威胁度 */
+  allskills_health_mod_Bonus:'uti',               /* 技能生命值 */
+  shield_platform_health_mod_Bonus:'uti',         /* 护盾生命值 */
+  IncomingHealingModBonus:'uti',                  /* 受到修复 */
+  DamageDoneToArmorModBonus:'off',                /* 对装甲的伤害 */
+  WeaponDamageMultiplierHealthModBonus:'off',     /* 生命值伤害 */
+  TargetOutOfCoverDamageDefaultModBonus:'off',    /* 对离开掩体目标的伤害 */
 };
-/* 「特定武器伤害」族（以及武器伤害/装甲/技能分阶这类核心专属）—— 一律不许出现在装备随机池里 */
+/* 「特定武器伤害」族（以及武器伤害/装甲/技能分阶这类核心专属）—— 一律不许出现在装备随机池里。
+   ⚠️ 2026-11-03：code 侧原来只认缩写（AR/SMG/…），而官方解包用的是全称
+   （`AssaultRifleDamageModBonus` / `RifleDamageModBonus`）⇒ 半自动步枪与突击步枪伤害一直判不出族。 */
 function isWeaponClassAffix(code,name){
   const n=String(name||'').trim();
   if(/^(突击步枪|步枪|射手步枪|狙击步枪|冲锋枪|轻机枪|霰弹枪|手枪)(伤害|Damage)$/.test(n))return true;
-  return /^(AR|SMG|LMG|Shotgun|MarksmanRifle|SniperRifle|Pistol)Damage/.test(String(code||''));
+  return /^(AR|SMG|LMG|Shotgun|MarksmanRifle|SniperRifle|Pistol|AssaultRifle|Rifle)Damage/.test(String(code||''));
 }
 /* 该件品质档能不能取到这条属性的官方满值（取不到就不摆上界面 —— 宁缺毋滥，不拿 0 顶替） */
 function poolRowOf(code,q){

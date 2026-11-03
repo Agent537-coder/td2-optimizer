@@ -451,12 +451,21 @@ function gearAffixBlock(i,it){
   return `<div class="axblk">${core}${other}${rows}${prototypeAugmentHtml(i)}</div>`;
 }
 function listKindForCode(code,q){
-  for(const f of AFFIX_FAM_ORDER)if(affixPoolCodes(f,q).indexOf(code)>=0)return f;
+  const c=String(code||'');
+  const inPool=(x)=>{for(const f of AFFIX_FAM_ORDER)if(affixPoolCodes(f,q).indexOf(x)>=0)return f;return '';};
+  const direct=inPool(c);if(direct)return direct;
   /* 随机池查不到再查固定/具名槽的判族表（只给图标上色，不影响候选池）；两表都没有才留空槽。
      2026-11-03 补：具名件自带的「特定武器伤害」也走攻击色（张牙舞爪的「手枪伤害 9%」原来落空槽），
      判据复用 `isWeaponClassAffix`（它本来就是「这类 code 不进随机池」的那条白名单），不另写正则。 */
-  if(FIXED_AFFIX_FAM[code])return FIXED_AFFIX_FAM[code];
-  return isWeaponClassAffix(code,'')?'off':'';
+  if(FIXED_AFFIX_FAM[c])return FIXED_AFFIX_FAM[c];
+  /* 变体归一：同一个属性的官方写法带后缀差异（`…DefaultFlatBonus` / `…ModBonus` / 两者叠加），
+     例如 `WeaponCriticalHitChanceDefaultFlatBonus`、`ArmorRegenFlatBonusModBonus`。
+     原样查池查不到 ⇒ 去后缀再查一次，仍查不到才交给族规则。这一条覆盖了库里 15 个同族变体 code
+     （2026-11-03 全库审核：固定词条 42 种 code，其中 18 种原来判不出族）。 */
+  const variants=[c.replace(/Default/g,''),c.replace(/ModBonus$/,''),c.replace(/Default/g,'').replace(/ModBonus$/,'')];
+  for(const v of variants){if(!v||v===c)continue;const f=inPool(v);if(f)return f;}
+  if(isWeaponClassAffix(c,''))return 'off';
+  return '';
 }
 /* 该件所在「品牌 / 装备组 × 部位」组里共有几件（点品牌块是填代表件，想指定另一件就走这里给的入口） */
 function gearGroupKey(it){
