@@ -64,6 +64,9 @@ const TAL_TIER_FAMILIES=[
      {id:'far',zh:'远',en:'Far',dist:[{code:'distance_threshold_far'},''],use:['far_crit_chance_bonus']},
    ]},
   {id:'acesandeights',family:'talent_gearset_acesandeights_5piece',
+   /* 默认档：本枪已触发。站长 2026-11-03：面板的「单发 / 爆头」要和游戏里满 buff 那一枪对得上，
+      平均折算另有「平均（5 张牌 1 发）」档可选，供看持续 DPS 时用。 */
+   defaultBand:'hit',
    /* 亡者手牌（A8 4 件套）：官方数值 `damageBonus = 75%`（配合胸甲 +25% = 100%），
       触发节奏也是官方给的：`UI_baseCardsFlipped = 5` ⇒ 翻 5 张牌才触发一次，
       `4ofakind = 4` ⇒ 铁支那一手有 4 发吃到加成（葫芦 3 发 / 对A对8 2 发，见天赋文案）。

@@ -31,11 +31,15 @@ function optCondTalent(key){
   if(OPT_COND_RE.test(desc))return true;
   return arr(t.bonus).some(b=>b&&OPT_COND_PARAM_RE.test(String(b.code||'')));
 }
-/* 档位：默认 half（半程）。`state.bp.condTier` 里显式写了就按写的。 */
+/* 档位：**默认 full（满值）**。
+   ⚠️ 2026-11-03 改：原默认 half（半程覆盖率）。站长指出「单发/爆头是满 buff 那一枪的数，
+   凭什么默认打折」——面板要能和游戏里的数对得上，所以默认给满值；
+   想要保守的实战估计，在「检查效果」里把某条改成「半程」或「不计入」即可。
+   优化搜索仍按自己的口径（它在自己的上下文里显式写 condTier）。 */
 function optCondTier(key){
   const m=state.bp&&state.bp.condTier;
   const v=m&&m[key];
-  return v==='off'||v==='full'?v:'half';
+  return v==='off'||v==='half'?v:'full';
 }
 /* 覆盖率：每条条件型天赋单独判，不用统一 0.5 —— 用户 2026-10-23
    「黑名单场上多名敌人我未必打得到，算一半已经夸张；制胜的覆盖率比它高多了，基本常驻」。
@@ -420,7 +424,7 @@ function renderCombatAudit(){
   const amount=supported&&e.input?`<label>${esc(L(...e.input.label))}<input type="number" min="0" max="${e.input.max}" step="${e.input.step}" data-combat-amount="${esc(x.key)}" value="${Math.max(0,Math.min(e.input.max,+state.bp.effects?.[x.key]?.amount||0))}"></label>`:'';
  return `<div class="combat-effect"><b>${t?talIcon(t,'tic tic-s'):''}${esc(t?nmTxt(t):x.key)}</b><span>${esc(x.label)} · ${esc(combatStatusText(x.key))}</span>${control}${covCtl}${stack}${amount}${ranges?`<div class="tal-params">${ranges}</div>`:''}${((talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')?('<div class="tal-params">'+(talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')+'</div>'):'')}${e?.note?`<p class="hint">${esc(L(...e.note))}</p>`:''}<details><summary>${esc(L('触发说明','Trigger details'))}</summary><p>${esc(t?talentDescPlain(t,!!state.bp.pvp):'')}</p><a class="build-db-link" href="/db?cat=talents&id=${encodeURIComponent(t?.uid||x.key)}" target="_blank" rel="noopener">${esc(L('查看天赋','View talent'))}</a></details></div>`;
  }).join('');
- box.innerHTML=`<summary>${esc(L('效果与触发条件','Effects & conditions'))} · ${list.length}</summary><div class="combat-presets"><button type="button" data-combat-preset="base">${esc(L('基础对照','Baseline'))}</button><button type="button" data-combat-preset="peak">${esc(L('已支持效果满层','Supported effects at max'))}</button></div><p class="hint">${esc(L('只计算已支持的数值部分。满层是条件快照，不代表持续覆盖；技能伤害及未支持机制不含在输出中。','Only supported numeric components are counted. Maximum stacks are a conditional snapshot, not sustained uptime. Skill damage and unsupported mechanics are excluded.'))}</p>${rows||esc(L('选择装备后显示相关效果','Equip items to see effects'))}${COMBAT_LAST?.ignoredAttrs?.length?`<p class="hint">${esc(L('尚未计算的属性：','Unmodeled attributes: ')+COMBAT_LAST.ignoredAttrs.join(' · '))}</p>`:''}`;
+ box.innerHTML=`<summary>${esc(L('效果与触发条件','Effects & conditions'))} · ${list.length}</summary><div class="combat-presets"><button type="button" data-combat-preset="base">${esc(L('基础对照','Baseline'))}</button><button type="button" data-combat-preset="peak">${esc(L('已支持效果满层','Supported effects at max'))}</button></div><p class="hint">${esc(L('只计算已支持的数值部分。默认按**满值（满 buff 那一枪）**计，便于和游戏里的单发/爆头对上；要看保守的持续估计，把对应天赋的「折算」改成半程或不计入。技能伤害及未支持机制不含在输出中。','Only supported numeric components are counted. Defaults are the **full-value shot** so they match the in-game numbers; switch the coverage of that talent to half or off for a conservative estimate. Skill damage and unsupported mechanics are excluded.'))}</p>${rows||esc(L('选择装备后显示相关效果','Equip items to see effects'))}${COMBAT_LAST?.ignoredAttrs?.length?`<p class="hint">${esc(L('尚未计算的属性：','Unmodeled attributes: ')+COMBAT_LAST.ignoredAttrs.join(' · '))}</p>`:''}`;
  box.open=open;
  for(const x of gtalInPlay()){const b=document.querySelector(`.gcard[data-i="${x.slot}"] .taltx`);if(b){b.dataset.calc=combatGearRows(x.key).length?'on':'off';b.title=combatStatusText(x.key)+' · '+(TALENT_BY_KEY[x.key]?talentDescPlain(TALENT_BY_KEY[x.key],!!state.bp.pvp):'');}}
  const warn=document.getElementById('r_warn');if(warn&&state.wactive>=0){const n=list.filter(x=>!combatParent(x.key)&&!['conditional_component'].includes(combatSupport(x.key).status)).length;warn.innerHTML=`<div class="wnote">${esc(L('当前为所选条件下的武器输出估计；','Weapon output estimate under selected conditions; '))}${n?esc(L(n+' 项效果未计入。',n+' effects not counted.')):''}<button type="button" data-combat-open>${esc(L('检查效果','Review effects'))}</button></div>`;}
