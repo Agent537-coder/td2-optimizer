@@ -184,7 +184,7 @@ function renderParams(){
     const t=talTierTalent(fam),nm=t?(t.zh||t.en||''):'';
     /* 公式被挡的族整族不进引擎：不画档位按钮，也不挂 data-act，避免点了像可选、DPS 却不变。 */
     if(combatBlocked(fam.family))return '<span class="tal-state">'+esc([nm,L('待核验 · 未计入','Needs validation · not counted')].filter(Boolean).join(' '))+'</span>';
-    const rows=talTierRows(fam,!!bp.pvp),cur=bp.tiers[fam.id]||(rows.find(x=>x.id!=='off'&&x.rows&&x.rows.length)||{}).id||'off';
+    const rows=talTierRows(fam,!!bp.pvp),cur=bp.tiers[fam.id]||talTierDefault(fam,rows);
     const chips=rows.map(b=>{
       const band=arr(fam.bands).find(z=>z.id===b.id)||{};
       const d=talTierBandDist(fam,band,!!bp.pvp);

@@ -333,7 +333,7 @@ function combatStatusText(key){
  if(e&&arr(e.rows).some(r=>r.color)){if(!combatEnabled(key))return L('条件关闭','Condition off');return combatGearRows(key).length?L('按已选颜色计入','Counted from selected colors'):L('未选择对应颜色 · 未计入','No matching colors selected · not counted');}
  if(e&&(e.rows?.length||e.cycle)){if(!combatEnabled(key))return L('条件关闭','Condition off');const n=combatLimit(key),current=state.bp.effects?.[key]?.stacks;return n==null?L('数值部分已计入','Numeric component counted'):L('当前层数：','Stacks: ')+Math.min(n,Math.max(0,Number.isFinite(+current)?+current:n))+'/'+n;}
  const fam=arr(TAL_TIER_FAMILIES).find(f=>key&&key.startsWith(f.family));
- if(fam&&!combatBlocked(key)){const rows=talTierRows(fam,!!state.bp.pvp),cur=state.bp.tiers[fam.id]||(rows.find(x=>x.id!=='off'&&x.rows&&x.rows.length)||{}).id||'off';return cur==='off'?L('条件关闭','Condition off'):L('选定档位 · 部分计入','Selected tier · partial');}
+ if(fam&&!combatBlocked(key)){const rows=talTierRows(fam,!!state.bp.pvp),cur=state.bp.tiers[fam.id]||talTierDefault(fam,rows);return cur==='off'?L('条件关闭','Condition off'):L('选定档位 · 部分计入','Selected tier · partial');}
   return combatUnsupportedReason(key);
 }
 function combatUnsupportedReason(key){
@@ -449,7 +449,7 @@ function combatVisibleRows(key){
   const fam=TAL_TIER_FAMILIES.find(f=>talTierKeys(f).indexOf(key)>=0);
   if(fam&&!combatBlocked(fam.family)){
    const list=talTierRows(fam,!!state.bp.pvp);
-   const cur=state.bp.tiers[fam.id]||(list.find(x=>x.id!=='off'&&x.rows&&x.rows.length)||{}).id||'off';
+   const cur=state.bp.tiers[fam.id]||talTierDefault(fam,list);
    const band=list.find(b=>b.id===cur);
    if(band&&Array.isArray(band.rows))rows.push(...band.rows);
   }

@@ -127,6 +127,17 @@ const TAL_TIER_FAMILIES=[
      {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
      {id:'on',zh:'击杀后（按层数）',en:'After kill (per stack)',dist:['',''],use:['weapon_damage'],perStack:true},
    ]},
+  {id:'virtuoso4',family:'talent_gearset_virtuoso_4pc',
+   /* 交响曲（大师 4 件套）：数据层已经按枪型给基础伤害（`*_damage_bonus`）。
+      官方另有 `max_stacks` 与 `final_buff_multiplier = 1.5`：叠满层时那份伤害 ×1.5。
+      这属于「达到层数才生效」的门槛 ⇒ 单独一档，只补多出来的 0.5 倍（父值的 ×0.5），
+      **默认关闭**（不该一穿上就按满层算）。
+      ⚠️ 渐速音（同套装背包）把所需层数 4→3，只改门槛不改数值 ⇒ 本档不额外加数，改动记在盘点里。 */
+   defaultBand:'off',
+   bands:[
+     {id:'off',zh:'未叠满（不计入）',en:'Below max stacks',dist:['',''],use:[]},
+     {id:'max',zh:'叠满层（交响曲 ×1.5）',en:'At max stacks (symphony ×1.5)',dist:['',''],use:[],parentRows:{key:'talent_gearset_virtuoso_4pc',factor:0.5}},
+   ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
 function talTierKeys(fam){
@@ -298,17 +309,32 @@ function talTierBandDist(fam,band,on){
   if(a===null||b===null)return null;
   return [a,b];
 }
+/* 默认档：族里写了 `defaultBand` 就用它（「满层 / 已触发」这类档不该默认打开），
+   否则取第一个有数值的非空档 —— 保证「穿了就看得到」，又不是永远按满层算。 */
+function talTierDefault(fam,rows){
+  if(fam&&fam.defaultBand)return fam.defaultBand;
+  return (arr(rows).find(x=>x.id!=='off'&&x.rows&&x.rows.length)||{}).id||'off';
+}
 /* 一族的全部档位行：返回 [{id,rows}]，rows=null 表示该档取不到官方参数。被挡的族提前返回，不把上限冒充成伤害行。 */
 function talTierRows(fam,on){
   if(combatBlocked(fam.family))return arr(fam.bands).map(b=>({id:b.id,rows:b.use.length?null:[]}));
   return arr(fam.bands).map(b=>{
-    if(!b.use.length)return {id:b.id,rows:[]};
+    if(!b.use.length&&!b.parentRows)return {id:b.id,rows:[]};
     /* 档位级的枪型门槛（多才多艺：冲锋/霰弹近距、轻机枪/突击中距、步枪/射手远距）：
        当前生效武器不在该档的枪型里 ⇒ 该档不出数值（也不参与默认档挑选）。 */
     if(b.weaponTypes&&b.weaponTypes.length){
       const w=arr(DB.weapons)[state.wslots[state.wactive]];
       const wt=w?(w.typeZh||w.type||''):'';
       if(b.weaponTypes.indexOf(wt)<0)return {id:b.id,rows:[]};
+    }
+    /* 门槛型档位：本档的数值 = **另一条规则**（通常是同套装的父天赋）的行 × 系数。
+       例：交响曲叠满层时武器伤害 ×1.5 ⇒ 这一档只补「多出来的 0.5 倍」。
+       父规则的数值仍然由数据层给，本层不写游戏数字。 */
+    if(b.parentRows){
+      const src=combatGearRows(b.parentRows.key);
+      if(!src.length)return {id:b.id,rows:null};
+      const f=(b.parentRows.factor==null)?1:+b.parentRows.factor;
+      return {id:b.id,rows:src.map(r=>({name:r.name,val:r.val*f,unit:r.unit||''}))};
     }
     const rows=talTierAttrs(fam,b.id,on);
     if(!rows)return {id:b.id,rows:null};

@@ -256,7 +256,7 @@ function evalBuildScoped(w,gear,opt){
         // One attainable band per family; never sum mutually exclusive distance/kill bands.
         tierChoices.push({family:fam.id,bands:talTierPeakBands(fam,!!state.bp.pvp,+state.bp.optDistanceM)});
       }else{
-        const band=rows.find(b=>b.id===(tb[fam.id]||(rows.find(x=>x.id!=='off'&&x.rows&&x.rows.length)||{}).id||'off'));
+        const band=rows.find(b=>b.id===(tb[fam.id]||talTierDefault(fam,rows)));
         if(band&&Array.isArray(band.rows))band.rows.forEach(x=>picks.attrs.push({name:x.name,val:+x.val,unit:''}));
       }
     });
