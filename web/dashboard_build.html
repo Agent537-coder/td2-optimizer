@@ -1,24 +1,24 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>配装器 · Agent Hub</title>
 <meta name="description" content="全境封锁2配装计算。结果是当前条件下的枪械弹匣快照，不是实战持续 DPS。The Division 2 build planner. Results are a firearm magazine snapshot, not sustained combat DPS.">
-<link rel="icon" type="image/x-icon" href="/favicon.ico?v=420" sizes="16x16 32x32">
-<link rel="icon" type="image/png" href="/assets/img/favicon.png?v=420" sizes="228x228">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=420">
-<link rel="stylesheet" href="/assets/base.css?v=420">
-<link rel="stylesheet" href="/assets/db/build.css?v=420">
-<link rel="stylesheet" href="/assets/hub.navigation.css?v=420">
-<link rel="stylesheet" href="/assets/hub.experience.css?v=420">
-<link rel="stylesheet" href="/assets/hub.layout.css?v=420">
-<link rel="stylesheet" href="/assets/db/build.layout.css?v=420">
-<link rel="stylesheet" href="/assets/db/build.share.css?v=420">
-<link rel="stylesheet" href="/assets/db/build.card.css?v=420">
-<link rel="stylesheet" href="/assets/mobile.css?v=420">
-<link rel="stylesheet" href="/assets/db/build.pen.css?v=420">
-<link rel="stylesheet" href="/assets/db/build.picker.css?v=420">
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=245" sizes="16x16 32x32">
+<link rel="icon" type="image/png" href="/assets/img/favicon.png?v=245" sizes="228x228">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=245">
+<link rel="stylesheet" href="/assets/base.css?v=374">
+<link rel="stylesheet" href="/assets/db/build.css?v=374">
+<link rel="stylesheet" href="/assets/hub.navigation.css?v=374">
+<link rel="stylesheet" href="/assets/hub.experience.css?v=374">
+<link rel="stylesheet" href="/assets/hub.layout.css?v=374">
+<link rel="stylesheet" href="/assets/db/build.layout.css?v=374">
+<link rel="stylesheet" href="/assets/db/build.share.css?v=374">
+<link rel="stylesheet" href="/assets/db/build.card.css?v=374">
+<link rel="stylesheet" href="/assets/mobile.css?v=374">
+<link rel="stylesheet" href="/assets/db/build.pen.css?v=374">
+<link rel="stylesheet" href="/assets/db/build.picker.css?v=374">
 </head>
 <body>
 <header>
@@ -68,12 +68,14 @@
     </div>
     <details class="card fold build-analysis" id="fold_analysis">
       <summary><span id="h_analysis">伤害分析</span></summary>
-      <div class="sub-lbl" id="l_hitgrid">命中伤害</div>
-      <div class="hitgrid" id="r_hits"></div>
+      <div id="damage_analysis"></div>
+      <div class="analysis-controls" id="analysis_controls"></div>
       <div class="charts">
         <div class="chartbox"><div class="charttl" id="l_chcyc">当前条件的弹匣快照</div><div class="chart" id="ch_cycle"></div><p class="hint tiny" id="ch_cycle_note"></p></div>
         <div class="chartbox"><div class="charttl" id="l_chhit">命中伤害对照</div><div class="chart" id="ch_hits"></div><p class="hint tiny" id="ch_hits_note"></p></div>
       </div>
+      <div class="sub-lbl" id="l_hitgrid">命中伤害</div>
+      <div class="hitgrid" id="r_hits"></div>
     </details>
     <details class="card fold" id="fold_tw">
       <summary><span id="h_tw">手填词条</span></summary>
@@ -167,33 +169,32 @@
 <dialog id="dlgmask"><div id="dlg" data-act="noop"></div></dialog>
 
 <div class="foot" id="foot"></div>
-<script src="/assets/base.js?v=420"></script>
-<script src="/assets/hub.navigation.js?v=420"></script>
-<script src="/assets/db/engine.js?v=420"></script>
-<script src="/assets/db/build.attrs.js?v=420"></script>
-<script src="/assets/db/build.data.js?v=420"></script>
-<script src="/assets/db/build.gtal.js?v=420"></script>
-<script src="/assets/db/build.mods.js?v=420"></script>
-<script src="/assets/db/build.params.js?v=420"></script>
-<script src="/assets/db/build.tiers.js?v=420"></script>
-<script src="/assets/db/build.triggers.js?v=420"></script>
-<script src="/assets/db/build.req.js?v=420"></script>
-<script src="/assets/db/build.links.js?v=420"></script>
-<script src="/assets/db/build.view.js?v=420"></script>
-<script src="/assets/db/build.charts.js?v=420"></script>
-<script src="/assets/db/build.opt.defs.js?v=420"></script>
-<script src="/assets/db/build.opt.cand.js?v=420"></script>
-<script src="/assets/db/build.opt.js?v=420"></script>
-<script src="/assets/db/build.audit.js?v=420"></script>
-<script src="/assets/db/build.specialization.js?v=420"></script>
-<script src="/assets/db/build.picker.js?v=420"></script>
-<script src="/assets/db/build.app.js?v=420"></script>
-<script src="/assets/hub.experience.js?v=420"></script>
-<script src="/assets/db/build.layout.js?v=420"></script>
-<script src="/assets/db/build.account.js?v=420"></script>
-<script src="/assets/db/build.card.js?v=420"></script>
-<script src="/assets/db/build.share.js?v=420"></script>
-<script src="/assets/mobile.js?v=420"></script>
-<script src="/standalone.js"></script>
+<script src="/assets/base.js?v=374"></script>
+<script src="/assets/hub.navigation.js?v=374"></script>
+<script src="/assets/db/engine.js?v=374"></script>
+<script src="/assets/db/build.attrs.js?v=374"></script>
+<script src="/assets/db/build.data.js?v=374"></script>
+<script src="/assets/db/build.gtal.js?v=374"></script>
+<script src="/assets/db/build.mods.js?v=374"></script>
+<script src="/assets/db/build.params.js?v=374"></script>
+<script src="/assets/db/build.tiers.js?v=374"></script>
+<script src="/assets/db/build.triggers.js?v=374"></script>
+<script src="/assets/db/build.req.js?v=374"></script>
+<script src="/assets/db/build.links.js?v=374"></script>
+<script src="/assets/db/build.view.js?v=374"></script>
+<script src="/assets/db/build.charts.js?v=374"></script>
+<script src="/assets/db/build.opt.defs.js?v=374"></script>
+<script src="/assets/db/build.opt.cand.js?v=374"></script>
+<script src="/assets/db/build.opt.js?v=374"></script>
+<script src="/assets/db/build.audit.js?v=374"></script>
+<script src="/assets/db/build.specialization.js?v=374"></script>
+<script src="/assets/db/build.picker.js?v=374"></script>
+<script src="/assets/db/build.app.js?v=374"></script>
+<script src="/assets/hub.experience.js?v=374"></script>
+<script src="/assets/db/build.layout.js?v=374"></script>
+<script src="/assets/db/build.account.js?v=374"></script>
+<script src="/assets/db/build.card.js?v=374"></script>
+<script src="/assets/db/build.share.js?v=374"></script>
+<script src="/assets/mobile.js?v=374"></script>
 </body>
 </html>

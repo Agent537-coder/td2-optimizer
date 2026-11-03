@@ -190,7 +190,7 @@ function initBuildLayout(){
   else{summary.style.order='';rail.prepend(summary);dialog.append(foldCond);foldCond.open=true;}
  };
  /* 「查看条件」只开弹窗：「战斗条件」那块已经常驻在弹窗里，不再跟着「一键配装」一起躲进二级弹窗。 */
- document.getElementById('build-condition-open').onclick=()=>{dialog.showModal();dialog.querySelector('[data-build-close]').focus({preventScroll:true});};dialog.querySelector('[data-build-close]').onclick=()=>dialog.close();
+ document.getElementById('build-condition-open').onclick=()=>{if(narrowDesk.matches){const step=matchMedia('(max-width:760px)').matches&&document.querySelector('#mobile-build-steps [data-step=conditions]');if(step)step.click();else foldCond.scrollIntoView({block:'start'});return;}dialog.showModal();dialog.querySelector('[data-build-close]').focus({preventScroll:true});};dialog.querySelector('[data-build-close]').onclick=()=>dialog.close();
  /* 点外面也要能关（站长：只能点 ✕，而 ✕ 又会滚走）。原生 `<dialog>` 的 `::backdrop` 在
     Chrome/Safari 系会把点击派发到 dialog 本体、Firefox 不派发 ⇒ 用 `pass.app.js:59-63` 那套
     **几何守卫**（target 是 dialog 且坐标落在 rect 外才关），别只判 `target===dialog`：

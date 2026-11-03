@@ -1359,18 +1359,11 @@ function prototypeAugmentHtml(i,kind){
  if(!state.bp.prototype)return '';
  if(kind==='w'){const w=arr(DB.weapons)[state.wslots[i-6]];if(!w||w.exotic)return '';}
  else if(!gearOf(i)||gearOf(i).kind==='exotic')return '';
- const rows=arr(DB.prototype_augments),sel=(state.bp.augments||[])[i]||{},key=sel.key||'',level=Math.max(1,Math.min(10,+sel.level||10));
+ const rows=arr(DB.prototype_augments),sel=(state.bp.augments||[])[i]||{},key=sel.key||'',level=combatAugmentLevel(sel.level);
  const a=rows.find(x=>x.code===key),t=arr(DB.talents_official).find(x=>x.key===key);
- const chance=combatAugmentValue(key,level,'_activation_chance');
- const curve=DB.combat_audit?.prototype_curves?.[key]?.[state.bp.pvp?'pvp':'pve'];
- const numeric=Object.values(curve||{})[0];
- const amount=numeric?100*(numeric.base+numeric.step*(level-1)):null;
- const effects=amount==null?[]:[L(chance!=null?'触发概率':'效果提升',chance!=null?'Trigger chance':'Effect bonus')+' '+fmtN(amount)+'%'];
- /* 捕猎者只喂 `SkillDuration`（`build.audit.js` 的 `combatAugmentTotals`），枪械公式不读那个字段 ——
-    2026-10-15 实测：多件 L10 把 SkillDuration 10→94，DPS/SDPS 与不计入时一字不差 ⇒ 不许标「已计入」，
-    与其余几条同口径标「不计入」。不许为此改 `engine.js`（公式真值，禁碰）。回声/悖论仍走 f.Echo，如实保留。 */
- const modeled=['talent_augment_echo','talent_augment_paradox'].includes(key);
- const note=modeled?L('已计入枪械输出期望值','Included in expected firearm output'):L('效果保留；不计入枪械输出','Effect retained; not included in firearm output');
+ const effects=a?[combatAugmentParameterText(key,level)]:[];
+ const modeled=combatAugmentModeled(key);
+ const note=modeled?(combatAugmentEnabled(key)?L('已计入枪械输出期望值','Included in expected firearm output'):L('对照已关闭；未计入','Disabled for comparison; not counted')):L('效果未模拟；未计入枪械输出','Effect not simulated; excluded from firearm output');
  const levelChoices=Array.from({length:10},(_,n)=>`<option value="${n+1}"${n+1===level?' selected':''}>${n+1}</option>`).join('');
   const effect=a?esc(effects.join(' · ')):'';
   /* 武器格未选时换成装备卡 `.build-gear-prototype.empty` 同形（方框加号 + 灰字，等级列隐掉）；`kind` 不是 'w' 的装备抽屉/装备卡摘要不跟着变 */

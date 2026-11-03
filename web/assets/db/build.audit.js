@@ -252,9 +252,11 @@ function combatEnabled(key){
   /* 条件型天赋的判定**不受 optPeak 影响**：搜索与交付后重算必须走同一条，
      否则会出现「评分的那套 ≠ 交出来的那套」（2026-10-23 bullet 自证变红就是这个）。
      常驻天赋仍按页面开关；optPeak 期间一律开。 */
+  const saved=state.bp.effects&&state.bp.effects[key];
+  if(!state.bp.optPeak&&saved?.on===false)return false;
   if(optCondTalent(key))return optCondTier(key)!=='off';
   if(state.bp&&state.bp.optPeak)return true;
-  const saved=state.bp.effects&&state.bp.effects[key];if(saved&&saved.on===false)return false;return combatPassive(key)||!saved||!!saved.on;}
+  return combatPassive(key)||!saved||!!saved.on;}
 function affixColorCount(key,gear,color,opt){
  const pieces=gear||[0,1,2,3,4,5].map(i=>gearOf(i));
  let n=0;
@@ -350,7 +352,7 @@ function combatStatusText(key){
  if(e&&arr(e.rows).some(r=>r.color)){if(!combatEnabled(key))return L('条件关闭','Condition off');return combatGearRows(key).length?L('按已选颜色计入','Counted from selected colors'):L('未选择对应颜色 · 未计入','No matching colors selected · not counted');}
  if(e&&(e.rows?.length||e.cycle)){
   if(!combatEnabled(key))return L('条件关闭','Condition off');
-  const rws=combatGearRows(key);
+  const rws=combatVisibleRows(key);
   if(rws.length&&!combatRowsFirearm(rws))return L('只计入其他统计栏 · 不改枪械数字','Other panels only · firearm numbers unchanged');
   /* 折算口径必须**写出来**：满值 / 半程 ×N / 不计入。
      站长 2026-11-03：「有条件的你一定要显示出来，如果是半程就显示半程，不能静默半程」。 */
@@ -389,11 +391,16 @@ function combatInPlay(){
   const n=countsGear()['set:'+set.code]||0;
   for(const tier of arr(set.tiers))if(n>=tier.pieces)for(const tl of arr(tier.talents))if(tl.key)result.push({key:tl.key.toLowerCase(),label:L(set.zh,set.en)+' '+tier.pieces});
  }
+ combatAugmentSources(state.slots.map((_,i)=>gearOf(i)),state.wactive).forEach(a=>result.push({key:a.key,label:a.label,prototype:true}));
  return result.filter((x,i,a)=>a.findIndex(y=>y.key===x.key)===i);
 }
 function combatPreset(mode){
- state.bp.effects={};state.bp.tiers={};
- if(mode==='peak')for(const x of combatInPlay()){const e=gtalEntry(x.key);if(e&&(e.rows.length||e.cycle)&&!combatBlocked(x.key))state.bp.effects[x.key]={on:true,stacks:combatLimit(x.key)||0};}
+ const previous=state.bp.effects||{};
+ state.bp.effects={};state.bp.tiers={};state.bp.condTier={};
+ for(const fam of talTierInPlay())state.bp.tiers[fam.id]=mode==='peak'?talTierDefault(fam,talTierRows(fam,!!state.bp.pvp)):'off';
+ state.bp.augmentEffects={};
+ for(const a of combatAugmentSources(state.slots.map((_,i)=>gearOf(i)),state.wactive))if(combatAugmentModeled(a.key))state.bp.augmentEffects[a.key]=mode==='peak';
+ for(const x of combatInPlay()){const e=gtalEntry(x.key);if(!e||combatBlocked(x.key)||combatPassive(x.key))continue;state.bp.condTier[x.key]=mode==='peak'?'full':'off';state.bp.effects[x.key]={on:mode==='peak',stacks:mode==='peak'?(combatLimit(x.key)??0):0};if(e.input)state.bp.effects[x.key].amount=mode==='peak'?(e.input.key==='distance'?(previous[x.key]?.amount??10):e.input.max):0;}
  state.bp.combatPreset=mode;state.opt.res=null;renderAll();
 }
 function combatRangeText(t){
@@ -415,7 +422,7 @@ function renderCombatAudit(){
  let box=document.getElementById('combat-audit');
  if(!box){box=document.createElement('details');box.id='combat-audit';box.className='fold2';box.open=true;document.getElementById('fold_cond').append(box);}
  const open=box.open;const list=combatInPlay();
- const rows=list.map(x=>{const t=TALENT_BY_KEY[x.key],e=gtalEntry(x.key),lim=combatLimit(x.key),supported=!!e&&(arr(e.rows).length||e.cycle)&&!combatBlocked(x.key)&&combatSupport(x.key).status!=='missing_parameter';
+ const rows=list.map(x=>{if(x.prototype)return combatAugmentAuditHtml(x);const t=TALENT_BY_KEY[x.key],e=gtalEntry(x.key),lim=combatLimit(x.key),supported=!!e&&(arr(e.rows).length||e.cycle)&&!combatBlocked(x.key)&&combatSupport(x.key).status!=='missing_parameter';
  const control=supported&&!combatPassive(x.key)?`<label><input type="checkbox" data-combat-key="${esc(x.key)}" ${combatEnabled(x.key)?'checked':''}>${esc(L('条件满足','Condition met'))}</label>`:'';
  /* 折算档（off / half / full）：条件型天赋在引擎里默认按「半程覆盖率」折算，
     面板原来只显示「层数 10/10」，用户看到满层却没拿到满值（2026-11-03 站长：BUFF 叠满该有几千万）。
@@ -435,16 +442,17 @@ function renderCombatAudit(){
   const amount=supported&&e.input?`<label>${esc(L(...e.input.label))}<input type="number" min="0" max="${e.input.max}" step="${e.input.step}" data-combat-amount="${esc(x.key)}" value="${Math.max(0,Math.min(e.input.max,+state.bp.effects?.[x.key]?.amount||0))}"></label>`:'';
  return `<div class="combat-effect"><b>${t?talIcon(t,'tic tic-s'):''}${esc(t?nmTxt(t):x.key)}</b><span>${esc(x.label)} · ${esc(combatStatusText(x.key))}</span>${control}${covCtl}${stack}${amount}${ranges?`<div class="tal-params">${ranges}</div>`:''}${((talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')?('<div class="tal-params">'+(talentParamLines(t,!!state.bp.pvp)||[]).map(line=>'<span>'+esc(line)+'</span>').join('')+'</div>'):'')}${e?.note?`<p class="hint">${esc(L(...e.note))}</p>`:''}<details><summary>${esc(L('触发说明','Trigger details'))}</summary><p>${esc(t?talentDescPlain(t,!!state.bp.pvp):'')}</p><a class="build-db-link" href="/db?cat=talents&id=${encodeURIComponent(t?.uid||x.key)}" target="_blank" rel="noopener">${esc(L('查看天赋','View talent'))}</a></details></div>`;
  }).join('');
- box.innerHTML=`<summary>${esc(L('效果与触发条件','Effects & conditions'))} · ${list.length}</summary><div class="combat-presets"><button type="button" data-combat-preset="base">${esc(L('基础对照','Baseline'))}</button><button type="button" data-combat-preset="peak">${esc(L('已支持效果满层','Supported effects at max'))}</button></div><p class="hint">${esc(L('只计算已支持的数值部分。默认按**满值（满 buff 那一枪）**计，便于和游戏里的单发/爆头对上；要看保守的持续估计，把对应天赋的「折算」改成半程或不计入。技能伤害及未支持机制不含在输出中。','Only supported numeric components are counted. Defaults are the **full-value shot** so they match the in-game numbers; switch the coverage of that talent to half or off for a conservative estimate. Skill damage and unsupported mechanics are excluded.'))}</p>${rows||esc(L('选择装备后显示相关效果','Equip items to see effects'))}${COMBAT_LAST?.ignoredAttrs?.length?`<p class="hint">${esc(L('尚未计算的属性：','Unmodeled attributes: ')+COMBAT_LAST.ignoredAttrs.join(' · '))}</p>`:''}`;
+ box.innerHTML=`<summary>${esc(L('效果与触发条件','Effects & conditions'))} · ${list.length}</summary><div class="combat-presets"><button type="button" data-combat-preset="base">${esc(L('基础对照','Baseline'))}</button><button type="button" data-combat-preset="peak">${esc(L('已支持效果满层','Supported effects at max'))}</button></div><p class="hint">${esc(L('只计算已支持的数值部分。普通条件天赋默认按满值（满 buff 那一枪）计，便于和游戏里的单发/爆头对上；要看保守的持续估计，把对应天赋的「折算」改成半程或不计入。技能伤害及未支持机制不含在输出中。','Only supported numeric components are counted. Ordinary conditional talents default to the full-value shot so they match the in-game numbers; switch the coverage of that talent to half or off for a conservative estimate. Skill damage and unsupported mechanics are excluded.'))}</p>${combatAugmentSummaryHtml()}${rows||esc(L('选择装备后显示相关效果','Equip items to see effects'))}${COMBAT_LAST?.ignoredAttrs?.length?`<p class="hint">${esc(L('尚未计算的属性：','Unmodeled attributes: ')+COMBAT_LAST.ignoredAttrs.join(' · '))}</p>`:''}`;
  box.open=open;
  for(const x of gtalInPlay()){const b=document.querySelector(`.gcard[data-i="${x.slot}"] .taltx`);if(b){b.dataset.calc=combatGearRows(x.key).length?'on':'off';b.title=combatStatusText(x.key)+' · '+(TALENT_BY_KEY[x.key]?talentDescPlain(TALENT_BY_KEY[x.key],!!state.bp.pvp):'');}}
- const warn=document.getElementById('r_warn');if(warn&&state.wactive>=0){const n=list.filter(x=>!combatParent(x.key)&&!['conditional_component'].includes(combatSupport(x.key).status)).length;warn.innerHTML=`<div class="wnote">${esc(L('当前为所选条件下的武器输出估计；','Weapon output estimate under selected conditions; '))}${n?esc(L(n+' 项效果未计入。',n+' effects not counted.')):''}<button type="button" data-combat-open>${esc(L('检查效果','Review effects'))}</button></div>`;}
+ const warn=document.getElementById('r_warn');if(warn&&state.wactive>=0){const n=list.filter(x=>x.prototype?(!combatAugmentModeled(x.key)||!combatAugmentEnabled(x.key)):!combatParent(x.key)&&!combatRowsFirearm(combatVisibleRows(x.key))).length;warn.innerHTML=`<div class="wnote">${esc(L('当前为所选条件下的武器输出估计；','Weapon output estimate under selected conditions; '))}${n?esc(L(n+' 项效果未计入枪械输出。',n+' effects excluded from firearm output.')):''}<button type="button" data-combat-open>${esc(L('检查效果','Review effects'))}</button></div>`;}
 }
 document.addEventListener('change',e=>{
+ if(e.target.dataset.combatAugment){const key=e.target.dataset.combatAugment;if(!combatAugmentModeled(key))return;state.bp.augmentEffects=state.bp.augmentEffects||{};state.bp.augmentEffects[key]=e.target.checked;state.bp.combatPreset='custom';state.opt.res=null;renderAll();return;}
  /* 折算档：只改 `state.bp.condTier`（off / half / full），与搜索、交付重算读同一份。 */
  if(e.target.dataset.combatCov){state.bp.condTier=state.bp.condTier||{};state.bp.condTier[e.target.dataset.combatCov]=e.target.value;state.opt.res=null;renderAll();return;}
  const t=e.target,key=t.dataset.combatKey||t.dataset.combatStack||t.dataset.combatAmount;if(!key)return;
- state.bp.effects=state.bp.effects||{};const v=state.bp.effects[key]||{on:false,stacks:0};
+ state.bp.effects=state.bp.effects||{};const v=state.bp.effects[key]||{on:combatEnabled(key),stacks:combatLimit(key)??0};
  if(t.dataset.combatKey)v.on=t.checked;else if(t.dataset.combatAmount)v.amount=Math.max(0,Math.min(gtalEntry(key)?.input?.max||0,+t.value||0));else v.stacks=Math.min(combatLimit(key)||0,Math.max(0,Math.floor(+t.value||0)));
  state.bp.effects[key]=v;state.bp.combatPreset='custom';state.opt.res=null;renderAll();
 });
@@ -459,6 +467,7 @@ function combatCycle(key){
 }
 function combatFieldFactor(name,fields){
  if(!fields||!name)return null;
+ if(name==='RedGearCores')return state.slots.reduce((n,_,i)=>{const it=gearOf(i);if(!it)return n;const chosen=state.core?.[i];const codes=coreChoices(it)&&chosen?[chosen]:arr(it.attrs_max?.slots).filter(s=>s?.kind==='core'&&s.fixed===true&&s.val>0).map(s=>s.code);return n+codes.filter(c=>/^WeaponDamage(?:Default)?ModBonus$/.test(c)).length;},0);
  if(name==='CriticalHitChance')return Math.min(60,+fields.CriticalHitChance||0);
  if(name==='StatusEffects')return (+fields.StatusEffects||0)+(+fields.SkillEfficiency||0);
  const v=+fields[name];
@@ -517,41 +526,103 @@ function combatApplyMagRefill(result,weapon,params,tal){
  return Object.assign({},result,TD2Calc.compute(f,w,params),{HitBase:result.HitBase,Hits:result.Hits,Hit:result.Hit,Headshot_Hit:result.Headshot_Hit,magRefillTalent:true});
 }
 
+// All slots, level labels and expected output share the generated mode curves.
+function combatAugmentLevel(level){return Math.max(1,Math.min(10,Math.floor(+level||10)));}
 function combatAugmentValue(key,level,tail){
  const mode=state.bp.pvp?'pvp':'pve',curves=DB.combat_audit?.prototype_curves?.[key]?.[mode];
  const pair=Object.entries(curves||{}).find(([name])=>name.endsWith(tail));
- return pair?100*(pair[1].base+pair[1].step*(Math.max(1,Math.min(10,Math.floor(+level||1)))-1)):null;
+ if(!pair||!Number.isFinite(pair[1].base)||!Number.isFinite(pair[1].step))return null;
+ return 100*(pair[1].base+pair[1].step*(combatAugmentLevel(level)-1));
 }
-function combatAugmentTotals(gear,weaponSlot){
- const out={echo:0,refill:0,rows:[]};if(!state.bp.prototype)return out;
- const slots=[];
- (gear||[]).forEach((it,i)=>{if(it&&it.kind!=='exotic')slots.push(state.bp.augments?.[i]);});
- if(weaponSlot>=0)slots.push(state.bp.augments?.[weaponSlot+6]);
- const add={};
- slots.forEach(a=>{
-  if(!a||!a.key)return;
-  if(a.key==='talent_augment_echo'||a.key==='talent_augment_paradox'){
-   const chance=combatAugmentValue(a.key,a.level,'_activation_chance');if(chance==null)return;
-   if(a.key==='talent_augment_echo')out.echo+=chance;
-   else {const rounds=gtalVal(TALENT_BY_KEY[a.key],!!state.bp.pvp,'_ammo_refill');if(rounds!=null)out.refill+=chance*rounds;}
-   return;
+function combatAugmentModeled(key){return ['talent_augment_echo','talent_augment_paradox'].includes(key);}
+function combatAugmentEnabled(key){return state.bp.augmentEffects?.[key]!==false;}
+function combatAugmentSources(gear,weaponSlot,weapon){
+ if(!state.bp.prototype)return [];
+ const sources=[],catalog=arr(DB.prototype_augments);
+ const add=(slot,label)=>{
+  const a=state.bp.augments?.[slot];if(!a||!catalog.some(t=>t.code===a.key))return;
+  sources.push({slot,label,key:a.key,level:combatAugmentLevel(a.level)});
+ };
+ (gear||[]).forEach((it,i)=>{if(it&&it.kind!=='exotic')add(i,L(...G_SLOTS[i]));});
+ const w=weapon||DB.weapons[state.wslots[weaponSlot]];
+ if(weaponSlot>=0&&weaponSlot<3&&w&&!w.exotic&&w.kind!=='exotic')add(weaponSlot+6,L('当前武器','Active weapon'));
+ return sources;
+}
+function combatAugmentTotals(gear,weaponSlot,weapon){
+ const out={echo:0,refill:0,rows:[],sources:combatAugmentSources(gear,weaponSlot,weapon)};
+ out.sources.forEach(a=>{
+  if(!combatAugmentEnabled(a.key))return;
+  const chance=combatAugmentValue(a.key,a.level,'_activation_chance');if(chance==null)return;
+  if(a.key==='talent_augment_echo')out.echo+=chance;
+  if(a.key==='talent_augment_paradox'){
+   const rounds=gtalVal(TALENT_BY_KEY[a.key],!!state.bp.pvp,'_ammo_refill');
+   if(rounds!=null)out.refill+=chance*rounds;
   }
-  const field=a.key==='talent_augment_trapper'?'SkillDuration':'';
-  const tail='_cc_effects_increased_duration';
-  if(!field)return;
-  const value=combatAugmentValue(a.key,a.level,tail);if(value==null)return;
-  add[field]=(add[field]||0)+value;
  });
- out.rows=Object.entries(add).map(([name,val])=>({name,val,unit:''}));
  return out;
 }
 function combatApplyAugments(result,weapon,params,gear,weaponSlot){
- const a=combatAugmentTotals(gear,weaponSlot);if(!a.echo&&!a.refill&&!a.rows.length)return result;
- // Reuse the existing, parity-tested Echo/MagRefill engine fields. compute()
- // applies handling once, so undo that earlier derived addition on this copy.
- const f=Object.assign({},result.fields);for(const name of ['ReloadSpeed','Stability','Accuracy','SwapSpeed'])f[name]-=f.WeaponHandling;
- f.Echo+=a.echo;f.MagRefill=100-(100-f.MagRefill)*(100-Math.min(a.refill,99))/100;
- a.rows.forEach(r=>{f[r.name]=(+f[r.name]||0)+r.val;});
+ const a=combatAugmentTotals(gear,weaponSlot,weapon);
+ if(!a.echo&&!a.refill)return result;
+ // Keep the parity-tested core formulas. Handling was applied by compute already.
+ const f=Object.assign({},result.fields);
+ for(const name of ['ReloadSpeed','Stability','Accuracy','SwapSpeed'])f[name]-=f.WeaponHandling||0;
+ f.Echo=(f.Echo||0)+a.echo;
+ f.MagRefill=100-(100-(f.MagRefill||0))*(100-Math.min(a.refill,99))/100;
  const w=Object.assign({},weapon,{type:TD2Calc.weaponTypeIndex(weapon.type)});
- return Object.assign({},result,TD2Calc.compute(f,w,params),{HitBase:result.HitBase,Hits:result.Hits,Hit:result.Hit,Headshot_Hit:result.Headshot_Hit,augmentExpected:true});
+ return Object.assign({},result,TD2Calc.compute(f,w,params),{
+  HitBase:result.HitBase,Hits:result.Hits,Hit:result.Hit,Headshot_Hit:result.Headshot_Hit,augmentExpected:true,
+  prototypeEffects:{echo:a.echo,refill:a.refill,before:{DPS:result.DPS,DPM:result.DPM,SDPS:result.SDPS,BulletDamage:result.BulletDamage,Magazine:result.Magazine,RPM:result.RPM,ReloadTime:result.ReloadTime}}
+ });
+}
+function combatAugmentParameterText(key,level){
+ const labels={
+  talent_augment_trapper:['状态效果持续时间','Status effect duration'],
+  talent_augment_atomize:['爆炸范围','Explosion range'],
+  talent_augment_entropy:['装甲转生命值比例','Armor to health conversion'],
+  talent_augment_anomaly:['技能伤害转治疗比例','Skill damage to healing']
+ };
+ const chance=combatAugmentValue(key,level,'_activation_chance');
+ const curves=DB.combat_audit?.prototype_curves?.[key]?.[state.bp.pvp?'pvp':'pve'];
+ const first=Object.keys(curves||{})[0],value=chance==null&&first?combatAugmentValue(key,level,first):chance;
+ if(value==null)return L('当前模式参数缺失','Missing mode parameters');
+ let text=(chance!=null?L('每次触发概率','Trigger chance'):L(...(labels[key]||['效果提升','Effect bonus'])))+' '+fmtN(value)+'%';
+ if(key==='talent_augment_paradox'){
+  const rounds=gtalVal(TALENT_BY_KEY[key],!!state.bp.pvp,'_ammo_refill');
+  if(rounds!=null)text+=' · '+L('每次回填 '+fmtN(rounds)+' 发','Refills '+fmtN(rounds)+' rounds');
+ }
+ return text;
+}
+function combatAugmentAuditHtml(x){
+ const t=TALENT_BY_KEY[x.key],sources=combatAugmentSources(state.slots.map((_,i)=>gearOf(i)),state.wactive).filter(a=>a.key===x.key);
+ const modeled=combatAugmentModeled(x.key),available=sources.every(a=>combatAugmentValue(a.key,a.level,'_activation_chance')!=null);
+ const enabled=combatAugmentEnabled(x.key),counted=modeled&&available&&enabled;
+ const status=!modeled?L('效果未模拟 · 未计入枪械输出','Effect not simulated · excluded from firearm output')
+  :!available?L('当前模式参数缺失 · 未计入','Missing mode parameters · not counted')
+  :enabled?L('已计入随机触发期望','Counted as a random-proc expectation'):L('对照已关闭 · 未计入','Disabled for comparison · not counted');
+ const control=modeled&&available?`<label><input type="checkbox" data-combat-augment="${esc(x.key)}" ${enabled?'checked':''}>${esc(L('计入期望值','Include expected effect'))}</label>`:'';
+ const sourceRows=sources.map(a=>`<span>${esc(a.label)} · Lv.${a.level} · ${esc(combatAugmentParameterText(a.key,a.level))}</span>`).join('');
+ const totals=combatAugmentTotals(state.slots.map((_,i)=>gearOf(i)),state.wactive);
+ const contribution=!counted?'':x.key==='talent_augment_echo'
+  ?L('合计额外伤害期望 +'+fmtN(totals.echo)+'%；不会提高武器面板伤害，普通命中表仍显示未触发的一枪。','Expected extra damage +'+fmtN(totals.echo)+'%; base weapon damage and ordinary hit values remain the untriggered shot.')
+  :L('每 100 发平均回填 '+fmtN(totals.refill)+' 发；影响等效弹匣、每弹匣伤害和持续 DPS，单发伤害与爆发 DPS 不变。','Returns '+fmtN(totals.refill)+' rounds per 100 shots on average; affects effective magazine, damage per magazine and sustained DPS. Single-hit damage and burst DPS are unchanged.');
+ const descriptions=sources.map(a=>`<p>${esc(a.label)} · Lv.${a.level}<br>${esc(combatAugmentDescription(a.key,a.level))}</p>`).join('');
+ return `<div class="combat-effect" data-prototype-effect="${esc(x.key)}"><b>${t?talIcon(t,'tic tic-s'):''}${esc(t?nmTxt(t):x.key)}</b><span>${esc(status)}</span>${control}<div class="tal-params">${sourceRows}</div>${contribution?`<p class="hint">${esc(contribution)}</p>`:''}<details><summary>${esc(L('触发说明','Trigger details'))}</summary>${descriptions}</details></div>`;
+}
+function combatAugmentDescription(key,level){
+ const t=TALENT_BY_KEY[key];if(!t)return '';
+ const template=L(t.desc_zh||t.desc_en,t.desc_en||t.desc_zh)||'';
+ return template.replace(/\{(\d+)\}/g,(_,index)=>{
+  const b=arr(t.bonus)[+index];if(!b)return '—';
+  const curve=combatAugmentValue(key,level,b.code),flat=gtalVal(t,!!state.bp.pvp,b.code);
+  return curve!=null?fmtN(curve):flat!=null?fmtN(flat):'—';
+ });
+}
+function combatAugmentSummaryHtml(){
+ const r=COMBAT_LAST,a=r?.prototypeEffects;if(!a||!state.bp.prototype||state.wactive<0)return '';
+ const metrics=[['爆发 DPS','Burst DPS','DPS'],['持续 DPS','Sustained DPS','SDPS'],['命中伤害期望','Expected damage per hit','BulletDamage'],['等效弹匣（发）','Effective magazine (rounds)','Magazine']];
+ return `<div class="combat-effect prototype-impact"><b>${esc(L('原型增幅收益','Prototype contribution'))}</b><span>${esc(L('同一配装、相同战斗条件，仅对照回声 / 悖论开关。数值为长期平均，单次触发有波动。','Same build and conditions, comparing Echo / Paradox only. Long-run averages; individual activations vary.'))}</span><dl>${metrics.map(([zh,en,k])=>{
+  const before=a.before[k],after=r[k],pct=before>0?(after/before-1)*100:0;
+  return `<div><dt>${esc(L(zh,en))}</dt><dd>${esc(fmtN(before))} → ${esc(fmtN(after))}<span>${esc((pct>=0?'+':'')+fmtN(pct)+'%')}</span></dd></div>`;
+ }).join('')}</dl></div>`;
 }

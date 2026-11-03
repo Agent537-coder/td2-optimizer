@@ -11,13 +11,13 @@ const RCELLS=[
   ['dps',['爆发 DPS','Burst DPS'],'DPS','dmg',1],
   ['dpm',['弹匣伤害','Mag DMG'],'DPM','dmg',1],
   ['sdps',['当前条件的弹匣快照','Current magazine snapshot'],'SDPS','dmg',1],
-  ['bullet',['单发伤害','Bullet DMG'],'BulletDamage','dmg'],
+  ['bullet',['命中伤害期望','Expected hit DMG'],'BulletDamage','dmg'],
   ['panel',['面板单发','Panel Hit'],'Damage','dmg'],
   ['armor',['护甲','Armor'],'Armor','def'],
   ['health',['生命','Health'],'Health','def'],
   ['rpm',['有效射速','RPM'],'RPM','rate'],
   ['reload',['换弹 (秒)','Reload (s)'],'ReloadTime','rate'],
-  ['mag',['弹匣','Magazine'],'Magazine','rate'],
+  ['mag',['等效弹匣','Effective magazine'],'Magazine','rate'],
   ['chc',['暴击率 %','CHC %'],'CHC','crit'],
   ['chd',['暴击伤 %','CHD %'],'CHD','crit'],
   ['hsd',['爆头伤 %','HSD %'],'HSD','crit'],
@@ -321,6 +321,7 @@ function recalc(){
   if(!$('#r_build')||!$('#r_grid'))return;
   const wi=state.wactive>=0?state.wslots[state.wactive]:null;
   if(wi==null){
+    COMBAT_LAST=null;
     const gear=state.slots.map((raw,i)=>gearOf(i));
     const gathered=collectGearBonus();
     const gcount=gear.filter(Boolean).length;
@@ -1321,3 +1322,15 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 // Skill expertise levels are per equipped slot and persist in bp snapshots/imports.
 document.addEventListener('change',e=>{const x=e.target;if(x&&x.dataset.act==='bpexpskill'){state.bp.skillExpertise=state.bp.skillExpertise||[0,0];state.bp.skillExpertise[+x.dataset.i]=Math.max(0,Math.min(30,Math.floor(+x.value||0)));renderAll();scheduleSync();}});
+// Analysis controls change the view, not the saved loadout or combat assumptions.
+document.addEventListener('change',e=>{
+ const x=e.target;
+ let selector;
+ if(x.dataset?.analysisSpan!==undefined){const n=+x.value;if([10,20,30,60].includes(n))CHART_SPAN=n;else return;selector='[data-analysis-span]';}
+ else if(x.dataset?.analysisHit!==undefined){if(!BP_HIT4.some(([key])=>key===x.value))return;ANALYSIS_HIT=x.value;selector='[data-analysis-hit]';}
+ else if(x.dataset?.analysisCover!==undefined){ANALYSIS_COVER=x.value==='1';selector='[data-analysis-cover]';}
+ else return;
+ renderCharts(COMBAT_LAST);
+ document.querySelector(selector)?.focus({preventScroll:true});
+});
+document.addEventListener('click',e=>{if(e.target.closest('[data-analysis-conditions]'))document.getElementById('build-condition-open')?.click();});

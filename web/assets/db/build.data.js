@@ -237,13 +237,24 @@ function gearHasTalent(key){
 }
 const fmt0=x=>(x==null||!isFinite(x))?'—':Math.round(x).toLocaleString('en-US');
 const fmt2=x=>(x==null||!isFinite(x))?'—':(+x).toFixed(2);
-const fmtN=x=>(x==null||!isFinite(x))?'—':(Math.abs(x)>=100?Math.round(x).toLocaleString('en-US'):(Math.round(x*100)/100).toString());
+/* 数字显示：**跟游戏一致的精度**（2026-11-03 站长：「游戏的头牌射手步枪伤害就 15，我们有 15.01」）。
+   · ≥100 → 取整（110.0361 → 110）
+   · ≥1   → 一位小数，去掉尾随 .0（15.0054 → 15；33.61 → 33.6；9.6 → 9.6）
+   · <1   → 两位小数（0.75 保持 0.75，别被并成 0.8）
+   只影响显示；引擎内部一律全精度，不在这里取整。 */
+const fmtN=x=>{
+  if(x==null||!isFinite(x))return '—';
+  const a=Math.abs(+x);
+  if(a>=100)return Math.round(x).toLocaleString('en-US');
+  if(a>=1)return String(Math.round(x*10)/10);
+  return String(Math.round(x*100)/100);
+};
 /* 双语主/副名：cn=zh||name、en=en||name；主名随 LANG 互换，副名缺失或与主名相同→不显示（不重复） */
 function nmTxt(o){const cn=(o&&o.zh)||o.name||'',en=(o&&o.en)||o.name||'';return LANG==='zh'?cn:en;}
 function nmAlt(o){const cn=(o&&o.zh)||o.name||'',en=(o&&o.en)||o.name||'';const m=LANG==='zh'?cn:en,a=LANG==='zh'?en:cn;return `<span>${esc(m)}</span>${a&&a!==m?`<span class="walt">${esc(a)}</span>`:''}`}
 /* 图标 URL 的版本戳（与资料库页同一个口径）：重建脚本**原地覆盖** `web/assets/db/img/` 下的文件，
    文件名不变内容变 ⇒ 浏览器会端旧图。服务器已一律 `no-store`，这里再挂戳让**已缓存的旧份**当场失效。 */
-const IMGV='?v=364';
+const IMGV='?v=374';
 /* 图标路径可能带目录（`skill/skills_menu_hive.png` / `gearmod/g_mod_*.png` / `modfilter/offense.png`）——
    逐段编码，别把 `/` 编成 `%2F`（那样服务器找不到文件）。戳一律由调用处拼 `IMGV`。 */
 function imgPath(ic){return String(ic).split('/').map(encodeURIComponent).join('/');}

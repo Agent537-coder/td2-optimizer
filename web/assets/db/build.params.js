@@ -108,6 +108,8 @@ function axisValue(b,i){
    这里**钉死 role=Veteran(0)**：红名/杂兵在官方模型里 `Armor=0`（见 `enemy_coeffs.json` 的 `meta.gaps`），
    「红名装甲」这一档官方压根不存在，不许编一档出来。 */
 function enemyTarget(){
+  // This target table models PvE NPCs; do not present it as a PvP player target.
+  if(state.bp&&state.bp.pvp)return null;
   const c=ENEMY_COEFFS,e=state.bp&&state.bp.enemy;if(!c||!c.pve||!e)return null;
   const role='Veteran';
   const i={progression:Number(e.progression),difficulty:Number(e.difficulty),role:0,players:Number(e.players)};
