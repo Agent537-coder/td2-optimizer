@@ -323,6 +323,17 @@ function combatGearRows(key,gear,weapon,opt){
 function combatParent(key){
  return gtalRules().find(e=>arr(e.limitAdd).some(m=>m.key===key)||arr(e.rows).some(r=>arr(r.add).some(m=>m.key===key)))||null;
 }
+/* 命中/输出公式真正消费的字段（`engine.js` 的 num17 / num19 与暴击、弹匣循环那几段）。
+   不在这个集合里的字段（SkillHaste / RepairSkills / SkillDuration / CooldownSeconds…）
+   只进技能与状态统计栏，**改了不会动枪械数字** ⇒ 面板文案必须把它们与「已计入武器伤害」分开说，
+   否则用户会以为「穿了套装但面板还是基础值」。 */
+const FIREARM_FIELDS=[
+  'AllWeaponDamage','TotalWeaponDamage','AmplifyDamage','AmplifyDamage_NotForHeadhunter',
+  'AmplifyDamage_Headshot','CriticalHitChance','CriticalHitDamage','HeadshotDamage',
+  'HeadhunterCap','HeadhunterCarry','RateOfFire','MagazineSize','ReloadSpeed',
+  'WeaponHandling','Stability','Accuracy','SwapSpeed','ArmorDamage','HealthDamage','NextShotsDamage'
+];
+function combatRowsFirearm(rows){return arr(rows).some(r=>FIREARM_FIELDS.indexOf(r.name)>=0);}
 function combatStatusText(key){
  const s=combatSupport(key);if(s.status==='blocked_formula')return L('待核验 · 未计入','Needs validation · not counted');
  const parent=combatParent(key);
@@ -331,7 +342,13 @@ function combatStatusText(key){
  if(e&&gtalStatus(key,!!state.bp.pvp)==='nodata')return L('当前模式参数缺失 · 未计入','Missing mode parameters · not counted');
  if(e&&!e.tier&&[e,...arr(e.rows)].some(r=>['minDistance','maxDistance','minDistanceEnds','maxDistanceEnds'].some(k=>r[k]!=null))&&combatEnabled(key)&&!combatGearRows(key).length)return L('距离/武器条件不满足 · 未计入','Distance/weapon condition unmet · not counted');
  if(e&&arr(e.rows).some(r=>r.color)){if(!combatEnabled(key))return L('条件关闭','Condition off');return combatGearRows(key).length?L('按已选颜色计入','Counted from selected colors'):L('未选择对应颜色 · 未计入','No matching colors selected · not counted');}
- if(e&&(e.rows?.length||e.cycle)){if(!combatEnabled(key))return L('条件关闭','Condition off');const n=combatLimit(key),current=state.bp.effects?.[key]?.stacks;return n==null?L('数值部分已计入','Numeric component counted'):L('当前层数：','Stacks: ')+Math.min(n,Math.max(0,Number.isFinite(+current)?+current:n))+'/'+n;}
+ if(e&&(e.rows?.length||e.cycle)){
+  if(!combatEnabled(key))return L('条件关闭','Condition off');
+  const rws=combatGearRows(key);
+  if(rws.length&&!combatRowsFirearm(rws))return L('只计入其他统计栏 · 不改枪械数字','Other panels only · firearm numbers unchanged');
+  const n=combatLimit(key),current=state.bp.effects?.[key]?.stacks;
+  return n==null?L('数值部分已计入','Numeric component counted'):L('当前层数：','Stacks: ')+Math.min(n,Math.max(0,Number.isFinite(+current)?+current:n))+'/'+n;
+ }
  const fam=arr(TAL_TIER_FAMILIES).find(f=>key&&key.startsWith(f.family));
  if(fam&&!combatBlocked(key)){const rows=talTierRows(fam,!!state.bp.pvp),cur=state.bp.tiers[fam.id]||talTierDefault(fam,rows);return cur==='off'?L('条件关闭','Condition off'):L('选定档位 · 部分计入','Selected tier · partial');}
   return combatUnsupportedReason(key);
