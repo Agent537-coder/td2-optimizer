@@ -350,11 +350,20 @@ function combatStatusText(key){
   if(!combatEnabled(key))return L('条件关闭','Condition off');
   const rws=combatGearRows(key);
   if(rws.length&&!combatRowsFirearm(rws))return L('只计入其他统计栏 · 不改枪械数字','Other panels only · firearm numbers unchanged');
+  /* 折算口径必须**写出来**：满值 / 半程 ×N / 不计入。
+     站长 2026-11-03：「有条件的你一定要显示出来，如果是半程就显示半程，不能静默半程」。 */
+  const covTxt=optCondTalent(key)?(optCondTier(key)==='full'
+    ?L('满值计入','Counted at full value')
+    :L('半程折算 ×','Half coverage ×')+(Math.round(optCondFactor(key)*100)/100)):'';
   const n=combatLimit(key),current=state.bp.effects?.[key]?.stacks;
+  if(covTxt)return covTxt;
   return n==null?L('数值部分已计入','Numeric component counted'):L('当前层数：','Stacks: ')+Math.min(n,Math.max(0,Number.isFinite(+current)?+current:n))+'/'+n;
  }
  const fam=arr(TAL_TIER_FAMILIES).find(f=>key&&key.startsWith(f.family));
- if(fam&&!combatBlocked(key)){const rows=talTierRows(fam,!!state.bp.pvp),cur=state.bp.tiers[fam.id]||talTierDefault(fam,rows);return cur==='off'?L('条件关闭','Condition off'):L('选定档位 · 部分计入','Selected tier · partial');}
+ if(fam&&!combatBlocked(key)){const rows=talTierRows(fam,!!state.bp.pvp),cur=state.bp.tiers[fam.id]||talTierDefault(fam,rows);  const curBand=arr(fam.bands).find(b=>b.id===cur)||{};
+  const bandName=curBand.zh||curBand.en||cur;
+  return cur==='off'?L('条件关闭 · 未计入','Condition off · not counted')
+    :L('档位：','Tier: ')+bandName+L(' · 已计入',' · counted');}
   return combatUnsupportedReason(key);
 }
 function combatUnsupportedReason(key){
