@@ -107,6 +107,16 @@ const TAL_TIER_FAMILIES=[
      {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
      {id:'on',zh:'转移给附近敌人（按目标数）',en:'Transfer to nearby (per target)',dist:['',''],use:['value'],perStack:true},
    ]},
+  {id:'versatile',family:'warlock_talent_weapon_swap_to_different_weapon_grants_damage',
+   /* 多才多艺 / 完美多变（武器天赋）：换枪后 10 秒内按枪型与距离给武器伤害。
+      官方 P1/P3/P5 = 近 / 远 / 中三档的伤害，P2/P4/P6/P7 = 各自的距离门槛。
+      三档互斥（由枪型决定），所以用档位选择；完美版的数值由官方表自己的 `_perfect` 行给出，不另写。 */
+   bands:[
+     {id:'off',zh:'不计入',en:'Not counted',dist:['',''],use:[]},
+     {id:'short',zh:'近距（≤15m · 冲锋枪/霰弹枪）',en:'Close (≤15m · SMG/shotgun)',dist:['0',{code:'short_range_distance'}],use:['short_range_damage_increase'],weaponTypes:['冲锋枪','霰弹枪']},
+     {id:'mid',zh:'中距（15–25m · 轻机枪/突击步枪）',en:'Mid (15–25m · LMG/AR)',dist:[{code:'mid_range_distance_1'},{code:'mid_range_distance_2'}],use:['mid_range_damage_increase'],weaponTypes:['轻机枪','突击步枪']},
+     {id:'long',zh:'远距（>25m · 步枪/射手步枪）',en:'Long (>25m · rifle/MMR)',dist:[{code:'long_range_distance'},''],use:['long_range_damage_increase'],weaponTypes:['步枪','射手步枪']},
+   ]},
 ];
 /* 一族在库里的**全部** key（普通 + 完美 + 任何带同前缀的官方条目）——现找，写死会漏变体。 */
 function talTierKeys(fam){
@@ -247,6 +257,8 @@ function talTierAttrName(fam,suf){
      层数由 `perStack` 乘上去，字段用「武器伤害」平铺区，不是总武器伤害乘区。 */
   /* 迷惑（动荡护膝）：把对一名敌人的武器伤害转 50% 给附近另一名 ⇒ 按「转移目标数」合计进总武器伤害乘区。 */
   if(fam.id==='bewildered'&&suf==='value')return 'TotalWeaponDamage';
+  /* 多才多艺 / 完美多变：换枪后按「枪型 × 距离」给**武器伤害**（平铺区，不是总武器伤害乘区）。 */
+  if(fam.id==='versatile'&&suf.indexOf('range_damage_increase')>=0)return 'AllWeaponDamage';
   if(fam.id==='frenzy'){
     if(suf.indexOf('RPM_increase')>=0)return 'RateOfFire';
     if(suf.indexOf('damage_increase')>=0)return 'AllWeaponDamage';
@@ -279,6 +291,13 @@ function talTierRows(fam,on){
   if(combatBlocked(fam.family))return arr(fam.bands).map(b=>({id:b.id,rows:b.use.length?null:[]}));
   return arr(fam.bands).map(b=>{
     if(!b.use.length)return {id:b.id,rows:[]};
+    /* 档位级的枪型门槛（多才多艺：冲锋/霰弹近距、轻机枪/突击中距、步枪/射手远距）：
+       当前生效武器不在该档的枪型里 ⇒ 该档不出数值（也不参与默认档挑选）。 */
+    if(b.weaponTypes&&b.weaponTypes.length){
+      const w=arr(DB.weapons)[state.wslots[state.wactive]];
+      const wt=w?(w.typeZh||w.type||''):'';
+      if(b.weaponTypes.indexOf(wt)<0)return {id:b.id,rows:[]};
+    }
     const rows=talTierAttrs(fam,b.id,on);
     if(!rows)return {id:b.id,rows:null};
     return {id:b.id,rows:rows};
