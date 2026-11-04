@@ -461,14 +461,16 @@ body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{align-items:cen
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk.empty{border-style:solid}
 }
 
-/* ── 天赋格 / 插件格占位（2026-10-30 用户：无装备天赋、无插件位也预留格子位置、什么也不展示）──
-   `.tal-reserve`、`.mod-reserve` 与真按钮同占栅格位（行轨道不塌），但清空全部可视装饰；
+/* ── 天赋格 / 插件格 / 原型格占位（2026-10-30 用户：无装备天赋、无插件位也预留格子位置、什么也不展示；
+   20261103 追加原型位：奇特件无原型格，但原型档开启时脚区须与同排卡同轨，否则行高差沉淀成属性下方空白）──
+   `.tal-reserve`、`.mod-reserve`、`.proto-reserve` 与真按钮同占栅格位（行轨道不塌），但清空全部可视装饰；
    追加在文件末尾是为了压掉上面宽屏档给 `.taltx`/`.modblk` 的下边框（那几条带 !important，这里同用）。
    悬停不生效（用户第二轮）：`pointer-events:none` 掐灭 build.css:256 / hub.experience.css:820 的
    `:hover` 底色，`cursor:inherit` 让指针延续卡片本体的手型，不闪回默认箭头。
    `.mod-reserve` 不在任何档给高度：内容是空 div ⇒ 自然高 0，行轨道靠上面 `.gc-ft` 的 `min-height:32px` 兜住。 */
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx.tal-reserve,
-body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve{border:0!important;border-bottom:0!important;background:none;visibility:hidden;pointer-events:none;cursor:inherit}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve,
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype.proto-reserve{border:0!important;border-bottom:0!important;background:none;visibility:hidden;pointer-events:none;cursor:inherit}
 /* 宽屏档：占位格与真插件格同栅格位（col2/row1），min-height 与真插件格同（32px）；
    本行已有 prototype 撑到 32px，但显式声明与 `.tal-reserve` PC 行为对称，也防后续 prototype 缺失时行高塌。*/
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve{grid-column:2;grid-row:1;height:auto;min-height:32px;padding:0}
@@ -500,10 +502,10 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .mod-reserve{grid
    多条属性时上下都有留白 ⇒ 给 `.gc-info` 单独 `align-self:flex-start` 靠顶堆（`.gc-mid` 已在 pen:144
    声明 `align-self:center`，图标仍居中）。
    分隔线：核心行在 `build.view.js` 里分两路（可挑核心 `label.axselect.core` 与固定核心 `div.axrow.core[data-fixed=core]`），
-   `build.layout.js:25` 把 `row.classList.contains('core')` 拷到卡面 `.build-gear-attr.core` ⇒ 紧邻核心的下一条加顶边框
-   （`color-mix(--line 70%)`，与脚区分隔线同族）。 */
+   `build.layout.js:25` 把 `row.classList.contains('core')` 拷到卡面 `.build-gear-attr.core` ⇒ 紧邻核心的下一条**非核心**加顶边框
+   （`color-mix(--line 70%)`，与脚区分隔线同族；`:not(.core)` 是为了多核心件——追悼等 5 件——不在核心之间画线）。 */
 body[data-hub-page=build] #ggrid .build-gear-card .gc-info{align-self:flex-start}
-body[data-hub-page=build] #ggrid .build-gear-card .build-gear-attr.core+.build-gear-attr{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:2px}
+body[data-hub-page=build] #ggrid .build-gear-card .build-gear-attr.core+.build-gear-attr:not(.core){border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:2px}
 
 /* ── 移动端武器卡：武器图侧栏（20261030 用户：顶到角落异常 ⇒ 图应在属性左侧；二次反馈⇒ 只占 affix 行，不占下方）──
    原本 `.wc-mid` 在 row1/col1 44x44 小格（`build.layout.css:30` grid-area:1/1 + `pen.css:66` cols 44px），

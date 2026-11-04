@@ -364,7 +364,12 @@ function coreChoices(it){
     const codes=affixCodes(Object.keys(s.by_list||{})[0]||'');
     if(codes.length)return codes;
   }
-  /* ② 奇特的核心是**件自带**（游戏里奇特的主属性固定）⇒ 不给挑，面板照旧显示那条固定值。
+/* ② 多核心件（官方给了 >1 条 core 槽、且都不是 by_list 可挑）：游戏里这几条核心**同时生效**
+     （实测全库 5 件：追悼 / 猎鹰之傲 / 萨鲁 / 忍者摩托车邮差包 4 件奇特背包 + 健身房背包装备组）
+     ⇒ 不是「三选一」，走只读分支逐条展示、逐条喂引擎（判定同奇特：固定核心无条件进结果）。
+     ⚠️ 本判据早于奇特/品牌分支：装备组里也藏着多核心件（健身房背包），只按 kind==='exotic' 放行会漏。 */
+  if(arr(am.slots).filter(x=>x&&x.kind==='core').length>1)return null;
+  /* ③ 奇特的核心是**件自带**（游戏里奇特的主属性固定）⇒ 不给挑，面板照旧显示那条固定值。
      具名按用户 2026-10-14 的口径放开：核心同样在官方三条里换（实测 71/73 具名件自带的那条本就是三条之一）。
      ⚠️ 「特殊词条」（`kind==='random' && fixed===true` 那批件自带加成）**仍然只读** —— 它走
         `gearAffixBlock()` 的 `special` 固定行，不经过本函数 ⇒ 放开具名的核心不会把它一起放开。
@@ -391,13 +396,10 @@ function gearCoreFam(i,it){
     const c0=arr(it.attrs_max.slots).filter(s=>s&&s.kind==='core')[0];
     code=c0?(c0.code||''):'';
   }
-  const c=String(code).toLowerCase();
-  if(!c)return '';
-  if(c.indexOf('armor')>=0)return 'def';
-  if(c.indexOf('skill')>=0||c.indexOf('utility')>=0)return 'uti';
-  if(c.indexOf('weapondamage')>=0||c.indexOf('damage')>=0)return 'off';
-  return '';
+  return coreFamForCode(code);
 }
+/* 单条核心 code → 图标家族（armor=防 / skill|utility=效 / damage=攻）；供 gearCoreFam 与多核心逐行上色共用 */
+function coreFamForCode(code){const c=String(code||'').toLowerCase();if(!c)return '';if(c.indexOf('armor')>=0)return 'def';if(c.indexOf('skill')>=0||c.indexOf('utility')>=0)return 'uti';if(c.indexOf('weapondamage')>=0||c.indexOf('damage')>=0)return 'off';return '';}
 /* 词条「引擎读不读」判据（复用现成的，不另造）：喂给引擎的归一键（`attrKey` / `affixAttrs` 的 `key`）
    在不在 `TD2Calc.attrNames()`（= engine.js MAP 的全部键；不在的键 `add()` 只记进 `r.ignoredAttrs` 静默忽略，
    与 `build.attrs.js` 的 `attrKnown`、体检面板「尚未计算的属性」同一套账）。⚠️ 只判「引擎根本没收录」；
@@ -418,11 +420,11 @@ function gearAffixBlock(i,it){
     core=`<label class="axrow axselect core${cur?'':' empty'}" data-fam="${esc(gearCoreFam(i,it))}">${axGlyph(gearCoreFam(i,it))}<span class="axk">${esc(L('核心','Core'))}</span><span class="axchoice">${esc(cur?affixLabel(cur,q):L('未选择','Not selected'))}</span><b class="axvalue">${display&&Number.isFinite(display.val)?fmtN(display.val)+esc(display.unit):'—'}</b><select data-act="gcore" data-i="${i}" aria-label="${esc(L('更换核心属性','Change core attribute'))}">`
       +ch.map(c=>`<option value="${esc(c)}"${cur===c?' selected':''}>${esc(affixLabel(c,q))}</option>`).join('')+`</select></label>`;
   }else{
-    const c0=fixed.filter(s=>s.kind==='core')[0];
-    /* ⚠️ 数字格式一律用**本页的** `fmtN`（`build.data.js`）：`num()` 只存在于资料库那套脚本里
+    /* 只读核心：单核心件渲一条，多核心件（追悼等 5 件）逐条渲**全部** core 槽 ⇒ 卡面/抽屉都显示全（2026-11-02 修：原来只取 [0]，多核心件的第 2、3 条被静默丢）。
+       ⚠️ 数字格式一律用**本页的** `fmtN`（`build.data.js`）：`num()` 只存在于资料库那套脚本里
        （`db.core.js`），配装器页压根没加载它 ⇒ 这里写 `num(...)` 就是 `ReferenceError`，
        而它从 `renderGear()` 抛出 ⇒ **整列装备卡一张都不渲染**（只剩空壳）。2026-09-13 真踩。 */
-    if(c0)core=`<div class="axrow core" data-fam="${esc(gearCoreFam(i,it))}" data-fixed="core">${axGlyph(gearCoreFam(i,it))}<span class="axchoice">${esc(L(c0.name_zh||c0.name_en,c0.name_en||c0.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(c0.code,c0.val,c0.qmod,proto))}${esc(c0.unit||'')}</b></div>`;
+    core=fixed.filter(s=>s.kind==='core').map(c0=>{const fam=coreFamForCode(c0.code);return `<div class="axrow core" data-fam="${esc(fam)}" data-fixed="core">${axGlyph(fam)}<span class="axchoice">${esc(L(c0.name_zh||c0.name_en,c0.name_en||c0.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(c0.code,c0.val,c0.qmod,proto))}${esc(c0.unit||'')}</b></div>`;}).join('');
   }
   const others=fixed.filter(s=>s.kind!=='core');
   const other=others.concat(special).map(s=>{const fam=listKindForCode(s.code,q);const read=affixEngineRead(attrKey(s.name_zh||s.name_en,s.unit));return `<div class="axrow fixed${read?'':' uncounted'}" data-fam="${esc(fam)}" data-fixed="special"${read?'':' title="'+esc(UNCOUNT_TITLE())+'"'}>${axGlyph(fam)}<span class="axk">${esc(L(s.name_zh||s.name_en,s.name_en||s.name_zh))}</span><b class="axvalue">${fmtN(prototypeAttrValue(s.code,s.val,s.qmod,proto))}${esc(s.unit||'')}</b>${read?'':`<small class="ax-uncount">${esc(L('不计入','Not counted'))}</small>`}</div>`;}).join('');

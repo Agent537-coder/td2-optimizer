@@ -39,7 +39,8 @@ function buildGearSummaryBlock(i,it){
  return '<div class="build-gear-summary">'+[...temp.content.querySelectorAll('.axrow:not(.prototype-augment)')].map(row=>{const un=row.classList.contains('uncounted'),co=row.classList.contains('core'),tt=row.getAttribute('title')||'';return '<div class="build-gear-attr'+(un?' uncounted':'')+(co?' core':'')+'"'+(un?' title="'+esc(tt)+'"':'')+' data-fam="'+esc(row.dataset.fam||'')+'"'+(row.dataset.fixed?' data-fixed="'+esc(row.dataset.fixed)+'"':'')+'>'+(row.querySelector('.axic')?.outerHTML||'')+'<span>'+esc((row.querySelector('.axchoice')||row.querySelector('.axk'))?.textContent||'')+'</span><b>'+esc(row.querySelector('.axvalue')?.textContent||'')+'</b></div>';}).join('')+'</div>';
 }
 function buildGearPrototypeSummary(i){
- const temp=document.createElement('template');temp.innerHTML=prototypeAugmentHtml(i);const root=temp.content.querySelector('.prototype-augment');if(!root)return '';
+ /* 奇特件无原型格，但原型档开着时同排卡都有 ⇒ 渲隐形占位格保住脚区 2 行轨道（同 `.mod-reserve`/`.tal-reserve`，20261103） */
+ const temp=document.createElement('template');temp.innerHTML=prototypeAugmentHtml(i);const root=temp.content.querySelector('.prototype-augment');if(!root)return state.bp.prototype?'<div class="build-gear-prototype proto-reserve" aria-hidden="true"></div>':'';
  const sel=root.querySelector('select[data-act=gaugment]'),hasAugment=sel&&sel.value!=='';
  const name=sel?.selectedOptions[0]?.textContent||root.querySelector('.axchoice')?.textContent||'';
  const level=hasAugment?(root.querySelector('.prototype-level-select')?.value||''):'';
