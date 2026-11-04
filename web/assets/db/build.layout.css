@@ -337,3 +337,54 @@ body[data-hub-page=build] .gtile .gn{white-space:normal;line-height:1.45;overflo
  body[data-hub-page=build] input[type=number],body[data-hub-page=build] select{font-size:16px;min-height:44px}
  body[data-hub-page=build]>header h1{flex:1 0 auto;white-space:nowrap}
 }
+
+/* ========= 结果面三色核心卡（用户 2026-11-04）=========
+   卡头 = 官方三色核心图标（corered / coreblue / coreyellow），**不用文字当标题**：
+   文字只留在 img 的 alt 与按钮的 title 上（读屏与悬停仍可读）。
+   三个图标就是三个页签，点哪个只显示那一组的具体数值。
+   ⚠️ 分组面板用 `display:contents` ⇒ `.rcell` 仍是 `#r_grid` 的直接 grid item，
+      所以 `#r_grid` 那四处按布局写的列数（2 / 4 / 6 列）原样继续生效。
+      这套样式**不写列数** —— 写了必然与那四处漂移（本仓踩过的正是这类双份口径）。 */
+.rcore-tabs {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 6px;
+}
+.rcore-tab {
+  --rcore: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 5px 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: var(--cur-hover);
+  opacity: .5;
+  transition: opacity .15s ease, border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+.rcore-tab[data-k=atk] { --rcore: var(--rar-off); }
+.rcore-tab[data-k=def] { --rcore: var(--rar-def); }
+.rcore-tab[data-k=uti] { --rcore: var(--rar-uti); }
+.rcore-tab:hover { opacity: .8; }
+.rcore-tab.on {
+  opacity: 1;
+  border-color: var(--rcore);
+  background: color-mix(in srgb, var(--rcore) 12%, var(--card));
+  box-shadow: inset 0 -2px 0 var(--rcore);
+}
+.rcore-tab:focus-visible { outline: 2px solid var(--rcore); outline-offset: 2px; }
+.rcore-ico { display: block; height: 28px; width: auto; max-width: 100%; object-fit: contain; }
+/* 面板本身不占格子：让 .rcell 直接成为 #r_grid 的 grid item，列数继续由 #r_grid 那四处决定 */
+.rcore-panel { display: contents; }
+.rcore-panel[hidden] { display: none; }
+@media (max-width:1100px) {
+  .rcore-ico { height: 24px; }
+  .rcore-tabs { margin-top: 6px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .rcore-tab { transition: none; }
+}
