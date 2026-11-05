@@ -93,6 +93,7 @@ const FIXED_AFFIX_FAM={
   WeaponRangeOptimalModBonus:'uti',               /* 有效射程 */
   WeaponMeleeDamageDefaultModBonus:'off',         /* 近战伤害 */
   ArmorOnKillModBonus:'def',                      /* 击杀时回复装甲 */
+  allskills_health_mod_Bonus:'uti',               /* 技能生命值（母性之爱等具名固定槽） */
 };
 /* 「特定武器伤害」族（以及武器伤害/装甲/技能分阶这类核心专属）—— 一律不许出现在装备随机池里 */
 function isWeaponClassAffix(code,name){

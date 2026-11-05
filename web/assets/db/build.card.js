@@ -23,7 +23,7 @@
         const mark=image(item.brandIcon,'ah-loadout-brand');if(mark)card.append(mark);
         const values=element('div','ah-loadout-attrs');attrs(item.attrs,values);card.append(values);
         const effects=element('div','ah-loadout-effects');effect(item.talent,effects);effect(item.augment,effects,true);if(effects.childNodes.length)card.append(effects);
-        if(item.mod){const mod=element('div','ah-loadout-mod');mod.append(element('span','',name(item.mod)));attrs(item.mod.attrs,mod);card.append(mod);}
+        for(const mod of (Array.isArray(item.mods)?item.mods:[])){if(!mod||typeof mod!=='object')continue;const modEl=element('div','ah-loadout-mod');modEl.append(element('span','',name(mod)));attrs(mod.attrs,modEl);card.append(modEl);}
         if(kind==='weapons'){
           const mods=element('div','ah-loadout-mods'),entries=Array.isArray(item.mods)?item.mods:[];
           ['optics','muzzle','underbarrel','magazine'].forEach((slot,index)=>{

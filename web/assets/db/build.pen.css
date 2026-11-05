@@ -213,6 +213,12 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{grid-colu
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-value{flex:none;font-weight:600}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk .mod-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 逐槽多格（20261105）：单格件不渲 `.gc-modcol`（见 `build.view.js` renderGear），全部由 `:has(.gc-modcol)` 兜住 ⇒ 单格行为完全不变。
+   下面这份「各槽纵向堆叠进同一个栅格位」是 ≤600 单列档与兜底口径；≥601 宽屏由后面 `@media(min-width:601px)` 改成逐槽分行（第二槽与装备天赋同行、不必再挤高 row1）。 */
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .gc-modcol{grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:2px;width:100%;min-width:0;align-self:start}
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .gc-modcol .modblk{grid-column:auto;grid-row:auto}
+/* 多槽件：`.gc-ft` 默认 `align-items:center`，堆叠后 row1 变高会把左列拉居中；改左列（原型天赋，无原型时顶位的天赋行）`align-self:start` ⇒ 与第一行插件顶部水平对齐。 */
+body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.gc-modcol) :is(.build-gear-prototype,.taltx){align-self:start}
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:600px){
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;row-gap:2px}
@@ -222,7 +228,18 @@ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{
     占位格 `.mod-reserve`（pen.css:475）仍 row2，不受影响。*/
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .build-gear-prototype{grid-column:1;grid-row:1}
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{grid-column:1;grid-row:2}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .gc-modcol{grid-column:1;grid-row:2}
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx{grid-column:1;grid-row:3}
+}
+/* ≥601（宽屏脚区）逐槽分行（用户 20261105 微调）：把 `.gc-modcol` 打散（`display:contents`）让各槽 `.modblk` 重做 `.gc-ft` 直接栅格子，
+   按 `data-k` 依次落 col2 的连续行（0→row1、1→row2）⇒ 第二个插件槽与装备天赋格同行、不再纵向挤进同一个 row1。
+   有原型时把满宽天赋收到 col1/row2 给第二槽让出右列；无原型时天赋仍走 `:not(:has(.build-gear-prototype))` 那条顶到 row1col1、第二槽独占 row2col2。
+   ≤600 保持上面那份纵向堆叠（单列无横向余量，分行无意义）。 */
+@media(min-width:601px){
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .gc-modcol{display:contents}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.gc-modcol) .modblk[data-k="0"]{grid-column:2;grid-row:1}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.gc-modcol) .modblk[data-k="1"]{grid-column:2;grid-row:2}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.gc-modcol):has(.build-gear-prototype) .taltx{grid-column:1;grid-row:2}
 }
 body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-state{display:none}
 body[data-hub-page=build] #ggrid .build-gear-card .taltx::before{display:none}
@@ -459,6 +476,10 @@ body[data-hub-page=build] #ggrid .build-gear-card .gc-hd .gc-lbl{align-items:cen
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .taltx .tal-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk{border:0;border-bottom:1px solid var(--line)!important;background:none;height:32px;min-height:32px;box-sizing:border-box;padding:0 6px}
  body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft .modblk.empty{border-style:solid}
+ /* 奇特件+原型档：脚区只有隐形原型占位 `.proto-reserve`（无真实原型格）但本身有装备天赋时，天赋上移到第 1 行左列补位；
+    原型占位改落第 2 行满宽承接轨道高度，保证与同排原型卡等高（20261103 等高语义不破，20261105 用户：装备天赋向上补位）。 */
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.proto-reserve):has(.taltx:not(.tal-reserve)) .taltx{grid-column:1;grid-row:1}
+ body[data-hub-page=build] #ggrid .gcard.build-gear-card .gc-ft:has(.proto-reserve):has(.taltx:not(.tal-reserve)) .build-gear-prototype.proto-reserve{grid-column:1/-1;grid-row:2}
 }
 
 /* ── 天赋格 / 插件格 / 原型格占位（2026-10-30 用户：无装备天赋、无插件位也预留格子位置、什么也不展示；

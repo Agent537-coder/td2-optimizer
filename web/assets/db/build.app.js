@@ -132,7 +132,8 @@ function picksFor(w,gear,opt){
   const selectedWslot=(opt.wslot!=null)?opt.wslot:state.wactive;
   if(w)weaponMaxAttrs(w,selectedWslot,opt).forEach(a=>picks.attrs.push(attrOf(a)));
   const gmods=opt.gmods||state.gmods;
-  gmods.forEach((mi,i)=>{const piece=gear[i];if(mi==null||!piece||!(MOD_POS.includes(i)||arr(piece.sockets).some(modSocketIsGear)||state.ovr[i]))return;const m=(GMODS||[])[mi];if(m)for(let n=0;n<gearModSlotCount(piece,i);n++)picks.mods.push({name:modName(m),val:modVal(m),unit:m.unit||''});});
+  /* 逐槽独立插件（20261105）：每格一个 mod、各计一次、空槽不计（旧「同一条喂 N 次」已由数组模型取代；标量入参经 `gmodsNormalizeValue` 复制填满，向后兼容）。 */
+  gmods.forEach((val,i)=>{const piece=gear[i];if(!piece||!(MOD_POS.includes(i)||arr(piece.sockets).some(modSocketIsGear)||state.ovr[i]))return;gmodsNormalizeValue(val,gearModSlotCount(piece,i)).forEach(mi=>{const m=mi==null?null:(GMODS||[])[mi];if(m)picks.mods.push({name:modName(m),val:modVal(m),unit:m.unit||''});});});
   /* 武器配件（四插槽）：与词条/插件**同一条入参通路**（`picks.mods` → 引擎 `feedAttr`）。
      ⚠️ 这里读的是 `wmActive()`（含官方 `fixed_mods` 预装件）—— 预装件不占用户选择，但**必须进计算**：
         奇特武器全靠它（58/434 把有预装件，多数是奇特），漏了等于这类枪白少一条属性。
@@ -323,7 +324,7 @@ function recalc(){
     .filter(v=>v!=null).join(' / ');
   const gcount=state.slots.filter(s=>s!=null).length;
   const exN=state.slots.filter((raw,i)=>{const it=gearOf(i);return it&&it.kind==='exotic';}).length;
-  const modN=state.gmods.filter(x=>x!=null).length;
+  const modN=state.gmods.reduce((n,val,i)=>{const it=gearOf(i);if(!it)return n;return n+gmodsNormalizeValue(val,gearModSlotCount(it,i)).filter(mi=>mi!=null).length;},0);
   const tierN=gathered.rows.filter(x=>x.on).length;
   $('#r_build').innerHTML=`<b>${esc(nmTxt(w))}</b>${wNames?' · '+esc(wNames):''} · ${gcount}/6 ${esc(L('装备','gear'))} · ${exN} ${esc(L('奇特','exotic'))} · ${modN} ${esc(L('插件','mods'))} · ${tierN} ${esc(L('加成档','tiers'))}
     <span class="bpb">${bpRowHtml(r)}</span>`;
@@ -671,7 +672,7 @@ document.addEventListener('click',e=>{
     case 'gswap':{const it=gearOf(i);openDlg('g',i);const d=state.dlg;
       if(d){d.mode='list';d.gkind=(it&&it.kind==='gearset')?'gearset':'brand';d.sub=gearGroupKey(it)||'';}
       renderDlg();return;}
-    case 'modblk': openDlg('m',i);break;
+    case 'modblk': openDlg('m',i,null,{sub:+el.dataset.k||0});break;
     /* 件天赋（背包 / 胸甲 卡片脚行那颗）：独立 `kind:'gt'`。
        ⚠️ **不复用 `'t'`**（武器天赋）：`'t'` 整段按武器槽语义写死（`W_SLOTS` 标题、`state.talents[d.slot]`、
        `slotWeaponCls(d.slot)`、`pickt` 写 `state.talents`）⇒ 复用会把装备天赋静默串到武器槽上。 */
@@ -741,7 +742,7 @@ document.addEventListener('click',e=>{
       if(d.kind==='g'||d.kind==='w'){buildPickerCommit(true);return;}
       if(d.kind==='w'){state.wslots[d.slot]=null;state.talents[d.slot]=-1;state.wmods[d.slot]=null;state.waffix[d.slot]=null;if(state.wactive===d.slot)state.wactive=state.wslots.findIndex(x=>x!=null);}
       else if(d.kind==='g'){state.slots[d.slot]=null;state.gmods[d.slot]=null;autoFillGear(d.slot);}
-      else if(d.kind==='m'){state.gmods[d.slot]=null;}
+      else if(d.kind==='m'){const a=gmodsNorm(d.slot);a[d.msub||0]=null;state.gmods[d.slot]=a;}
       else if(d.kind==='t'){state.talents[d.slot]=-1;}
       /* 件天赋：取消 = 回到「不装」（`null`），与 `pickt` 的 `-1` 同义 */
       else if(d.kind==='gt'){state.gtal[d.slot]=null;}
@@ -753,7 +754,7 @@ document.addEventListener('click',e=>{
       closeDlg();renderAll();return;}
     case 'pickw':{const row=DLG_ROWS[+el.dataset.row];if(row)buildPickerSelect('w',row[1],el);return;}
     case 'pickg':{const row=DLG_ROWS[+el.dataset.row];if(row)buildPickerSelect('g',row[2],el);return;}
-    case 'pickm':{const d=state.dlg,row=DLG_ROWS[+el.dataset.row];if(!d||!row){closeDlg();break;}const i=row[1];state.gmods[d.slot]=state.gmods[d.slot]===i?null:i;closeDlg();break;}
+    case 'pickm':{const d=state.dlg,row=DLG_ROWS[+el.dataset.row];if(!d||!row){closeDlg();break;}const mi=row[1],sub=d.msub||0,a=gmodsNorm(d.slot);a[sub]=(a[sub]===mi?null:mi);state.gmods[d.slot]=a;closeDlg();break;}
     case 'skprev':{const d=state.dlg;if(!d||d.kind!=='s')return;d.skillPreview=+el.dataset.row||0;const s=SKILLS[d.skillPreview],db=skillDbOf(s);d.skillVariant=(db&&db.variants&&db.variants[0]&&db.variants[0].code)||null;renderDlgList();return;}
     case 'skvar':{const d=state.dlg;if(!d||d.kind!=='s')return;d.skillVariant=el.dataset.v||null;renderDlgList();return;}
     case 'picks':{const d=state.dlg,row=DLG_ROWS[+el.dataset.row];if(!d||!row){closeDlg();break;}const i=row[1];state.skill[d.slot]=i;state.skillVariant[d.slot]=el.dataset.v||d.skillVariant||null;closeDlg();break;}
@@ -1057,7 +1058,7 @@ function applySaved(raw){
       state.core=arr(raw.core).length===6?raw.core.map((c,i)=>(c&&randomSlotHas(next[i],'core',c))?c:null):[null,null,null,null,null,null];
       state.affix=arr(raw.affix).length===6?raw.affix.map((a,i)=>arr(a).filter(c=>randomSlotHas(next[i],-1,c))):[[],[],[],[],[],[]];
       state.gtal=arr(raw.gtal).length===6?raw.gtal.map((g,i)=>(g&&gtalPool(i).keys.indexOf(g)>=0)?g:null):[null,null,null,null,null,null];
-      state.gmods=arr(raw.gmods).length===6?raw.gmods.map(x=>(Number.isInteger(x)&&(GMODS||[])[x]!=null)?x:null):[null,null,null,null,null,null];
+      state.gmods=arr(raw.gmods).length===6?raw.gmods.map((x,i)=>{if(gearOf(i)==null)return null;return gmodsNormalizeValue(x,gearModSlotCount(gearOf(i),i));}):[null,null,null,null,null,null];
       state.ovr=arr(raw.ovr).length===6?raw.ovr.map(Boolean):state.ovr;
     }
   }

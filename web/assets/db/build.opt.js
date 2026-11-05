@@ -118,7 +118,8 @@ function optimizeBuild(o){
     const wd=words(it,i);
     sel.core[i]=wd.core;sel.aff[i]=wd.aff.slice();sel.gtal[i]=null;
     const gm=arr(saved.gmods)[i];
-    sel.gmods[i]=pfeMod!=null&&optGmodOkFor(it,i,pfeMod)?pfeMod:((gm!=null&&optGmodOkFor(it,i,gm))?gm:null);
+    const gmRep=Array.isArray(gm)?(gm.find(x=>x!=null)??null):gm;   // 换件 ⇒ 取首个非空槽作代表标量（不继承旧件逐槽数组）
+    sel.gmods[i]=pfeMod!=null&&optGmodOkFor(it,i,pfeMod)?pfeMod:((gmRep!=null&&optGmodOkFor(it,i,gmRep))?gmRep:null);
   }
   function refitWeapon(sel,w,tal){
     /* 天赋位不再一律留 -1：换枪后先挂上**该枪类最佳可换天赋**（`clsBestTal`，固定天赋枪 → -1）。

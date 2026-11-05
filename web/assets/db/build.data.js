@@ -411,12 +411,28 @@ function modSocketIsGear(s){
   if(tg.indexOf('Dye')>=0)return false;
   return tg.indexOf('Gear')>=0;                 // 只有件本体声明的那一种写法算真插件位
 }
-/* Multiple declared Gear sockets are real slots, not one boolean. A single selected
-   mod means the same mod in each slot; independent mixed-slot choices are not modeled. */
+/* Multiple declared Gear sockets are real slots, not one boolean. Each socket holds its own
+   mod and counts once (empty socket = nothing); the array model landed 20261105. */
 function gearModSlotCount(it,i){
   const declared=new Set(arr(it&&it.sockets).filter(modSocketIsGear).map(s=>s.io)).size;
   return Math.max(declared,MOD_POS.includes(i)?1:0,(state.ovr&&state.ovr[i])?1:0);
 }
+/* 该件有序 Gear 槽 io 列表（长度 = `gearModSlotCount`）；件本体未声明的隐式槽（基础位/OVR 补的）io 记 null。 */
+function gearModSockets(it,i){
+  const ios=[...new Set(arr(it&&it.sockets).filter(modSocketIsGear).map(s=>s.io))];
+  const count=gearModSlotCount(it,i);
+  for(let n=ios.length;n<count;n++)ios.push(null);
+  return ios.slice(0,count);
+}
+/* `state.gmods[i]`（标量 / 数组 / null）归一成长度 = count 的数组：数组逐格取合法 GMODS 下标、越界/非法记 null；
+   遗留标量复制填满 count（保旧语义与旧存档数值不变）。 */
+function gmodsNormalizeValue(v,count){
+  const out=new Array(count).fill(null);
+  if(Array.isArray(v)){for(let n=0;n<count;n++){const m=v[n];out[n]=(Number.isInteger(m)&&(GMODS||[])[m]!=null)?m:null;}}
+  else if(Number.isInteger(v)&&(GMODS||[])[v]!=null){for(let n=0;n<count;n++)out[n]=v;}
+  return out;
+}
+function gmodsNorm(i){const it=gearOf(i);return gmodsNormalizeValue(state.gmods?state.gmods[i]:null,gearModSlotCount(it,i));}
 function hasModSlot(i){
   if(MOD_POS.indexOf(i)>=0)return true;         // 官方三部位恒有 1 个
   if(modSockets(i).length)return true;          // 临时件本体声明的例外

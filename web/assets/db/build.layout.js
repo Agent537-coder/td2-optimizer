@@ -114,7 +114,7 @@ function buildGearEditorPaint(){
  const active=document.activeElement,focus=host.contains(active)&&active.dataset.act?{act:active.dataset.act,k:active.dataset.k}:null;
  const temp=document.createElement('template');temp.innerHTML=buildGearDraftView(()=>gearAffixBlock(i,it));let index=0;
  const fields=[...temp.content.querySelectorAll('.axrow')].map(row=>{const core=row.classList.contains('core'),proto=row.classList.contains('prototype-augment');if(proto){const s=row.querySelector('select[data-act=gaugment]');if(s){const btn=document.createElement('button');btn.type='button';btn.className='pa-pick-btn';btn.dataset.act='pa-pick';btn.dataset.i=String(i);btn.dataset.scope='draft';btn.textContent=s.selectedOptions[0]?.textContent||L('选择原型天赋','Pick prototype talent');s.replaceWith(btn);}else row.classList.remove('prototype-augment');}const label=proto?L('原型','Prototype'):core?L('核心属性','Core attribute'):L('属性 '+(++index),'Attribute '+index);row.classList.add('build-editor-input');return '<div class="build-editor-field"><span>'+esc(label)+'</span>'+row.outerHTML+'</div>';}).join('');
- const card=document.querySelector('#ggrid .gcard[data-i="'+i+'"]'),mod=card?.querySelector('.gc-ft .modblk');
+ const card=document.querySelector('#ggrid .gcard[data-i="'+i+'"]'),mod=card?.querySelector('.gc-ft .gc-modcol')||card?.querySelector('.gc-ft .modblk');
  /* 天赋段必须在草稿作用域里渲染（与上面 `gearAffixBlock` 同一通路）：`gtalKeyOf` 读的是 `state.gtal`，
     不入草稿域则选完回弹旧值。提交时机不变 —— 仍只有「应用」（`buildCloseGearEditor(true)`）写 state。 */
  const talentHtml=buildGearDraftView(()=>buildGearTalentSection(i));

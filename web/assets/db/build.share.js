@@ -33,8 +33,8 @@ function buildSharePreview(){
     let attrs=fixed.map(a=>({...a,val:prototypeAttrValue(a.code,a.val,a.qmod,proto)}));
     if(ch&&state.core[i]){const a=coreAttrOf(it,state.core[i]);attrs=attrs.filter(x=>x.kind!=='core');if(a)attrs.unshift(a);}
     attrs.push(...affixAttrs(it,i));
-    const mod=GMODS[state.gmods[i]];
-    return {...names(it),icon:it.gear_icon?.startsWith('gear/')?'fit/'+it.gear_icon:it.gear_icon||'',brandIcon:brandWmIcon(it)||'',quality:proto?'proto':it.kind,rarity:({named:'named',gearset:'set',exotic:'exotic'}[it.kind]||'brand'),attrs:attrs.map(attr),mod:mod?{...names(mod),attrs:[attr({name:modName(mod),val:modVal(mod),unit:mod.unit||''})]}:null,talent:effect(TALENT_BY_KEY[gtalKeyOf(i)]),augment:it.kind==='exotic'?null:augment(i)};});
+    const mods=gmodsNorm(i).map(mi=>mi==null?null:GMODS[mi]).filter(Boolean).map(mod=>({...names(mod),attrs:[attr({name:modName(mod),val:modVal(mod),unit:mod.unit||''})]}));
+    return {...names(it),icon:it.gear_icon?.startsWith('gear/')?'fit/'+it.gear_icon:it.gear_icon||'',brandIcon:brandWmIcon(it)||'',quality:proto?'proto':it.kind,rarity:({named:'named',gearset:'set',exotic:'exotic'}[it.kind]||'brand'),attrs:attrs.map(attr),mods,talent:effect(TALENT_BY_KEY[gtalKeyOf(i)]),augment:it.kind==='exotic'?null:augment(i)};});
   const weapons=state.wslots.map((id,i)=>{const w=DB.weapons[id];if(!w)return null;const mods=wmModel(w,i).map(slot=>{const selected=wmShown(w,slot.code,i)?.mod;return {slot:slot.code,fixed:!!slot.hasFixed,item:selected?{...names(selected),attrs:wmAttrRows(selected).map(attr)}:null};});return {...names(w),icon:w.icon||'',quality:w.exotic?'exotic':state.bp.prototype?'proto':'brand',rarity:w.exotic?'exotic':w.named?'named':'brand',attrs:[...arr(w.attrs),...weaponMaxAttrs(w,i)].map(attr),mods,talent:effect(weaponFixedTalent(w)||TALENTS[state.talents[i]]),augment:w.exotic?null:augment(i+6)};});
   const skills=state.skill.map((id,i)=>{const s=SKILLS[id],db=s&&skillDbOf(s),v=s&&skillVariantOf(s,state.skillVariant[i]);return v?{...names(v),icon:v.icon||db.icon||'',tier:activeSkillTier(v.code)}:null;});
   const spec=BP_SPEC_LIST.find(x=>x.id===state.bp.spec);
@@ -46,7 +46,7 @@ function buildShareDocument(){
     weapons:state.wslots.map(i=>buildShareIdentity(DB.weapons[i])),
     gear:state.slots.map(i=>buildShareIdentity(DB.gear[i])),
     talents:state.talents.map(i=>TALENTS[i]?.key||null),
-    mods:state.gmods.map(i=>GMODS[i]?{code:GMODS[i].code,val:modVal(GMODS[i]),unit:GMODS[i].unit||''}:null),
+    mods:state.gmods.map((val,i)=>{const it=gearOf(i);if(!it)return null;return gmodsNormalizeValue(val,gearModSlotCount(it,i)).map(mi=>mi==null?null:(GMODS[mi]?{code:GMODS[mi].code,val:modVal(GMODS[mi]),unit:GMODS[mi].unit||''}:null));}),
     wmods:[0,1,2].map(i=>{const bag=arr(state.wmods)[i];return (bag&&typeof bag==='object')?Object.fromEntries(Object.keys(bag).map(code=>[code,buildShareWmodKey(bag[code])])):null;}),
     skills:state.skill.map(i=>SKILLS[i]?.zh||null)
   }};
@@ -100,7 +100,11 @@ function buildShareRemap(doc){
   raw.slots=map(items.gear,6,DB.gear,(x,id)=>buildShareIdentity(x)===id);
   raw.talents=map(items.talents,3,TALENTS,(x,id)=>x.key===id).map(i=>i==null?-1:i);
   raw.skill=map(items.skills,2,SKILLS,(x,id)=>x.zh===id).map(i=>i==null?-1:i);
-  raw.gmods=map(items.mods,6,GMODS,(x,id)=>id&&x.code===id.code&&modVal(x)===id.val&&(x.unit||'')===id.unit);
+  /* 插件按槽恢复（20261105）：新链接 `items.mods[i]` 是该件各槽的身份数组；老链接是单个身份对象（长度 6 的平铺）。
+     两种形状都归一回 `raw.gmods`（数组 / 标量下标），后续 `applySaved` 用 `gmodsNormalizeValue` 统一按新件 count 落地。 */
+  if(!Array.isArray(items.mods)||items.mods.length!==6)throw new Error('Invalid slots');
+  const gmodIdx=id=>{if(id==null)return null;const idx=arr(GMODS).findIndex(x=>x&&x.code===id.code&&modVal(x)===id.val&&(x.unit||'')===(id.unit||''));if(idx<0){missing++;return null;}return idx;};
+  raw.gmods=items.mods.map(slot=>Array.isArray(slot)?slot.map(gmodIdx):(slot&&typeof slot==='object'?gmodIdx(slot):(Number.isInteger(slot)?slot:null)));
   const wmod=buildShareWmods(items,raw);
   if(!raw.wslots.some(x=>x!=null)&&!raw.slots.some(x=>x!=null))throw new Error('No matching items');
   return {raw,missing:missing+wmod.missing,moved:wmod.moved};

@@ -472,11 +472,19 @@ function renderGear(){
     const ms=hasModSlot(i);
     let modblk='';
     if(ms&&it){
-      const mi=state.gmods[i], m=mi==null?null:(GMODS||[])[mi];
-      /* 装了哪一类插件就画哪一类的官方字形（`img/modfilter/` 三张，颜色与 `.modblk.red/blue/yellow` 同源） */
-      modblk=m?`<button type="button" class="modblk hasic ${modColor(m)}" data-act="modblk" data-i="${i}" aria-label="${esc(modTitle(m))}" title="${esc(modTitle(m))}">${modGlyph(m,'mglyph')}<span class="mod-label">${esc(buildModLabel(m))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span><b class="mod-value">${fmtN(modVal(m))}${esc(m.unit||'')}</b></button>`
-              :`<button type="button" class="modblk empty" data-act="modblk" data-i="${i}" aria-label="${esc(L('选择插件','Pick gear mod'))}" title="${esc(L('插件（装备改造模块）','Gear mod'))}"><span class="proto-add">+</span><span class="mod-label">${esc(L('选择插件','Pick gear mod'))}${gearModSlotCount(it,i)>1?' ×'+gearModSlotCount(it,i):''}</span></button>`;
-    }else modblk='<div class="mod-reserve" aria-hidden="true"></div>';
+      /* 逐槽独立插件（20261105）：`gmodsNorm(i)` 给每格一个位（可能 null），逐格渲 `.modblk`（`data-k`=槽序号，仅供内部路由）；
+         多于一格时包进 `.gc-modcol` 纵向堆叠（不显序号），单格件行为/样式不变（无 `.gc-modcol`）。 */
+      const gmArr=gmodsNorm(i),mCount=gmArr.length;
+      const cells=gmArr.map((mi,j)=>{
+        const m=mi==null?null:(GMODS||[])[mi];
+        const base=esc(L('插件（装备改造模块）','Gear mod'));
+        const label=m?esc(buildModLabel(m)):esc(L('选择插件','Pick gear mod'));
+        const aria=m?esc(modTitle(m)):esc(L('选择插件','Pick gear mod'));
+        return m?`<button type="button" class="modblk hasic ${modColor(m)}" data-act="modblk" data-i="${i}" data-k="${j}" aria-label="${aria}" title="${esc(modTitle(m))}">${modGlyph(m,'mglyph')}<span class="mod-label">${label}</span><b class="mod-value">${fmtN(modVal(m))}${esc(m.unit||'')}</b></button>`
+              :`<button type="button" class="modblk empty" data-act="modblk" data-i="${i}" data-k="${j}" aria-label="${aria}" title="${base}"><span class="proto-add">+</span><span class="mod-label">${label}</span></button>`;
+      }).join('');
+      modblk=mCount>1?`<div class="gc-modcol">${cells}</div>`:cells;
+    }else modblk='<div class="mod-reserve" data-reserve aria-hidden="true"></div>';
     /* 无插件位时渲不可见占位格（`.mod-reserve`，与 `.tal-reserve` 同款）：脚区行轨道不塌，
        没有插件的件与有插件的件卡面等高；不带 `data-act` ⇒ 点不出抽屉，也不影响
        `build.layout.js` 按 `.gc-ft .modblk` 判定抽屉里是否渲染「插件」段。 */
@@ -495,7 +503,7 @@ function renderGear(){
     const gcounted=!!(gkey&&combatVisibleRows(gkey).length);
     const gNote=gkey?L('天赋','Talent')+'：'+gn+' · '+gstat:L('选择装备天赋','Pick gear talent');
     const gtico=gObj?talIcon(gObj,'tic tic-s'):'';
-    const tal=gpool.keys.length?`<button type="button" class="taltx${gkey?'':' empty'}${gkey&&!gcounted?' na':''}" data-act="gtal" data-i="${i}"${gpool.locked?' data-own="1"':''} aria-pressed="${gkey?'true':'false'}" title="${esc(gNote)}">${gtico}<span class="tal-name">${esc(gn||L('＋ 天赋','＋ Talent'))}</span>${gkey?'<span class="tal-state">'+esc(gstat)+'</span>':''}</button>`:'<div class="taltx tal-reserve" aria-hidden="true"></div>';
+    const tal=gpool.keys.length?`<button type="button" class="taltx${gkey?'':' empty'}${gkey&&!gcounted?' na':''}" data-act="gtal" data-i="${i}"${gpool.locked?' data-own="1"':''} aria-pressed="${gkey?'true':'false'}" title="${esc(gNote)}">${gtico}<span class="tal-name">${esc(gn||L('＋ 天赋','＋ Talent'))}</span>${gkey?'<span class="tal-state">'+esc(gstat)+'</span>':''}</button>`:'<div class="taltx tal-reserve" data-reserve aria-hidden="true"></div>';
     const ovr=canOvr(i)?`<button class="ovrbtn${state.ovr[i]?' on':''}" data-act="ovr" data-i="${i}" title="${esc(L('临时套装(Override)：开启后本格可插插件','Override set: enables mod slot on this piece'))}">OVR</button>`:'';
     /* 原型档开着时，非奇特件渲成紫色（官方原型色 --rar-proto）+ 一颗「原型」标，
        让「这一套现在按原型算」在卡面上看得见，不用去右栏找开关。 */
@@ -770,7 +778,11 @@ function applyOpt(){
     const names=[];
     for(let i=0;i<6;i++){
       const raw=res.gear[i].raw;
-      if(raw!==before.slots[i]||res.core[i]!==before.core[i]||JSON.stringify(res.aff[i])!==JSON.stringify(before.affix[i])||res.gtal[i]!==before.gtal[i]||res.gmods[i]!==before.gmods[i])names.push(optSlotLbl(i));
+      /* 逐槽插件按新件 count 归一后比值（数组 / 标量兼容）：旧代码 `res.gmods[i]!==before.gmods[i]` 是引用比较，
+         数组永远不等 ⇒ 每格误判「已改」；件换没换上面 `raw!==` 已判，这里只在同件时比插件真动过没。 */
+      const gcnt=gearModSlotCount(res.gear[i],i);
+      const gmodSame=JSON.stringify(gmodsNormalizeValue(res.gmods[i],gcnt))===JSON.stringify(gmodsNormalizeValue(before.gmods[i],gcnt));
+      if(raw!==before.slots[i]||res.core[i]!==before.core[i]||JSON.stringify(res.aff[i])!==JSON.stringify(before.affix[i])||res.gtal[i]!==before.gtal[i]||!gmodSame)names.push(optSlotLbl(i));
       if(state.opt.lock&&state.opt.lock[i])continue;
       state.slots[i]=raw;state.core[i]=res.core[i];state.affix[i]=res.aff[i].slice();
       state.gtal[i]=res.gtal[i];state.gmods[i]=res.gmods[i];
@@ -1025,6 +1037,7 @@ function openDlg(kind,slot,wslot,opts){
     skillPreview:(kind==='s'&&state.skill[slot]>=0)?state.skill[slot]:0,
     skillVariant:(kind==='s'&&state.skillVariant[slot])?state.skillVariant[slot]:null,
     scrollY:window.scrollY,scrollX:window.scrollX,
+    msub:(kind==='m'&&(opts||{}).sub!=null?(+opts.sub||0):0),
     openerDialog:document.activeElement?.closest('dialog')?.id||'',openerAction:document.activeElement?.dataset?.act||'',
     scope:(kind==='pa'&&((opts||{}).scope==='draft'))?'draft':'state',
     opener:document.activeElement&&document.activeElement!==document.body?document.activeElement:null};
@@ -1099,7 +1112,7 @@ function renderDlg(){
   const active=box.contains(document.activeElement)?document.activeElement:null;
   const focusKey=active?.id?{id:active.id}:active?.dataset?.act?{act:active.dataset.act,i:active.dataset.i,k:active.dataset.k}:null;
   box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-label',dlgTitle());
-  const canClear=(d.kind==='w'&&state.wslots[d.slot]!=null)||(d.kind==='g'&&state.slots[d.slot]!=null)||(d.kind==='m'&&state.gmods[d.slot]!=null)||(d.kind==='s'&&state.skill[d.slot]>=0)||(d.kind==='t'&&state.talents[d.slot]>=0)
+  const canClear=(d.kind==='w'&&state.wslots[d.slot]!=null)||(d.kind==='g'&&state.slots[d.slot]!=null)||(d.kind==='m'&&gmodsNorm(d.slot)[d.msub||0]!=null)||(d.kind==='s'&&state.skill[d.slot]>=0)||(d.kind==='t'&&state.talents[d.slot]>=0)
     ||(d.kind==='gt'&&state.gtal[d.slot]!=null)
     ||(d.kind==='pa'&&((d.scope==='draft'?buildEditorDraft&&buildEditorDraft.augment:state.bp.augments&&state.bp.augments[d.slot])||{}).key)
     ||(d.kind==='wm'&&(()=>{const w=arr(DB.weapons)[state.wslots[d.slot]];const b=state.wmods&&state.wmods[d.slot];return !!(b&&b[d.wslot]!=null&&w&&wmCands(w,d.wslot).indexOf(b[d.wslot])>=0);})());
@@ -1283,7 +1296,7 @@ function renderDlgList(){
     if(!all.length)h=`<div class="pk-empty">${esc(L('该枪这一槽没有可换的配件','No replaceable mod for this slot'))}</div>`;
     box.innerHTML=`<div class="dlg-grid mgrid">${h}</div><div class="pk-empty">${esc(L('按官方安装位标签匹配，共 '+all.length+' 件','socket-tag matches: '+all.length))}</div>`;
   }else if(d.kind==='m'){
-    const cur=state.gmods[d.slot];
+    const cur=gmodsNorm(d.slot)[d.msub||0];
     const ms=(GMODS||[]).map((m,i)=>[m,i]).filter(([m])=>!q||((buildModLabel(m))+' '+(m.en||'')+' '+(m.desc_zh||'')).toLowerCase().includes(q));
     DLG_ROWS=ms;
     box.innerHTML=`<div class="dlg-grid mgrid">`+ms.map(([m,i],row)=>`<div class="sTile mTile${cur===i?' on':''}" data-act="pickm" data-row="${row}" tabindex="0" role="button" aria-pressed="${cur===i?'true':'false'}" title="${esc(modTitle(m))}">${modGlyph(m,'mdot mglyph '+modColor(m))}<div style="min-width:0"><div class="wname" style="font-size:11.5px">${esc(buildModLabel(m))}</div><b>+${fmtN(modVal(m))}${esc(m.unit||'')}</b>${m.max!=null?`<span class="walt">${esc(L('满值','Max'))} ${fmtN(m.max)}${esc(m.unit||'')}</span>`:''}${m.desc_zh?`<div class="mdesc">${esc(m.desc_zh)}</div>`:''}${m.threshold?`<div class="mdesc">${esc(L('面板上限','Panel cap'))}: ${esc(m.threshold)}</div>`:''}</div></div>`).join('')+`</div>`;

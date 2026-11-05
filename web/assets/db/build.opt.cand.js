@@ -179,9 +179,13 @@ function optAffOkFor(it,k,code){
   return arr(randomSlotCodes(it,k)).indexOf(code)>=0;
 }
 /* 防具插件下标对某件是否合法（判据同 `picksFor`：官方三部位 / 件本体声明 / OVR 放行） */
+/* `mi` 兼容三种形状：搜索维度的标量代表插件 / 按槽数组（`[modIdx|null,...]`，锁定时原样保留）/ null。
+   数组取其首个非空槽作代表（口径 = 「一件一个代表插件填满所有槽」，判据与 `gmodsNormalizeValue` 同源）；
+   全空数组 ⇒ `rep=null` ⇒ 视作不装（合法）。 */
 function optGmodOkFor(it,i,mi){
-  if(mi==null)return true;
-  if(!arr(GMODS)[mi])return false;
+  const rep=Array.isArray(mi)?(mi.find(x=>x!=null)??null):mi;
+  if(rep==null)return true;
+  if(!arr(GMODS)[rep])return false;
   return MOD_POS.indexOf(i)>=0||arr(it&&it.sockets).some(modSocketIsGear)||!!(state.ovr&&state.ovr[i]);
 }
 /* 一件 × 一整套 sel 是否相容（防「上一件的核心/词条/插件给新件凭空加成」） */
