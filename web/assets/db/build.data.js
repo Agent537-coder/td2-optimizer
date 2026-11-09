@@ -139,6 +139,9 @@ const state={
      池的判据与数值全在 `build.gtal.js`（对照复刻 BuildTool 的 `AppData.TalentData[Num-2]`）。 */
   gtal:[null,null,null,null,null,null],
   axopen:-1,
+  /* 结果面显示哪一组三色核心卡（`atk` 攻击 / `def` 防御 / `uti` 技能）。
+     纯 UI 偏好，不进 `SAVE_KEYS`：数值不受它影响，换组只是切换显示哪一批格子。 */
+  rcore:'atk',
   bp:bpDefaults(),                              // 战斗参数（专精/手表/精通/专长/额外参数/目标设置）
   cq:'',                                        // 战斗参数面板的专精搜索词
   /* 一键配装（用户第 111 轮）：目标 / 武器类别 / 条件条 / 单件锁定。奇特唯一是强制项，不在这里。

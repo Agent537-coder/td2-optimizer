@@ -52,15 +52,89 @@ const RCELLS=[
   ['nextshots',['接下来几发伤害 %','Next shots %'],'NextShotsDamage','dmg'],
   ['spread',['状态扩散范围','Status spread'],'StatusSpreadRange','rate'],
  ];
+/* ── 结果面「三色核心卡」（用户 2026-11-04）─────────────────────────────────────
+   卡头 = 官方三色核心图标（`img/corered|coreblue|coreyellow`），**不用文字当标题**：
+   文字只留在 `alt` / `title` 上（读屏与悬停仍可读）。三个图标就是三个页签，
+   点哪个只显示哪一组的具体数值。
+   ⚠️ 分组**只决定渲染位置**：`RCELLS` / `STATCELLS` 与 `recalc()` 写 `#v_<key>` 的通路一字未动 ——
+      39 个 key 一个不漏、一个不重（漏组有兜底，见 `rcoreGroups()`）。
+   ⚠️ 面板用 `display:contents`（见 build.layout.css）⇒ `.rcell` 仍是 **`#r_grid` 的直接 grid item**，
+      所以 `#r_grid` 那四处按布局写的 `grid-template-columns`（2 / 4 / 6 列）原样继续生效；
+      这一层**不许**再写一份列数 —— 写了必然与那四处漂移（本仓踩过的正是这类双份口径）。 */
+const RCORE_GROUPS=[
+  ['atk','corered.png',['攻击','Offense'],
+    ['dps','dpm','sdps','bullet','panel','rpm','reload','mag','nextshots','chc','chd','hsd','melee','range','handling','acc','stab','swap']],
+  ['def','coreblue.png',['防御','Defense'],
+    ['armor','health','aok','regen','hazard','bonus','reduce','repairfrom']],
+  ['uti','coreyellow.png',['技能','Skill'],
+    ['skd','skh','skdur','repair','sktier','skeff','skhp','status','explosive','bleed','burn','move','spread']],
+];
+/* 一条指标的定义：RCELLS 优先、再 STATCELLS（两处形状不同 —— RCELLS 多一个 `big`，
+   所以按 key 回原表取，不另抄一份定义）。 */
+function rcoreCellDef(k){
+  for(let i=0;i<RCELLS.length;i++)if(RCELLS[i][0]===k)return RCELLS[i];
+  for(let i=0;i<STATCELLS.length;i++)if(STATCELLS[i][0]===k)return STATCELLS[i];
+  return null;
+}
+function rcoreCellHtml(k){
+  const d=rcoreCellDef(k);if(!d)return '';
+  const [,zh,,role,big]=d;
+  return `<div class="rcell${big?' k':''}"><span class="rlbl">${esc(L(zh[0],zh[1]))}</span>`+
+    `<b class="rnum r-${role||'dmg'}" id="v_${k}">—</b></div>`;
+}
+/* 当前页签：`state.rcore`；非法值（旧存档 / 手改）回落到第一组，别让整块面板空着 */
+function rcoreActive(){
+  const a=state&&state.rcore;
+  for(let i=0;i<RCORE_GROUPS.length;i++)if(RCORE_GROUPS[i][0]===a)return a;
+  return RCORE_GROUPS[0][0];
+}
+/* 分组 + 漏组兜底：将来往 `RCELLS`/`STATCELLS` 加一条却忘了登记进 `RCORE_GROUPS` 时，
+   那一条**不许静默消失**（本仓最忌讳的就是「少一格数字而没人发现」）⇒ 追加到默认可见的第一组。
+   ⚠️ key 在 `g[3]`（`g[2]` 是 `[中,英]` 标签）—— 写错成 `g[2]` 的症状很隐蔽：
+      漏组兜底会把**全部 39 个 key** 塞进第一组，另外两组变空壳，而格子总数仍是 39 看着「正常」。 */
+function rcoreGroups(){
+  const covered={};RCORE_GROUPS.forEach(g=>g[3].forEach(k=>{covered[k]=1;}));
+  const extra=RCELLS.concat(STATCELLS).map(c=>c[0]).filter(k=>!covered[k]);
+  return RCORE_GROUPS.map((g,i)=>[g[0],g[1],g[2],i===0?g[3].concat(extra):g[3]]);
+}
+/* 切页签：只改 `hidden` 与按下态，**不重渲整页** —— 39 个格子本来就都在 DOM 里（recalc 已写好值） */
+function rcoreSelect(id){
+  let ok=false;for(let i=0;i<RCORE_GROUPS.length;i++)if(RCORE_GROUPS[i][0]===id)ok=true;
+  if(!ok)return;
+  state.rcore=id;
+  const g=$('#r_grid');if(!g)return;
+  const tabs=g.querySelectorAll('.rcore-tab');
+  for(let i=0;i<tabs.length;i++){const on=tabs[i].dataset.k===id;tabs[i].classList.toggle('on',on);tabs[i].setAttribute('aria-pressed',on?'true':'false');}
+  const panels=g.querySelectorAll('.rcore-panel');
+  for(let i=0;i<panels.length;i++)panels[i].hidden=panels[i].id!=='rcore-'+id;
+}
+/* 卡头图：`imgUrl()` 出的是 webp（`dbIcon()` 改写）；webp 缺失时按 `onerror` 退回同名 png —
+   两份都在 `web/assets/db/img/` 里，主备都写死在这里，不靠托管侧猜。
+   不加 `loading="lazy"`：三张一共 3.4 KB 且在首屏，懒加载只会让卡头先空一下（同 build.specialization.js 的实测结论）。 */
+function rcoreImg(icon,alt){
+  const png='/assets/db/img/'+imgPath(icon)+IMGV;
+  return `<img class="rcore-ico" src="${imgUrl(icon)}" alt="${esc(alt)}" decoding="async"`+
+    ` onerror="this.onerror=null;this.src='${png}'">`;
+}
 function fillGridLabels(){
   const g=$('#r_grid');if(!g)return;
   const note=`<p class="result-scope">${esc(L(
     '下面是当前条件下的枪械弹匣快照，不是实战持续 DPS。技能、治疗、状态和未支持天赋在「未进 DPS」里。',
     'These numbers are a firearm magazine snapshot under the current conditions, not sustained combat DPS. Skills, healing, status effects, and unsupported talents stay under “not in DPS”.'
   ))}</p>`;
-  g.innerHTML=note+RCELLS.concat(STATCELLS).map(([k,zh,,role,big])=>
-    `<div class="rcell${big?' k':''}"><span class="rlbl">${esc(L(zh[0],zh[1]))}</span>`+
-    `<b class="rnum r-${role||'dmg'}" id="v_${k}">—</b></div>`).join('');
+  const act=rcoreActive(),groups=rcoreGroups();
+  g.innerHTML=note+
+    `<div class="rcore-tabs" role="group" aria-label="${esc(L('属性分类','Attribute groups'))}">`+
+    groups.map(([id,icon,label])=>{
+      const on=id===act,nm=L(label[0],label[1]);
+      return `<button type="button" class="rcore-tab${on?' on':''}" data-act="rcore" data-k="${id}"`+
+        ` aria-pressed="${on?'true':'false'}" aria-controls="rcore-${id}" title="${esc(nm)}">`+
+        rcoreImg(icon,nm)+`</button>`;
+    }).join('')+
+    `</div>`+
+    groups.map(([id,,,keys])=>
+      `<div class="rcore-panel" id="rcore-${id}"${id===act?'':' hidden'}>${keys.map(rcoreCellHtml).join('')}</div>`
+    ).join('');
 }
 /* ── 16 格命中矩阵 + 装甲目标（口径同 BuildTool 的 Result 命中四族 × 目标四态，逐格同名） ──
    单发基础值取 r.HitBase（= 引擎内部 num17，已含 武器伤/类别伤/总武器伤/独立增伤）；
@@ -579,6 +653,10 @@ document.addEventListener('click',e=>{
     /* 装备卡上的词条区（面板直接选，用户第 110 轮）：
        这些 chip 长在装备卡内部，`closest('[data-act]')` 会直接命中它们自己 ⇒ 天然不会冒泡到
        `gcard`（不会出现「点词条却弹出选装备列表」）。 */
+    /* 结果面三色核心卡：只切「显示哪一组」，不动任何配装/计算 ——
+       39 个格子本来就都在 DOM 里（`recalc()` 已按 `#v_<key>` 写好值），所以这里**不重渲整页**，
+       直接 `return`（否则每点一次页签都要重画武器/装备/图表/审计面板）。 */
+    case 'rcore': rcoreSelect(el.dataset.k||''); return;
     /* ── 一键配装（用户第 111 轮）── */
     case 'optrun': askOpt();break;
     /* 「应用到配装台」才是**唯一**会动用户手配的那一下；`askOpt()` 只算、不落地。 */
@@ -716,7 +794,7 @@ document.addEventListener('click',e=>{
       /* 第一下只把按钮点亮成「确认清空？」，第二下才真的清 —— 原生 confirm 会遮住整页、
          且在读屏里把背景内容一并吞掉；两步确认在键盘与鼠标上是同一条路径。 */
       if(!state.armReset){state.armReset=true;const b=$('#reset');if(b)b.textContent=L('确认清空？','Confirm reset?');return;}
-      buildPickerUndo=null;state.armReset=false;Object.assign(state,{wslots:[null,null,null],wactive:-1,slots:[null,null,null,null,null,null],ovr:[false,false,false,false,false,false],gmods:[null,null,null,null,null,null],wmods:[null,null,null],waffix:[null,null,null],skill:[-1,-1],skillVariant:[null,null],talents:[-1,-1,-1],tq:'',tkind:'',bonuses:[],bq:'',tweaks:[],bp:bpDefaults(),core:[null,null,null,null,null,null],affix:[[],[],[],[],[],[]],gtal:[null,null,null,null,null,null],axopen:-1,cq:'',dlg:null,opt:{target:'sdps',wtype:0,cons:[],lock:[false,false,false,false,false,false],lockW:false,res:null,undo:null,changed:0},tperfect:false});clearSaved();break;}
+      buildPickerUndo=null;state.armReset=false;Object.assign(state,{wslots:[null,null,null],wactive:-1,slots:[null,null,null,null,null,null],ovr:[false,false,false,false,false,false],gmods:[null,null,null,null,null,null],wmods:[null,null,null],waffix:[null,null,null],skill:[-1,-1],skillVariant:[null,null],talents:[-1,-1,-1],tq:'',tkind:'',bonuses:[],bq:'',tweaks:[],bp:bpDefaults(),core:[null,null,null,null,null,null],affix:[[],[],[],[],[],[]],gtal:[null,null,null,null,null,null],axopen:-1,rcore:'atk',cq:'',dlg:null,opt:{target:'sdps',wtype:0,cons:[],lock:[false,false,false,false,false,false],lockW:false,res:null,undo:null,changed:0},tperfect:false});clearSaved();break;}
     /* 弹窗 */
     case 'noop': return;
     case 'dlgx': closeDlg();renderAll();return;
